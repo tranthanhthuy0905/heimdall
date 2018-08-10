@@ -1,0 +1,10 @@
+@(message: String, style: String = "scala") 
+
+@defining(play.core.PlayVersion.current) { version =>
+<div>
+	<h3>@message</h3>
+</div>
+<div>
+	<p>You’re using Play @version</p>
+</div>
+}
