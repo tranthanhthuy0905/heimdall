@@ -1,10 +1,12 @@
-name := """play-scala-starter-example"""
+name := "heimdall"
 
 version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 resolvers += Resolver.sonatypeRepo("snapshots")
+
+javaOptions in Universal += "-J-Xmx2048M"
 
 scalaVersion := "2.12.6"
 
