@@ -20,7 +20,4 @@ else
   export BUILD_QUALIFIER="-$BRANCH_NAME-SNAPSHOT"
 fi
 
-# OK, now build Heimdall.
-
-./bin/sbt compile test package universal:packageBin -Dpackaging.buildQualifier="$BUILD_QUALIFIER" -Dpackaging.buildNumber="$BUILD_NUMBER"
-
+./bin/sbt compile test outputVersion package universal:packageBin -Dpackaging.buildQualifier="$BUILD_QUALIFIER" -Dpackaging.buildNumber="$BUILD_NUMBER"
