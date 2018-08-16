@@ -2,3 +2,6 @@
 **/.idea_modules/
 **/target/
 **/*.swp
+**/logs
+**/.idea/
+conf/envs/dev.conf

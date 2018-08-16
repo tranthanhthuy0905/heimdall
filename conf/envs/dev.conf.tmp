@@ -1,0 +1,35 @@
+// This is template configuration, please change the towbox number and remove them .tmp to dev.conf to run in your local
+
+service {
+  environment {
+    type = "dbox980"
+  }
+  usingDummyServices=true
+}
+
+fixedConnectionPool = 9
+play.http.secret.key = "changeme"
+
+edc.service.dredd {
+  thrift_auth_type = "internal"
+  thrift_auth_secret = ${?SECRET_dredd}
+}
+
+edc.keyManager {
+  type = "InMemoryKeyManager"
+  sessionCookieJOSEKeyId = "Z+ilIjVD3cIPUDp3rJfPETTdqnkBua56"
+  internalJWTSignatureKeyId = "5f0ee38cf2a7deedcd9e1b4acd60a475"
+  data = {
+    keys = [{
+      id = "Z+ilIjVD3cIPUDp3rJfPETTdqnkBua56",
+      key = "VAn/Wj25AKMbHf5C2XN5T90BFtyU4Vh/bD0aK6cDXYU=",
+      enc = "A256CBC-HS512",
+      jweAlg = "A256KW"
+    },
+      {
+        id = "5f0ee38cf2a7deedcd9e1b4acd60a475",
+        alg = "HS256",
+        key = "AIpAF1sOXvVIf572xFEuNeoe0oOF4TU/ZR3UO/5uE06jkvVr2vNwocZx1FycGeXVW8wJ4rTjpRdpJC0jRYgSYQ=="
+      }]
+  }
+}
