@@ -1,9 +1,7 @@
-import play.sbt.routes.RoutesKeys
-
 name := "heimdall"
-
 scalaVersion := "2.12.6"
 
+PlayKeys.playRunHooks += ConfigurationHook()
 resolvers ++= Common.resolvers
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayAkkaHttpServer)
@@ -14,34 +12,29 @@ javaOptions in Universal += "-J-Xmx2048M"
 sources in(Compile, doc) := Seq.empty
 publishArtifact in(Compile, packageDoc) := false
 
-// Setup for dev envs
-PlayKeys.devSettings += "HEIMDALL_ENV" -> "dev"
+routesGenerator := InjectedRoutesGenerator
 
 libraryDependencies ++= Seq(
-    guice,
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
-    "net.logstash.logback" % "logstash-logback-encoder" % "4.11",
-    "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
-    "org.mockito" % "mockito-core" % "2.18.3" % Test,
-    "com.typesafe.play" %% "play-iteratees-reactive-streams" % "2.6.1"
+  guice
 )
 
 libraryDependencies ++= Seq(
-    "com.evidence" %% "service-common" % Common.serviceCommonVersion,
-    "com.evidence" %% "service-common-auth" % Common.serviceCommonVersion,
-    "com.evidence" %% "service-common-logging-macro" % Common.serviceCommonVersion,
-    "com.evidence" %% "service-common-zookeeper" % Common.serviceCommonVersion,
-    "com.evidence" %% "service-common-cache" % Common.serviceCommonVersion
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
 )
 
-// For date manipulation
-libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.20.0"
+libraryDependencies ++= Seq(
+  "com.evidence" %% "service-common" % Common.serviceCommonVersion,
+  "com.evidence" %% "service-common-logging-macro" % Common.serviceCommonVersion,
+  "com.evidence" %% "service-common-auth" % Common.serviceCommonVersion,
+  "com.evidence" %% "service-common-finagle" % Common.serviceThriftVersion,
+  "com.evidence" %% "service-common-zookeeper" % Common.serviceCommonVersion,
+  "com.evidence" %% "service-common-cache" % Common.serviceCommonVersion
+)
 
 // Thrift Services
 libraryDependencies ++= Seq(
     "com.evidence" %% "service-common-finagle" % Common.serviceThriftVersion,
-    "com.evidence" %% "sessions-service-thrift" % Common.serviceThriftVersion,
-    "com.evidence" %% "komrade-service-thrift" % Common.serviceThriftVersion
+    "com.evidence" %% "dredd-service-thrift" % Common.serviceThriftVersion
 )
 
 // Exclusions

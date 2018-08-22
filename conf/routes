@@ -1,8 +1,19 @@
 # Routes
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# TODO [okroshkia]: REMOVEME
+# HomeController can be removed when HlsController will start functioning
 GET / controllers.HomeController.index
 
-# Add more controllers below
+# API: HLS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# TODO XXX [okroshkina]: the following route is an example of entry point.
+# /api/v1/hls requests dredd-service to provide presigned URL for a hardcoded evidence ID.
+# Heimdall is not going to expose getPresginedUrl API in future, URL will be used underneath streaming API-s.
+# Thus, there is no need to create EvidenceController. Instead, HlsController will be temporarily passing the request to dredd.
+# HlsController might be removed, or renamed in future.
+# /api/v1/hls route will be replaced with more meaningful routes. For example, /api/v1/hls/partnerId/:partnerId/fileId/:fileId.
+#
+GET /api/v1/hls/agencies/:agencyId/evidence/:evidenceId/files/:fileId controllers.HlsController.hls(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
 

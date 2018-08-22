@@ -7,6 +7,7 @@ import play.api.mvc._
 /**
  * This controller creates an `Action` to handle HTTP requests to the
  * application's home page.
+ * TODO [okroshkina]: deleteme
  */
 @Singleton
 class HomeController @Inject()(cc: ControllerComponents) (implicit assetsFinder: AssetsFinder)
