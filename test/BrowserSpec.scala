@@ -13,8 +13,8 @@ class BrowserSpec extends PlaySpec
   "Application" should {
 
     "work from within a browser" in {
-      go to ("http://localhost:" + port)
-      pageSource must include ("Heimdall is up")
+      go to ("http://localhost:" + port + "/media/alive")
+      pageSource must include ("ok")
     }
   }
 }
