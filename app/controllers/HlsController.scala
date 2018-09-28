@@ -2,11 +2,10 @@ package controllers
 
 import java.util.UUID
 import javax.inject._
-
 import play.api.mvc._
 import com.evidence.service.common.logging.LazyLogging
+import play.api.libs.json.Json
 import services.dredd.DreddClient
-
 import scala.concurrent.ExecutionContext
 
 class HlsController @Inject() (
@@ -21,7 +20,7 @@ extends AbstractController(components) with LazyLogging {
       response <- dredd.getPresignedUrl2(agencyId, evidenceId, fileId)
     } yield response.presignedUrl
     u.map(maybeFile => {
-      Ok(views.html.index("PRESIGNED URL:\t" ++ maybeFile.toString))
+      Ok(Json.obj("status" -> "ok", "presignedUrl" -> maybeFile.toString))
     })
   }
 

@@ -9,7 +9,7 @@ Heimdall the Gatekeeper is a servant of All-Father and ally of Thor. He was the 
 ./bin/sbt run
 ```
 
-And then go to <http://localhost:9000> to see the running web application.
+And then go to <http://localhost:9000/media/alive> to see the healthcheck endpoint.
 
 ### Testing API
 * Update conf/env/localdev.conf with dev twobox number and thrift_auth_secret. For example:

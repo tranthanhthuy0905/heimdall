@@ -1,9 +1,9 @@
 # Routes
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# TODO [okroshkia]: REMOVEME
-# HomeController can be removed when HlsController will start functioning
-GET / controllers.HomeController.index
+
+# Basic is it up endpoint
+GET /media/alive controllers.HealthController.isItUp
 
 # API: HLS
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -16,4 +16,3 @@ GET / controllers.HomeController.index
 # /api/v1/hls route will be replaced with more meaningful routes. For example, /api/v1/hls/partnerId/:partnerId/fileId/:fileId.
 #
 GET /api/v1/hls/agencies/:agencyId/evidence/:evidenceId/files/:fileId controllers.HlsController.hls(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
-
