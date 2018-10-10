@@ -19,6 +19,8 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
+  "com.typesafe.play" %% "play-ws" % "2.6.17",
+  "com.typesafe.play" %% "play-iteratees-reactive-streams" % "2.6.1",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
 )
 
@@ -33,8 +35,9 @@ libraryDependencies ++= Seq(
 
 // Thrift Services
 libraryDependencies ++= Seq(
-    "com.evidence" %% "service-common-finagle" % Common.serviceThriftVersion,
-    "com.evidence" %% "dredd-service-thrift" % Common.serviceThriftVersion
+  "com.evidence" %% "dredd-service-thrift" % Common.serviceThriftVersion,
+  "com.evidence" %% "sessions-service-thrift" % Common.serviceThriftVersion,
+  "com.evidence" % "edc-thrift-java" % Common.serviceThriftVersion
 )
 
 // Exclusions
@@ -43,6 +46,8 @@ libraryDependencies ~= {
 }
 
 updateOptions := updateOptions.value.withCachedResolution(true)
+
+javaOptions in Test += "-Dconfig.file=conf/env/test.conf"
 
 // Exclude development configs from zip package
 mappings in Universal := {

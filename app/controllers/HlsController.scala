@@ -23,6 +23,5 @@ extends AbstractController(components) with LazyLogging {
       Ok(Json.obj("status" -> "ok", "presignedUrl" -> maybeFile.toString))
     })
   }
-
   // TODO: support List[String] instead of just String.
 }
