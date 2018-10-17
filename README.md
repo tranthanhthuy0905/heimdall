@@ -41,10 +41,14 @@ edc.service.sessions {
 
 * See the application in browser, for example:
 ```
+// Get presigned URL from dredd-service
 http://localhost:9000/media/v0/hls/agencies/f3d719bc-db2b-4b71-bfb1-436240fb9099/evidence/31b4f97f-20cd-40de-acb8-7a6fe95357eb/files/4f706842-e602-4287-b80b-a74b09d8995a
-http://localhost:9000/media/v0/sessions/create/token-type/2/agency-id/f3d719bc-db2b-4b71-bfb1-436240fb9099
-http://localhost:9000/media/v0/sessions/get/token-type/2/token/http://localhost:9000/media/v0/sessions/get/token-type/2/token/1xf5zqfyzvr37pto9u3sjnk8h0zha0l2xa9y5w7hhe6o00eqcz
-http://localhost:9000/media/v0/sessions/delete/token-type/2/token/http://localhost:9000/media/v0/sessions/get/token-type/2/token/1xf5zqfyzvr37pto9u3sjnk8h0zha0l2xa9y5w7hhe6o00eqcz
+// Create, and delete session; Get authorization response by token from sessions-service
+http://localhost:9000/media/v0/sessions/create-session/agency-id/f3d719bc-db2b-4b71-bfb1-436240fb9099
+http://localhost:9000/media/v0/sessions/get-auth/token/1xf5zqfyzvr37pto9u3sjnk8h0zha0l2xa9y5w7hhe6o00eqcz
+http://localhost:9000/media/v0/sessions/delete-session/token/1xf5zqfyzvr37pto9u3sjnk8h0zha0l2xa9y5w7hhe6o00eqcz
+// Using token created with the sessions API above, get and parse authorization data
+http://localhost:9000/media/v0/auth/get-data/token/1xf5zqfyzvr37pto9u3sjnk8h0zha0l2xa9y5w7hhe6o00eqcz
 ```
 Note [2018-09-26]: agency, evidence, and file ID-s must be provided in UUID format, including '-'.<br/>
 I.e. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
