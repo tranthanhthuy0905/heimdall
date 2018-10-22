@@ -11,6 +11,7 @@ Heimdall the Gatekeeper is a servant of All-Father and ally of Thor. He was the 
 
 And then go to <http://localhost:9000/media/alive> to see the healthcheck endpoint.
 
+
 ### Testing API
 * Update conf/env/localdev.conf with dev twobox number and thrift_auth_secret. For example:
 ```
@@ -39,17 +40,19 @@ edc.service.sessions {
 ./bin/sbt run
 ```
 
-* See the application in browser, for example:
+* Heimdall can create sessions and get authorization data with the following API-s (for testing only):
 ```
-// Get presigned URL from dredd-service
-http://localhost:9000/media/v0/hls/agencies/f3d719bc-db2b-4b71-bfb1-436240fb9099/evidence/31b4f97f-20cd-40de-acb8-7a6fe95357eb/files/4f706842-e602-4287-b80b-a74b09d8995a
-// Create, and delete session; Get authorization response by token from sessions-service
 http://localhost:9000/media/v0/sessions/create-session/agency-id/f3d719bc-db2b-4b71-bfb1-436240fb9099
 http://localhost:9000/media/v0/sessions/get-auth/token/1xf5zqfyzvr37pto9u3sjnk8h0zha0l2xa9y5w7hhe6o00eqcz
 http://localhost:9000/media/v0/sessions/delete-session/token/1xf5zqfyzvr37pto9u3sjnk8h0zha0l2xa9y5w7hhe6o00eqcz
-// Using token created with the sessions API above, get and parse authorization data
-http://localhost:9000/media/v0/auth/get-data/token/1xf5zqfyzvr37pto9u3sjnk8h0zha0l2xa9y5w7hhe6o00eqcz
 ```
+
+* Example of passing Axon cookie to Heimdall:
+```
+// Get presigned URL from dredd-service
+curl 'http://localhost:9000/media/v0/hls/agencies/f3d719bc-db2b-4b71-bfb1-436240fb9099/evidence/31b4f97f-20cd-40de-acb8-7a6fe95357eb/files/4f706842-e602-4287-b80b-a74b09d8995a' -H 'Cookie: AXONSESSION=2ts26spdw5y60yempoxab6n1w9qrs4g5d4ntivlu9t7xe13ult'
+```
+
 Note [2018-09-26]: agency, evidence, and file ID-s must be provided in UUID format, including '-'.<br/>
 I.e. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
 

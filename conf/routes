@@ -12,9 +12,6 @@ GET /media/alive controllers.HealthController.isItUp
 
 GET /media/v0/hls/agencies/:agencyId/evidence/:evidenceId/files/:fileId controllers.HlsController.hls(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
 
-
 GET /media/v0/sessions/create-session/agency-id/:agencyId controllers.SessionsControllerV0.create(agencyId: java.util.UUID)
 GET /media/v0/sessions/get-auth/token/:token              controllers.SessionsControllerV0.get(token: String)
 GET /media/v0/sessions/delete-session/token/:token        controllers.SessionsControllerV0.delete(token: String)
-
-GET /media/v0/auth/get-data/token/:token controllers.AuthControllerV0.get(token: String)

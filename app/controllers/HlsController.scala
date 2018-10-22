@@ -1,14 +1,15 @@
 package controllers
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 import java.util.UUID
 
-import javax.inject._
-import play.api.libs.json.Json
-import play.api.mvc._
 import com.evidence.service.common.logging.LazyLogging
+import javax.inject.Inject
+import play.api.libs.json.Json
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.dredd.DreddClient
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class HlsController @Inject() (
                                 components: ControllerComponents,

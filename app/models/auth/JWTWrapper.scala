@@ -2,8 +2,8 @@ package models.auth
 
 import scala.collection.JavaConverters._
 
-import com.evidence.api.thrift.v1.TidEntities
 import com.evidence.service.common.auth.jwt.JWTConstants
+
 import com.nimbusds.jwt.{JWT,JWTClaimsSet}
 
 /**
@@ -66,9 +66,6 @@ object JWTWrapper {
   }
 }
 
-/**
- * Version 2 JWT wrapper.
- */
 class JWTWrapperV2(jwt: JWT) extends JWTWrapper(jwt) {
   val subjectType = claimSet.getStringClaim(JWTConstants.SubjectTypeClaim)
   val audienceType = claimSet.getStringClaim(JWTConstants.AudienceTypeClaim)

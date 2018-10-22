@@ -1,10 +1,5 @@
 package services.sessions
 
-import scala.collection.Set
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
-import javax.inject.{Inject, Singleton}
-
 import com.evidence.api.thrift.v1.{EntityDescriptor, SessionAuthClient, SessionTokenType}
 import com.evidence.service.common.config.Configuration
 import com.evidence.service.common.finagle.FinagleClient
@@ -12,6 +7,11 @@ import com.evidence.service.common.finagle.FutureConverters._
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.sessions.api.thrift.v1._
 import com.evidence.service.thrift.v2.{Authorization => RequestAuthorization}
+import javax.inject.{Inject, Singleton}
+
+import scala.collection.Set
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 trait SessionsClient {
 
