@@ -15,3 +15,5 @@ GET /media/v0/hls/agencies/:agencyId/evidence/:evidenceId/files/:fileId controll
 GET /media/v0/sessions/create-session/agency-id/:agencyId controllers.SessionsControllerV0.create(agencyId: java.util.UUID)
 GET /media/v0/sessions/get-auth/token/:token              controllers.SessionsControllerV0.get(token: String)
 GET /media/v0/sessions/delete-session/token/:token        controllers.SessionsControllerV0.delete(token: String)
+
+GET /media/v0/zookeeper/instance/:key controllers.ZookeeperControllerV0.getInstance(key: String)

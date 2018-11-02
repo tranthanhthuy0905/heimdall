@@ -3,7 +3,6 @@ package models.auth
 import com.evidence.api.thrift.v1.SessionTokenType
 import com.evidence.service.common.auth.jwt.VerifyingJWTParser
 import com.evidence.service.common.auth.{CachingJOSEComponentFactory, KeyManager}
-import com.evidence.service.common.config.Configuration
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
@@ -16,17 +15,15 @@ import scala.util.{Failure, Success}
 case class AuthorizationData(jwt: JWTWrapper)
 
 trait Authorizer {
-  protected val config: Config = Configuration.load()
-  protected val keyManager: KeyManager = KeyManager.apply(config)
-  protected val componentFactory: CachingJOSEComponentFactory = new CachingJOSEComponentFactory(keyManager)
-  protected val parser = new VerifyingJWTParser(componentFactory)
-
   def authorize(requestHeader: RequestHeader): Future[Either[Result, AuthorizationData]]
 }
 
 @Singleton
-class AuthorizerImpl @Inject()(sessions: SessionsClient)(implicit val executionContext: ExecutionContext)
+class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implicit val executionContext: ExecutionContext)
   extends Authorizer with LazyLogging {
+  protected val keyManager: KeyManager = KeyManager.apply(config)
+  protected val componentFactory: CachingJOSEComponentFactory = new CachingJOSEComponentFactory(keyManager)
+  protected val parser = new VerifyingJWTParser(componentFactory)
 
   def authorize(requestHeader: RequestHeader): Future[Either[Result, AuthorizationData]] = {
     getCookieValue(requestHeader) match {
@@ -52,15 +49,13 @@ class AuthorizerImpl @Inject()(sessions: SessionsClient)(implicit val executionC
             Left(Results.Unauthorized)
         }
       })
-      case Failure(exception) => {
+      case Failure(exception) =>
         logger.warn("failedToGetAuthorizationData")("token" -> token, "exception" -> exception.getMessage)
         Future.successful(Left(Results.Unauthorized))
-      }
     }
   }
 
-  private def getCookieValue(request: RequestHeader): Option[String] = {
+  private def getCookieValue(request: RequestHeader): Option[String] =
     request.cookies.get("AXONSESSION").map(_.value)
-  }
 
 }

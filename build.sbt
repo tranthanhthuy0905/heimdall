@@ -19,6 +19,8 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
+  "com.google.inject" % "guice" % "4.2.1",
+  "com.google.inject.extensions" % "guice-throwingproviders" % "4.2.1",
   "com.typesafe.play" %% "play-ws" % "2.6.17",
   "com.typesafe.play" %% "play-iteratees-reactive-streams" % "2.6.1",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test

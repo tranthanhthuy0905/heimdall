@@ -1,12 +1,12 @@
 package services.sessions
 
 import com.evidence.api.thrift.v1.{EntityDescriptor, SessionAuthClient, SessionTokenType}
-import com.evidence.service.common.config.Configuration
 import com.evidence.service.common.finagle.FinagleClient
 import com.evidence.service.common.finagle.FutureConverters._
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.sessions.api.thrift.v1._
 import com.evidence.service.thrift.v2.{Authorization => RequestAuthorization}
+import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
 
 import scala.collection.Set
@@ -14,7 +14,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 trait SessionsClient {
-
   def getAuthorization(tokenType: SessionTokenType, token: String): Try[Future[GetAuthorizationResponse]]
   def createSession(subject: EntityDescriptor, audience: EntityDescriptor, subjectScopes: Set[String], tokenType: SessionTokenType,
                     ttlSeconds: Option[Int], userRoleId: Option[Long], authClient: Option[SessionAuthClient]): Try[Future[CreateSessionResponse]]
@@ -22,9 +21,7 @@ trait SessionsClient {
 }
 
 @Singleton
-class SessionsClientImpl @Inject() (implicit ec: ExecutionContext) extends SessionsClient with LazyLogging {
-
-  private val config = Configuration.load()
+class SessionsClientImpl @Inject()(config: Config)(implicit ec: ExecutionContext) extends SessionsClient with LazyLogging {
 
   private val client: SessionsService.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)

@@ -1,24 +1,23 @@
 package services.dredd
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
 
 import com.evidence.api.thrift.v1.TidEntities
-import com.evidence.service.common.config.Configuration
 import com.evidence.service.common.finagle.FinagleClient
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.dredd.thrift._
+import com.typesafe.config.Config
+import javax.inject.{Inject, Singleton}
+
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 trait DreddClient {
   def getPresignedUrl2 (agencyId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int = 60) : Try[Future[PresignedUrlResponse]]
 }
 
 @Singleton
-class DreddClientImpl @Inject() (implicit ex: ExecutionContext) extends DreddClient with LazyLogging {
-
-  private val config = Configuration.load()
+class DreddClientImpl @Inject() (config: Config) (implicit ex: ExecutionContext) extends DreddClient with LazyLogging {
 
   private val client: DreddService.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)

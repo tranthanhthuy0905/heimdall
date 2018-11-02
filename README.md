@@ -53,6 +53,11 @@ http://localhost:9000/media/v0/sessions/delete-session/token/1xf5zqfyzvr37pto9u3
 curl 'http://localhost:9000/media/v0/hls/agencies/f3d719bc-db2b-4b71-bfb1-436240fb9099/evidence/31b4f97f-20cd-40de-acb8-7a6fe95357eb/files/4f706842-e602-4287-b80b-a74b09d8995a' -H 'Cookie: AXONSESSION=2ts26spdw5y60yempoxab6n1w9qrs4g5d4ntivlu9t7xe13ult'
 ```
 
+* Get a RTM zookeeper endpoint:
+```
+http://localhost:9000/media/v0/zookeeper/instance/something
+```
+
 Note [2018-09-26]: agency, evidence, and file ID-s must be provided in UUID format, including '-'.<br/>
 I.e. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
 

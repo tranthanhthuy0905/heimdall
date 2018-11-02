@@ -1,7 +1,5 @@
 import play.sbt.PlayRunHook
 
-import sbt._
-
 object ConfigurationHook {
   def apply(): PlayRunHook = {
 
