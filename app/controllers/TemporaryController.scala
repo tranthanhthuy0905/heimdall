@@ -8,19 +8,23 @@ import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import services.dredd.DreddClient
 import services.sessions.SessionsClient
+import services.zookeeper.ZookeeperServerSet
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class SessionsControllerV0 @Inject() (
+// TODO Delete this controller and test routes after heimdall has sufficient unit tests and before launch in prod.
+// TODO XXX Ignore codacy warnings related to this controller.
+class TemporaryController @Inject() (
                                        components: ControllerComponents,
-                                       sessions: SessionsClient) (implicit assetsFinder: AssetsFinder, ex: ExecutionContext)
+                                       sessions: SessionsClient,
+                                       zookeeper: ZookeeperServerSet,
+                                       dredd: DreddClient) (implicit assetsFinder: AssetsFinder, ex: ExecutionContext)
   extends AbstractController(components) with LazyLogging {
 
-  // TODO FIXME The following codacy warning will go away as the client will be closer to the prod level state:
-  // FIXME "The method takes a value that is controlled by the client"
-  def get(token: String): Action[AnyContent] = Action.async {
+  def getSession(token: String): Action[AnyContent] = Action.async {
     sessions.getAuthorization(SessionTokenType.AuthToken, token) match {
       case Success(value) => value.map(u => {
         Ok(Json.obj("status" -> "ok", "response" -> u.authorization.toString()))
@@ -32,13 +36,11 @@ class SessionsControllerV0 @Inject() (
     }
   }
 
-  // TODO FIXME The following codacy warning will go away as the client will be closer to the prod level state:
-  // FIXME "The method takes a value that is controlled by the client"
-  def create(agencyId: UUID): Action[AnyContent] = Action.async {
+  def createSession(agencyId: UUID): Action[AnyContent] = Action.async {
     val entity = EntityDescriptor(TidEntities.Subscriber, UUID.randomUUID().toString.toUpperCase, Option(agencyId.toString))
     val domain = EntityDescriptor(TidEntities.Partner, agencyId.toString, Option(agencyId.toString))
     val scopes = Set[String](ECOMScopes.EVIDENCE_ANY_LIST, ECOMScopes.CASES_ANY_MODIFY) // TODO this method will be removed, it is needed for testing only
-    val tokenType = SessionTokenType.SessionCookie
+    val tokenType = SessionTokenType.AuthToken
     val ttlSeconds = Option(900)
     val userRoleId = Option(10L)
     val authClient = Option(SessionAuthClient.Web)
@@ -53,9 +55,7 @@ class SessionsControllerV0 @Inject() (
     }
   }
 
-  // TODO FIXME The following codacy warning will go away as the client will be closer to the prod level state:
-  // FIXME "The method takes a value that is controlled by the client"
-  def delete(token: String): Action[AnyContent] = Action.async {
+  def deleteSession(token: String): Action[AnyContent] = Action.async {
     sessions.deleteSession(SessionTokenType.AuthToken, token) match {
       case Success(value) => value.map(_ => {
         Ok(Json.obj("status" -> "ok"))
@@ -64,6 +64,19 @@ class SessionsControllerV0 @Inject() (
         logger.error(exception, "Failed to delete session token")()
         Future.successful(InternalServerError(Json.obj("status"-> "500 INTERNAL_SERVER_ERROR", "exception" -> exception.getMessage)))
       }
+    }
+  }
+
+  def getRtmInstance(key: String): Action[AnyContent] = Action {
+    zookeeper.getInstance(key) match {
+      case Success(value)  => Ok(Json.obj("status" -> "ok", "result" -> value.toString))
+      case Failure(exception) => InternalServerError(Json.obj("status"-> "500 INTERNAL_SERVER_ERROR", "exception" -> exception.getMessage))
+    }
+  }
+
+  def getUrl(agencyId: UUID, evidenceId: UUID, fileId: UUID): Action[AnyContent] = Action.async {
+    dredd.getUrl(agencyId, evidenceId, fileId) map { u =>
+      Ok(Json.obj("status" -> "ok", "presignedUrlResponse" -> u.toString))
     }
   }
 

@@ -4,6 +4,7 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.zookeeper.{ConsistentHashLb, ServiceEndpoint, ZookeeperBuilder, ZookeeperConfig}
 import com.google.inject.{Inject, Provider}
 import com.typesafe.config.Config
+import javax.inject.Singleton
 import org.apache.curator.framework.CuratorFramework
 
 import scala.util.{Failure, Success, Try}
@@ -12,6 +13,7 @@ class ZookeeperClientProvider @Inject() (config: Config) extends Provider[Curato
   def get(): CuratorFramework = ZookeeperBuilder.connect(new ZookeeperConfig(config))
 }
 
+@Singleton
 class ZookeeperServerSet @Inject() (lb: String => Option[ServiceEndpoint])
   extends LazyLogging {
   def getInstance(key: String): Try[ServiceEndpoint] = {

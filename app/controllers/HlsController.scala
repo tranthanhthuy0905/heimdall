@@ -4,30 +4,37 @@ import java.util.UUID
 
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
-import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import services.dredd.DreddClient
+import play.api.http.HttpEntity
+import play.api.libs.ws.WSResponse
+import play.api.mvc._
+import services.rtm.RtmClient
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext
 
-class HlsController @Inject() (
-                                components: ControllerComponents,
-                                dredd: DreddClient) (implicit assetsFinder: AssetsFinder, ex: ExecutionContext)
-extends AbstractController(components) with LazyLogging {
+class HlsController @Inject() (rtm: RtmClient,
+                               components: ControllerComponents)
+                              (implicit assetsFinder: AssetsFinder, ex: ExecutionContext)
+  extends AbstractController(components) with LazyLogging {
 
-  // TODO: change type of arguments from UUID to string. See https://git.taservs.net/ecom/lantern/blob/aeea6396474d575cf8683a0f0798ca3e1aadc593/app/controllers/Evidence.scala#L261
-  // TODO FIXME: Prohibit untrusted Http-Request parameter
-  def hls(agencyId: UUID, evidenceId: UUID, fileId: UUID): Action[AnyContent] = Action.async {
-    dredd.getPresignedUrl2(agencyId, evidenceId, fileId) match {
-      case Success(value) => value.map(u => {
-        Ok(Json.obj("status" -> "ok", "presignedUrlResponse" -> u.toString))
-      })
-      case Failure(exception) => {
-        logger.error(exception, "Failed to get presigned URL")()
-        Future.successful(InternalServerError(Json.obj("status"-> "500 INTERNAL_SERVER_ERROR", "exception" -> exception.getMessage)))
-      }
+  def segment(agencyId: UUID, evidenceId: UUID, fileId: UUID): Action[AnyContent] = Action.async { implicit request =>
+    rtm.send("/hls/segment", agencyId, evidenceId, fileId, request.queryString) map { u =>
+      processResponse(u)
     }
   }
-  // TODO: support List[String] instead of just String.
+
+  private def processResponse(response: WSResponse): Result = {
+    if (response.status == 200) {
+      val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/octet-stream")
+      response.headers.get("Content-Length") match {
+        case Some(Seq(length)) =>
+          Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.toLong), Some(contentType)))
+        case _ =>
+          Ok.chunked(response.bodyAsSource).as(contentType)
+      }
+    } else {
+      logger.error("unexpectedRtmReturnCode")("status" -> response.status)
+      BadGateway
+    }
+  }
+
 }

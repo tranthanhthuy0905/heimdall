@@ -1,5 +1,6 @@
 package services.dredd
 
+import java.net.URL
 import java.util.UUID
 
 import com.evidence.api.thrift.v1.TidEntities
@@ -10,10 +11,9 @@ import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 trait DreddClient {
-  def getPresignedUrl2 (agencyId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int = 60) : Try[Future[PresignedUrlResponse]]
+  def getUrl (agencyId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int = 60) : Future[URL]
 }
 
 @Singleton
@@ -32,7 +32,27 @@ class DreddClientImpl @Inject() (config: Config) (implicit ex: ExecutionContext)
     Authorization(authType, secret)
   }
 
-  override def getPresignedUrl2 (agencyId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int) : Try[Future[PresignedUrlResponse]] = {
+  override def getUrl (agencyId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int) : Future[URL] = {
+    def extractUrlFromDreddResponse(r: PresignedUrlResponse): Future[URL] = {
+      val u = for {
+        presigned <- r.presignedUrl
+        urlString <- presigned.url
+        url = new URL(urlString)
+      } yield Future(url)
+      u.getOrElse {
+        logger.error("noUrlInResponse")(
+          "message" -> "No URL contained in PresignedUrlResponse", "evidenceId" -> evidenceId, "agencyId" -> agencyId)
+          Future.failed(new Exception("No URL contained in PresignedUrlResponse for " +
+            s"evidenceId=$evidenceId partnerId=$agencyId"))
+      }
+    }
+    for {
+      presignedUrlResponse <- getPresignedUrl(agencyId, evidenceId, fileId, expiresSecs)
+      url <- extractUrlFromDreddResponse(presignedUrlResponse)
+    } yield url
+  }
+
+  private def getPresignedUrl (agencyId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int) : Future[PresignedUrlResponse] = {
     import com.evidence.service.common.finagle.FutureConverters._
 
     val ip = "127.0.0.1" // TODO: add request context (see lantern)
@@ -44,10 +64,8 @@ class DreddClientImpl @Inject() (config: Config) (implicit ex: ExecutionContext)
       evidenceId = evidenceId.toString,
       fileId = fileId.toString,
       expiresSecs = expiresSecs,
-      suppressAudit = Some(true)) // TODO: pass suppressAudit value, which shall default to false
-    Try(client.getPresignedUrl2(auth, request, requestContext).toScalaFuture)
+      suppressAudit = Some(true))
+    client.getPresignedUrl2(auth, request, requestContext).toScalaFuture
   }
 
 }
-
-// TODO: add tests

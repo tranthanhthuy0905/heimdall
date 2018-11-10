@@ -9,11 +9,18 @@ GET /media/alive controllers.HealthController.isItUp
 # Heimdall API
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 'v0' means pre-alpha version.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#
+# The idea/plan for test routes is the following:
+# I Add unit tests
+# II Remove test routes together with all 'v0'
+# III Launch the service in prod
+#
 
-GET /media/v0/hls/agencies/:agencyId/evidence/:evidenceId/files/:fileId controllers.HlsController.hls(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
+GET /media/v0/hls/segment/agency/:agencyId/evidence/:evidenceId/file/:fileId controllers.HlsController.segment(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
 
-GET /media/v0/sessions/create-session/agency-id/:agencyId controllers.SessionsControllerV0.create(agencyId: java.util.UUID)
-GET /media/v0/sessions/get-auth/token/:token              controllers.SessionsControllerV0.get(token: String)
-GET /media/v0/sessions/delete-session/token/:token        controllers.SessionsControllerV0.delete(token: String)
-
-GET /media/v0/zookeeper/instance/:key controllers.ZookeeperControllerV0.getInstance(key: String)
+GET /media/v0/test/create-session/:agencyId              controllers.TemporaryController.createSession(agencyId: java.util.UUID)
+GET /media/v0/test/delete-session/:token                 controllers.TemporaryController.deleteSession(token: String)
+GET /media/v0/test/get-session/:token                    controllers.TemporaryController.getSession(token: String)
+GET /media/v0/test/get-url/:agencyId/:evidenceId/:fileId controllers.TemporaryController.getUrl(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
+GET /media/v0/test/get-rtm/:key                          controllers.TemporaryController.getRtmInstance(key: String)
