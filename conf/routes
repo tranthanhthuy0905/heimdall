@@ -10,17 +10,12 @@ GET /media/alive controllers.HealthController.isItUp
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 'v0' means pre-alpha version.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# The idea/plan for test routes is the following:
-# I Add unit tests
-# II Remove test routes together with all 'v0'
-# III Launch the service in prod
-#
 
-GET /media/v0/hls/segment/agency/:agencyId/evidence/:evidenceId/file/:fileId controllers.HlsController.segment(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
+GET /media/hls/master  controllers.HlsController.master
+GET /media/hls/variant controllers.HlsController.variant
+GET /media/hls/segment controllers.HlsController.segment
 
-GET /media/v0/test/create-session/:agencyId              controllers.TemporaryController.createSession(agencyId: java.util.UUID)
-GET /media/v0/test/delete-session/:token                 controllers.TemporaryController.deleteSession(token: String)
-GET /media/v0/test/get-session/:token                    controllers.TemporaryController.getSession(token: String)
-GET /media/v0/test/get-url/:agencyId/:evidenceId/:fileId controllers.TemporaryController.getUrl(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
-GET /media/v0/test/get-rtm/:key                          controllers.TemporaryController.getRtmInstance(key: String)
+GET /media/test/create-session                        controllers.TemporaryController.createSession
+GET /media/test/get-session                           controllers.TemporaryController.getSession
+GET /media/test/get-url/:agencyId/:evidenceId/:fileId controllers.TemporaryController.getUrl(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
+GET /media/test/get-rtm/:key                          controllers.TemporaryController.getRtmInstance(key: String)

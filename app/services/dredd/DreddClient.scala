@@ -32,7 +32,7 @@ class DreddClientImpl @Inject() (config: Config) (implicit ex: ExecutionContext)
     Authorization(authType, secret)
   }
 
-  override def getUrl (agencyId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int) : Future[URL] = {
+  override def getUrl (partnerId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int) : Future[URL] = {
     def extractUrlFromDreddResponse(r: PresignedUrlResponse): Future[URL] = {
       val u = for {
         presigned <- r.presignedUrl
@@ -41,13 +41,13 @@ class DreddClientImpl @Inject() (config: Config) (implicit ex: ExecutionContext)
       } yield Future(url)
       u.getOrElse {
         logger.error("noUrlInResponse")(
-          "message" -> "No URL contained in PresignedUrlResponse", "evidenceId" -> evidenceId, "agencyId" -> agencyId)
+          "message" -> "No URL contained in PresignedUrlResponse", "evidenceId" -> evidenceId, "partnerId" -> partnerId)
           Future.failed(new Exception("No URL contained in PresignedUrlResponse for " +
-            s"evidenceId=$evidenceId partnerId=$agencyId"))
+            s"evidenceId=$evidenceId partnerId=$partnerId"))
       }
     }
     for {
-      presignedUrlResponse <- getPresignedUrl(agencyId, evidenceId, fileId, expiresSecs)
+      presignedUrlResponse <- getPresignedUrl(partnerId, evidenceId, fileId, expiresSecs)
       url <- extractUrlFromDreddResponse(presignedUrlResponse)
     } yield url
   }

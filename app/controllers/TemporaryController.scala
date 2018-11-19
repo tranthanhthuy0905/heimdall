@@ -24,7 +24,8 @@ class TemporaryController @Inject() (
                                        dredd: DreddClient) (implicit assetsFinder: AssetsFinder, ex: ExecutionContext)
   extends AbstractController(components) with LazyLogging {
 
-  def getSession(token: String): Action[AnyContent] = Action.async {
+  def getSession: Action[AnyContent] = Action.async { implicit request =>
+    val token = request.queryString("token").head //XXX: no need to check because this is a temp test controller.
     sessions.getAuthorization(SessionTokenType.AuthToken, token) match {
       case Success(value) => value.map(u => {
         Ok(Json.obj("status" -> "ok", "response" -> u.authorization.toString()))
@@ -36,9 +37,10 @@ class TemporaryController @Inject() (
     }
   }
 
-  def createSession(agencyId: UUID): Action[AnyContent] = Action.async {
-    val entity = EntityDescriptor(TidEntities.Subscriber, UUID.randomUUID().toString.toUpperCase, Option(agencyId.toString))
-    val domain = EntityDescriptor(TidEntities.Partner, agencyId.toString, Option(agencyId.toString))
+  def createSession: Action[AnyContent] = Action.async { implicit request =>
+    val agencyId = request.queryString("agency").head //XXX: no need to check because this is a temp test controller.
+    val entity = EntityDescriptor(TidEntities.Subscriber, UUID.randomUUID().toString.toUpperCase, Option(agencyId))
+    val domain = EntityDescriptor(TidEntities.Partner, agencyId.toString, Option(agencyId))
     val scopes = Set[String](ECOMScopes.EVIDENCE_ANY_LIST, ECOMScopes.CASES_ANY_MODIFY) // TODO this method will be removed, it is needed for testing only
     val tokenType = SessionTokenType.AuthToken
     val ttlSeconds = Option(900)
@@ -50,18 +52,6 @@ class TemporaryController @Inject() (
       })
       case Failure(exception) => {
         logger.error(exception, "Failed to create a new sessions")()
-        Future.successful(InternalServerError(Json.obj("status"-> "500 INTERNAL_SERVER_ERROR", "exception" -> exception.getMessage)))
-      }
-    }
-  }
-
-  def deleteSession(token: String): Action[AnyContent] = Action.async {
-    sessions.deleteSession(SessionTokenType.AuthToken, token) match {
-      case Success(value) => value.map(_ => {
-        Ok(Json.obj("status" -> "ok"))
-      })
-      case Failure(exception) => {
-        logger.error(exception, "Failed to delete session token")()
         Future.successful(InternalServerError(Json.obj("status"-> "500 INTERNAL_SERVER_ERROR", "exception" -> exception.getMessage)))
       }
     }

@@ -40,7 +40,7 @@ class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implici
   }
 
   private def getAuthorizationData(token: String): Future[Either[Result, AuthorizationData]] = {
-    sessions.getAuthorization(SessionTokenType.SessionCookie, token) match {
+    sessions.getAuthorization(SessionTokenType.AuthToken, token) match {
       case Success(value) => value.map(u => {
         parser.parse(u.authorization.jwt) match {
           case Right(jwt) => Right(AuthorizationData(JWTWrapper(jwt)))

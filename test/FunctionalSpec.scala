@@ -11,12 +11,12 @@ class FunctionalSpec extends PlaySpec with GuiceOneAppPerSuite {
 
   "Routes" should {
 
-    "send 401 on an unauthorized request" in  {
+    "send 401 on a bad request" in  {
       route(app, FakeRequest(GET, "/boum")).map(status(_)) mustBe Some(UNAUTHORIZED)
     }
 
-    "send 404 on a bad request" in  {
-      route(app, FakeRequest(GET, "/media/alive/unsupported")).map(status(_)) mustBe Some(NOT_FOUND)
+    "send 401 on an unauthorized request" in  {
+      route(app, FakeRequest(GET, "/media/hls/segment")).map(status(_)) mustBe Some(UNAUTHORIZED)
     }
 
     "send 200 on a good request" in  {

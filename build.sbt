@@ -21,7 +21,6 @@ libraryDependencies ++= Seq(
 
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-ws" % "2.6.17",
-  "com.typesafe.play" %% "play-iteratees-reactive-streams" % "2.6.1",
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
 )
 

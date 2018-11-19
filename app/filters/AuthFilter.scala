@@ -14,12 +14,15 @@ class AxonAuthFilter @Inject()
   (implicit val mat: Materializer, ec: ExecutionContext, authorizer: Authorizer)
   extends Filter with LazyLogging {
 
-  final val nonRestrictedRoutes = List("/media/alive", "/media/v0/test") //TODO delete "/media/v0/test"
+  // TODO delete /media/test routes from the nonRestrictedRoutes
+  final val nonRestrictedRoutes = List("/media/alive", "/media/test/create-session",  "/media/test/get-session")
 
   def apply(nextFilter: RequestHeader => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {
     val startTime = System.currentTimeMillis
-    if (isAuthRequired(requestHeader)) {
+    if (isNonRestricted(requestHeader)) {
+      executeRequest(startTime, nextFilter, requestHeader)
+    } else {
       authorizer.authorize(requestHeader).flatMap {
         case Right(a) =>
           val requestHeaderWithAuth = requestHeader.addAttr(TypedKey.apply[AuthorizationData]("auth"), a)
@@ -27,16 +30,11 @@ class AxonAuthFilter @Inject()
         case Left(e) =>
           Future.successful(e)
       }
-    } else {
-      executeRequest(startTime, nextFilter, requestHeader)
     }
   }
 
-  private def isAuthRequired(requestHeader: RequestHeader) : Boolean = {
-    // TODO when ready to prod-launch Heimdall, update the method with `nonRestrictedRoutes.contains(requestHeader.path)`
-    val foundNonRestrictedRoute = for (nonRestrictedRoute <- nonRestrictedRoutes if requestHeader.path.startsWith (nonRestrictedRoute) )
-      yield nonRestrictedRoute
-    foundNonRestrictedRoute.isEmpty
+  private def isNonRestricted(requestHeader: RequestHeader) : Boolean = {
+    nonRestrictedRoutes.contains(requestHeader.path)
   }
 
   private def executeRequest(startTime: Long, nextFilter: RequestHeader => Future[Result], requestHeader: RequestHeader) : Future[Result] = {
