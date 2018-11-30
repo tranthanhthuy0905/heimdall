@@ -2,6 +2,7 @@ import sbt._
 
 object Common {
   val serviceCommonVersion = "14.11.1334"
+  val serviceCommonCryptoVersion = "1.4.+"
   val paradiseVersion = "2.1.0"
   val scalaTestVersion = "3.0.1"
   val scalaMockVersion = "3.5.0"

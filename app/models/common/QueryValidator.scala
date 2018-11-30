@@ -7,16 +7,55 @@ import com.evidence.service.common.logging.LazyLogging
 
 import scala.collection.immutable.Map
 
+trait HeimdallRoutes {
+  protected final val Health = "/media/alive"
+  protected final val Probe = "/media/probe"
+  protected final val HlsMaster = "/media/hls/master"
+  protected final val HlsVariant = "/media/hls/master"
+  protected final val HlsSegment = "/media/hls/master"
+  protected final val Thumbnail = "/media/thumbnail"
+  protected final val Mp3 = "/media/mp3"
+}
+
 case class ValidatedQuery(file: FileIdent, params: Map[String, String])
 
-object QueryValidator extends LazyLogging {
+object QueryValidator extends LazyLogging with HeimdallRoutes {
+  private final val CommonParams = List(
+    "offset",
+    "selectaudio",
+    "customlayout",
+    "totalwidth",
+    "totalheight",
+    "t", "l", "w", "h",
+    "fast",
+    "dants",
+    "disablebframes",
+    "autorotate"
+  )
 
-  def apply(path: String, query: Map[String, Seq[String]]): Option[ValidatedQuery] = {
+  private final val HlsVariantParams = List(
+    "level"
+  )
+
+  private final val HlsSegmentParams = List(
+    "level",
+    "index",
+    "boost"
+  )
+
+  private final val WhitelistedParams = Map(
+    Probe -> CommonParams,
+    HlsMaster -> CommonParams,
+    HlsVariant -> List.concat(CommonParams, HlsVariantParams),
+    HlsSegment -> List.concat(CommonParams, HlsSegmentParams)
+  )
+
+  def apply(route: String, query: Map[String, Seq[String]]): Option[ValidatedQuery] = {
     for {
       fileId <- getUuidValue(query, "file_id")
       evidenceId <- getUuidValue(query, "evidence_id")
       partnerId <- getUuidValue(query, "partner_id")
-      queryMap <- filterQueryForPath(path, query)
+      queryMap <- filterQueryForRoute(route, query)
     } yield ValidatedQuery(FileIdent(fileId, evidenceId, partnerId), queryMap)
   }
 
@@ -28,45 +67,27 @@ object QueryValidator extends LazyLogging {
     } yield uuid
   }
 
-  private def filterQueryForPath(path: String, query: Map[String, Seq[String]]): Option[Map[String, String]] = {
-    if (path.startsWith("/media/hls/master")) {
-      filterAllowedParams(query, whitelistedParams(RequestPathEnum.HlsCommon) ++ whitelistedParams(RequestPathEnum.HlsMaster))
-    } else if (path.startsWith("/media/hls/variant")) {
-      filterAllowedParams(query, whitelistedParams(RequestPathEnum.HlsCommon) ++ whitelistedParams(RequestPathEnum.HlsVariant))
-    } else if (path.startsWith("/media/hls/segment")) {
-      filterAllowedParams(query, whitelistedParams(RequestPathEnum.HlsCommon) ++ whitelistedParams(RequestPathEnum.HlsSegment))
+  private def filterQueryForRoute(route: String, query: Map[String, Seq[String]]): Option[Map[String, String]] = {
+    if (route.startsWith(HlsMaster)) {
+      filterAllowedParams(query, WhitelistedParams(HlsMaster))
+    } else if (route.startsWith(HlsVariant)) {
+      filterAllowedParams(query, WhitelistedParams(HlsVariant))
+    } else if (route.startsWith(HlsSegment)) {
+      filterAllowedParams(query, WhitelistedParams(HlsSegment))
+    } else if (route.startsWith(Probe)) {
+      filterAllowedParams(query, WhitelistedParams(Probe))
     } else {
-      logger.error("unexpectedQueryPath")("path" -> path)
+      logger.error("unexpectedQueryRoute")("route" -> route)
       None
     }
   }
 
   private def filterAllowedParams(query: Map[String, Seq[String]], allowedParams: List[String]): Option[Map[String, String]] = {
     val filteredParams = query.filterKeys(allowedParams.contains(_))
-    val result = filteredParams map { case (k, v) => k -> v.head }
+    val result = {
+      filteredParams map { case (k, v) => k -> v.head } // TODO: return headOption instead of head
+    }
     Some(result)
-  }
-
-  private val whitelistedParams = Map(
-    RequestPathEnum.HlsCommon -> List(
-      "offset",
-      "selectaudio",
-      "customlayout",
-      "totalwidth",
-      "totalheight",
-      "t", "l", "w", "h",
-      "fast",
-      "dants",
-      "disablebframes",
-      "autorotate"
-    ),
-    RequestPathEnum.HlsMaster -> List(),
-    RequestPathEnum.HlsVariant -> List("level"),
-    RequestPathEnum.HlsSegment -> List("level", "index", "boost")
-  )
-
-  object RequestPathEnum extends Enumeration {
-    val Thumbnail, HlsMaster, HlsVariant, HlsSegment, HlsCommon = Value
   }
 
 }

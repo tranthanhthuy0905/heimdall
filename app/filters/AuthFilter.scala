@@ -24,8 +24,8 @@ class AxonAuthFilter @Inject()
       executeRequest(startTime, nextFilter, requestHeader)
     } else {
       authorizer.authorize(requestHeader).flatMap {
-        case Right(a) =>
-          val requestHeaderWithAuth = requestHeader.addAttr(TypedKey.apply[AuthorizationData]("auth"), a)
+        case Right(authData) =>
+          val requestHeaderWithAuth = requestHeader.addAttr(TypedKey.apply[AuthorizationData]("auth"), authData)
           executeRequest(startTime, nextFilter, requestHeaderWithAuth)
         case Left(e) =>
           Future.successful(e)

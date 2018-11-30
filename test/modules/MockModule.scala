@@ -1,17 +1,18 @@
 package modules
 
-import com.google.inject.Singleton
-import models.auth.{Authorizer, AuthorizerImpl}
+import models.auth.Authorizer
 import org.apache.curator.framework.CuratorFramework
 import org.scalatest.mockito.MockitoSugar
-import services.dredd.{DreddClient, DreddClientImpl}
-import services.rtm.{RtmClient, RtmClientImpl}
-import services.sessions.{SessionsClient, SessionsClientImpl}
-import services.zookeeper.{ZookeeperClientProvider, ZookeeperServerSet, ZookeeperServerSetProvider}
+import services.audit.AuditClient
+import services.dredd.DreddClient
+import services.rtm.RtmClient
+import services.sessions.SessionsClient
+import services.zookeeper.ZookeeperServerSet
 
 class MockModule extends Module with MockitoSugar {
 
   override def configure() = {
+    bind(classOf[AuditClient]).toInstance(mock[AuditClient])
     bind(classOf[DreddClient]).toInstance(mock[DreddClient])
     bind(classOf[Authorizer]).toInstance(mock[Authorizer])
     bind(classOf[SessionsClient]).toInstance(mock[SessionsClient])

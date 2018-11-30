@@ -26,7 +26,7 @@ class TemporaryController @Inject() (
 
   def getSession: Action[AnyContent] = Action.async { implicit request =>
     val token = request.queryString("token").head //XXX: no need to check because this is a temp test controller.
-    sessions.getAuthorization(SessionTokenType.AuthToken, token) match {
+    sessions.getAuthorization(SessionTokenType.SessionCookie, token) match {
       case Success(value) => value.map(u => {
         Ok(Json.obj("status" -> "ok", "response" -> u.authorization.toString()))
       })
@@ -42,7 +42,7 @@ class TemporaryController @Inject() (
     val entity = EntityDescriptor(TidEntities.Subscriber, UUID.randomUUID().toString.toUpperCase, Option(agencyId))
     val domain = EntityDescriptor(TidEntities.Partner, agencyId.toString, Option(agencyId))
     val scopes = Set[String](ECOMScopes.EVIDENCE_ANY_LIST, ECOMScopes.CASES_ANY_MODIFY) // TODO this method will be removed, it is needed for testing only
-    val tokenType = SessionTokenType.AuthToken
+    val tokenType = SessionTokenType.SessionCookie
     val ttlSeconds = Option(900)
     val userRoleId = Option(10L)
     val authClient = Option(SessionAuthClient.Web)

@@ -14,7 +14,7 @@ import com.nimbusds.jwt.{JWT,JWTClaimsSet}
  *    being manipulated).
  *  - Subject: the entity performing the action.
  *
- *  Since these are evidence.com entities, we must represent them according to
+ * Since these are evidence.com entities, we must represent them according to
  *  the Ecom Data Model.  All entities can be represented using a 3-Tuple
  *  (guid, type, partitionKey).
  *

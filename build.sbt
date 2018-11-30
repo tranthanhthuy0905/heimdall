@@ -29,11 +29,13 @@ libraryDependencies ++= Seq(
   "com.evidence" %% "service-common-auth" % Common.serviceCommonVersion,
   "com.evidence" %% "service-common-finagle" % Common.serviceThriftVersion,
   "com.evidence" %% "service-common-zookeeper" % Common.serviceCommonVersion,
-  "com.evidence" %% "service-common-cache" % Common.serviceCommonVersion
+  "com.evidence" %% "service-common-cache" % Common.serviceCommonVersion,
+  "com.evidence" %  "service-common-crypto" % Common.serviceCommonCryptoVersion
 )
 
 // Thrift Services
 libraryDependencies ++= Seq(
+  "com.evidence" %% "audit-service-thrift" % Common.serviceThriftVersion,
   "com.evidence" %% "dredd-service-thrift" % Common.serviceThriftVersion,
   "com.evidence" %% "sessions-service-thrift" % Common.serviceThriftVersion,
   "com.evidence" % "edc-thrift-java" % Common.serviceThriftVersion
