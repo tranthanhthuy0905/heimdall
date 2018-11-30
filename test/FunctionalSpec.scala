@@ -9,14 +9,14 @@ import play.api.test.Helpers._
  */
 class FunctionalSpec extends PlaySpec with GuiceOneAppPerSuite {
 
-  "Routes" should {
+  "Routes" must {
 
-    "send 401 on a bad request" in  {
-      route(app, FakeRequest(GET, "/boum")).map(status(_)) mustBe Some(UNAUTHORIZED)
+    "send 404 on a non-existing route" in  {
+      route(app, FakeRequest(GET, "/boum")).map(status(_)) mustBe Some(NOT_FOUND)
     }
 
-    "send 401 on an unauthorized request" in  {
-      route(app, FakeRequest(GET, "/media/hls/segment")).map(status(_)) mustBe Some(UNAUTHORIZED)
+    "send 400 on a bad request - missing query parameters" in  {
+      route(app, FakeRequest(GET, "/media/hls/segment")).map(status(_)) mustBe Some(BAD_REQUEST)
     }
 
     "send 200 on a good request" in  {

@@ -10,7 +10,7 @@ class BrowserSpec extends PlaySpec
   with HtmlUnitFactory
   with ServerProvider {
 
-  "Application" should {
+  "Application" must {
 
     "work from within a browser" in {
       go to ("http://localhost:" + port + "/media/alive")

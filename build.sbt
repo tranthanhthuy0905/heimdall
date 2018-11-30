@@ -20,8 +20,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play-ws" % "2.6.17",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
+  "com.typesafe.play" %% "play-ws" % "2.6.17"
 )
 
 libraryDependencies ++= Seq(
@@ -40,6 +39,12 @@ libraryDependencies ++= Seq(
   "com.evidence" % "edc-thrift-java" % Common.serviceThriftVersion
 )
 
+// Test
+libraryDependencies ++= Seq(
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
+  "org.mockito" % "mockito-core" % "2.10.0" % Test
+)
+
 // Exclusions
 libraryDependencies ~= {
     _.map(_.excludeAll(Common.exclusions: _*))
@@ -52,6 +57,6 @@ javaOptions in Test += "-Dconfig.file=conf/env/test.conf"
 // Exclude development configs from zip package
 mappings in Universal := {
     val origMappings = (mappings in Universal).value
-    origMappings.filterNot { case (_, file) => file.endsWith("envs/dev.conf.tmp") || file.endsWith("envs/dev.conf") }
+    origMappings.filterNot { case (_, file) => file.endsWith("env/localdev.conf") }
 }
 

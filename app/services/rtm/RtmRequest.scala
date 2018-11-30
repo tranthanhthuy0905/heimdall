@@ -7,15 +7,13 @@ import com.evidence.service.common.zookeeper.ServiceEndpoint
 
 import scala.collection.immutable.Map
 
-class RtmRequest(path: String, endpoint: ServiceEndpoint, query: Map[String, Seq[String]]) {
+// The purpose of RtmRequest is to convert HlsQueryParameters, request path and endpoint (obtained from Zookeeper)
+// into a format consumable by RTM.
+class RtmRequest(path: String, endpoint: ServiceEndpoint, query: Map[String, String]) {
   override def toString(): String = {
-    def encodeValue(seq: Seq[String]): String = seq.foldLeft("") {
-      case ("", value) => URLEncoder.encode(value, "UTF-8")
-      case (s, value) => s + "," + URLEncoder.encode(value, "UTF-8")
-    }
     val encodedQuery = query.foldLeft("") {
-      case ("", (key, value)) => URLEncoder.encode(key, "UTF-8") + "=" + encodeValue(value)
-      case (s, (key, value)) => s + "&" + URLEncoder.encode(key, "UTF-8") + "=" + encodeValue(value)
+      case ("", (key, value)) => URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(value, "UTF-8")
+      case (s, (key, value)) => s + "&" + URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(value, "UTF-8")
     }
     Uri.from(scheme = "https",
       host = endpoint.host,
@@ -23,16 +21,12 @@ class RtmRequest(path: String, endpoint: ServiceEndpoint, query: Map[String, Seq
       path = path,
       queryString = Some(encodedQuery)
     ).toString
-
   }
 }
 
 object RtmRequest {
-  def apply(path: String, endpoint: ServiceEndpoint, presignedUrl: URL, query: Map[String, Seq[String]]): String = {
-    val request = new RtmRequest(path, endpoint, addToQuery(query, Map("source" -> Seq[String](presignedUrl.toString))))
+  def apply(path: String, endpoint: ServiceEndpoint, presignedUrl: URL, query: Map[String, String]): String = {
+    val request = new RtmRequest(path, endpoint, query ++ Map("source" -> presignedUrl.toString))
     request.toString
   }
-
-  private def addToQuery(query: Map[String, Seq[String]], newArg: Map[String, Seq[String]]):  Map[String, Seq[String]] =
-    query ++ newArg.map{ case (k,v) => k -> (v ++ query.getOrElse(k,Nil)) }
 }

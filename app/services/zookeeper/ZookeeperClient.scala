@@ -21,7 +21,7 @@ class ZookeeperServerSet @Inject() (lb: String => Option[ServiceEndpoint])
       case Success(Some(server)) => Try(server)
       case Success(None) =>
         logger.error("noServiceInstanceFound")("key" -> key)
-        Failure(new Exception(s"No service instances found for key=${key}"))
+        Failure(new Exception(s"No service instances found for key=$key"))
       case Failure(e) =>
         logger.error("failedToGetAnInstance")("key" -> key, "error" -> e.getMessage)
         Failure(e)
