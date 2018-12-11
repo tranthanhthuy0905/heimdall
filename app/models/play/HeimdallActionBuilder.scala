@@ -6,7 +6,7 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class HeimdallRequest[A](val validatedQuery: ValidatedQuery, request: Request[A]) extends WrappedRequest[A](request)
+case class HeimdallRequest[A](val validatedQuery: ValidatedQuery, request: Request[A]) extends WrappedRequest[A](request) with RequestHeader
 
 class  HeimdallActionBuilder @Inject()(defaultParser: BodyParsers.Default)
                                 (implicit ex: ExecutionContext)

@@ -6,6 +6,7 @@ import com.evidence.service.common.auth.{CachingJOSEComponentFactory, KeyManager
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
+import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{RequestHeader, Result, Results}
 import services.sessions.SessionsClient
 
@@ -13,6 +14,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 case class AuthorizationData(jwt: JWTWrapper)
+
+object AuthorizationAttr {
+  val Key: TypedKey[AuthorizationData] = TypedKey.apply[AuthorizationData]("auth")
+}
 
 trait Authorizer {
   def authorize(requestHeader: RequestHeader): Future[Either[Result, AuthorizationData]]
@@ -28,7 +33,6 @@ class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implici
   def authorize(requestHeader: RequestHeader): Future[Either[Result, AuthorizationData]] = {
     getCookieValue(requestHeader) match {
       case Some(t) =>
-        logger.debug("found token:" + t.toString)()
         getAuthorizationData(t).map {
           case Left(sessionsError) => Left(sessionsError)
           case Right(authData) => Right(authData)

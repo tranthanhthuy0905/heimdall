@@ -72,6 +72,9 @@ ffplay 'http://localhost:9000/media/hls/variant?file_id=4f706842-e602-4287-b80b-
 
 # Segment:
 curl -v --cookie "AXONSESSION=2ux6qd1b12z82rdr5ywjn695wv1pcv2c1ib3dm983z0aq69zh3" 'http://localhost:9000/media/hls/segment?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&index=0&offset=0&start=0&fast=1&label=AWESOME_LABEL' | ffplay -
+
+#Probe:
+curl -v  --cookie "AXONSESSION=1jmhyqyo8s8qva2bum9hw9w5z8c1s013rnircigd44tvztz96j" 'http://localhost:9000/media/start?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&index=0&offset=0' 
 ```
 
 

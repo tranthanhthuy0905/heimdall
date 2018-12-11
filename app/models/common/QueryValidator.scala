@@ -9,10 +9,10 @@ import scala.collection.immutable.Map
 
 trait HeimdallRoutes {
   protected final val Health = "/media/alive"
-  protected final val Probe = "/media/probe"
+  protected final val Probe = "/media/start"
   protected final val HlsMaster = "/media/hls/master"
-  protected final val HlsVariant = "/media/hls/master"
-  protected final val HlsSegment = "/media/hls/master"
+  protected final val HlsVariant = "/media/hls/variant"
+  protected final val HlsSegment = "/media/hls/segment"
   protected final val Thumbnail = "/media/thumbnail"
   protected final val Mp3 = "/media/mp3"
 }
@@ -85,7 +85,7 @@ object QueryValidator extends LazyLogging with HeimdallRoutes {
   private def filterAllowedParams(query: Map[String, Seq[String]], allowedParams: List[String]): Option[Map[String, String]] = {
     val filteredParams = query.filterKeys(allowedParams.contains(_))
     val result = {
-      filteredParams map { case (k, v) => k -> v.head } // TODO: return headOption instead of head
+      filteredParams map { case (k, v) => k -> v.head }
     }
     Some(result)
   }

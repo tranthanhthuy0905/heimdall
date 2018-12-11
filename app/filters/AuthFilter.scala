@@ -2,8 +2,7 @@
 import akka.stream.Materializer
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
-import models.auth.{AuthorizationData, Authorizer}
-import play.api.libs.typedmap.TypedKey
+import models.auth.{AuthorizationAttr, Authorizer}
 import play.api.mvc.{Filter, RequestHeader, Result}
 import play.api.routing.Router
 
@@ -25,8 +24,7 @@ class AxonAuthFilter @Inject()
     } else {
       authorizer.authorize(requestHeader).flatMap {
         case Right(authData) =>
-          val requestHeaderWithAuth = requestHeader.addAttr(TypedKey.apply[AuthorizationData]("auth"), authData)
-          executeRequest(startTime, nextFilter, requestHeaderWithAuth)
+          executeRequest(startTime, nextFilter, requestHeader.addAttr(AuthorizationAttr.Key, authData))
         case Left(e) =>
           Future.successful(e)
       }

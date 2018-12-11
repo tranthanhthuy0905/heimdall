@@ -19,8 +19,8 @@ trait RtmRequestRoutes {
   protected final val Health = "/health"
   protected final val Probe = "/probe"
   protected final val HlsMaster = "/hls/master"
-  protected final val HlsVariant = "/hls/master"
-  protected final val HlsSegment = "/hls/master"
+  protected final val HlsVariant = "/hls/variant"
+  protected final val HlsSegment = "/hls/segment"
   protected final val Thumbnail = "/thumbnail"
   protected final val Mp3 = "/mp3"
 }
