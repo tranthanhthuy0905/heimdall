@@ -21,7 +21,7 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
   extends AbstractController(components) with LazyLogging with RtmRequestRoutes with AuditConversions {
 
   def probe: Action[AnyContent] = action.async { implicit request =>
-    rtm.send(Probe, request.validatedQuery).flatMap { response =>
+    rtm.send(request.rtmQuery).flatMap { response =>
       if (response.status == OK) {
         val authHandler = request.attrs(AuthorizationAttr.Key)
 
@@ -30,9 +30,9 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
         // TODO: streaming session token -> HMAC(secret + sorted fileId-s).
 
         val auditEvent = EvidenceRecordBufferedEvent(
-          evidenceTid(request.validatedQuery.file),
+          evidenceTid(request.rtmQuery.file),
           updatedByTid(authHandler.jwt),
-          fileTid(request.validatedQuery.file),
+          fileTid(request.rtmQuery.file),
           request.remoteAddress)
 
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")

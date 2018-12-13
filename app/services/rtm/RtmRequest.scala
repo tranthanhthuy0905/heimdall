@@ -16,13 +16,13 @@ import scala.collection.immutable.Map
   * Note: /flv was deprecated. Thus, Heimdall does not support it.
   */
 trait RtmRequestRoutes {
-  protected final val Health = "/health"
-  protected final val Probe = "/probe"
-  protected final val HlsMaster = "/hls/master"
-  protected final val HlsVariant = "/hls/variant"
-  protected final val HlsSegment = "/hls/segment"
-  protected final val Thumbnail = "/thumbnail"
-  protected final val Mp3 = "/mp3"
+  final val Health = "/health"
+  final val Probe = "/probe"
+  final val HlsMaster = "/hls/master"
+  final val HlsVariant = "/hls/variant"
+  final val HlsSegment = "/hls/segment"
+  final val Thumbnail = "/thumbnail"
+  final val Mp3 = "/mp3"
 }
 
 /**

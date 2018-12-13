@@ -12,11 +12,10 @@ import services.zookeeper.ZookeeperServerSet
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-
-import models.common.ValidatedQuery
+import models.common.RtmQueryParams
 
 trait RtmClient {
-  def send(path: String, query: ValidatedQuery): Future[WSResponse]
+  def send(query: RtmQueryParams): Future[WSResponse]
 }
 
 @Singleton
@@ -25,11 +24,11 @@ class RtmClientImpl @Inject()(dredd: DreddClient,
                               ws: WSClient)(implicit ex: ExecutionContext) extends RtmClient with LazyLogging {
 
 
-  def send(path: String, query: ValidatedQuery): Future[WSResponse] = {
+  def send(rtmQuery: RtmQueryParams): Future[WSResponse] = {
     for {
-      presignedUrl <- dredd.getUrl(query.file.partnerId, query.file.evidenceId, query.file.fileId)
-      endpoint <- getEndpoint(query.file.fileId)
-      request = RtmRequest(path, endpoint, presignedUrl, query.params)
+      presignedUrl <- dredd.getUrl(rtmQuery.file.partnerId, rtmQuery.file.evidenceId, rtmQuery.file.fileId)
+      endpoint <- getEndpoint(rtmQuery.file.fileId)
+      request = RtmRequest(rtmQuery.path, endpoint, presignedUrl, rtmQuery.params)
       response <- ws.url(request).withMethod("GET").stream
     } yield response
   }

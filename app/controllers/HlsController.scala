@@ -20,15 +20,15 @@ class HlsController @Inject()(action: HeimdallActionBuilder,
     with LazyLogging with RtmRequestRoutes {
 
   def master: Action[AnyContent] = action.async { implicit request =>
-    serveHlsManifest(HlsMaster, request)
+    serveHlsManifest(request.rtmQuery.path, request)
   }
 
   def variant: Action[AnyContent] = action.async { implicit request =>
-    serveHlsManifest(HlsVariant, request)
+    serveHlsManifest(request.rtmQuery.path, request)
   }
 
   def segment: Action[AnyContent] = action.async { implicit request =>
-    rtm.send(HlsSegment, request.validatedQuery) map { response =>
+    rtm.send(request.rtmQuery) map { response =>
       if (response.status == OK) {
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("video/MP2T")
         response.headers.get("Content-Length") match {
@@ -45,10 +45,10 @@ class HlsController @Inject()(action: HeimdallActionBuilder,
   }
 
   private def serveHlsManifest[A](path: String, request:  HeimdallRequest[A]): Future[Result] = {
-    rtm.send(path, request.validatedQuery) map { response =>
+    rtm.send(request.rtmQuery) map { response =>
       if (response.status == OK) {
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/x-mpegURL")
-        val newManifest = HlsManifestFormatter(response.body, request.validatedQuery.file, config.getString("heimdall.api_prefix"))
+        val newManifest = HlsManifestFormatter(response.body, request.rtmQuery.file, config.getString("heimdall.api_prefix"))
         Ok(newManifest).as(contentType)
       } else {
         logger.error(s"unexpectedHlsManifestReturnCode")(
