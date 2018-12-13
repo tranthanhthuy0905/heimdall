@@ -8,24 +8,6 @@ import com.evidence.service.common.zookeeper.ServiceEndpoint
 import scala.collection.immutable.Map
 
 /**
-  * List of RTM request API-s.
-  *
-  * The enum has to be in sync with RTM's registered paths.
-  * See https://git.taservs.net/ecom/rtm/blob/cae8381f91b668eaed143cfe07dd6fa4a8acf6ba/src/rtm/server/http/server.go#L220
-  *
-  * Note: /flv was deprecated. Thus, Heimdall does not support it.
-  */
-trait RtmRequestRoutes {
-  final val Health = "/health"
-  final val Probe = "/probe"
-  final val HlsMaster = "/hls/master"
-  final val HlsVariant = "/hls/variant"
-  final val HlsSegment = "/hls/segment"
-  final val Thumbnail = "/thumbnail"
-  final val Mp3 = "/mp3"
-}
-
-/**
   * RtmRequest generates request URI digestible by RTM.
   * @param path specifies RTM API to call.
   * @param endpoint instance of RTM provided by Zookeeper Server set.

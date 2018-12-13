@@ -17,8 +17,8 @@ class QueryValidatorSpec extends PlaySpec {
         "partner_id" -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
       )
 
-      val result = QueryValidator("/media/hls/master", query)
-      result mustBe Some(ValidatedQuery(file = FileIdent(uuid, uuid, uuid), params = Map()))
+      val result = QueryHelper("/media/hls/master", query)
+      result mustBe Some(RtmQueryParams(file = FileIdent(uuid, uuid, uuid), path = "/hls/master", params = Map()))
     }
 
     "filter out extra params" in {
@@ -30,8 +30,8 @@ class QueryValidatorSpec extends PlaySpec {
         "unexpected_param" -> Seq(randomUUID.toString, randomUUID.toString)
       )
 
-      val result = QueryValidator("/media/hls/master", query)
-      result mustBe Some(ValidatedQuery(file = FileIdent(uuid, uuid, uuid), params = Map()))
+      val result = QueryHelper("/media/hls/master", query)
+      result mustBe Some(RtmQueryParams(file = FileIdent(uuid, uuid, uuid), path = "/hls/master", params = Map()))
     }
 
     "return None because of missing file_id" in {
@@ -42,7 +42,7 @@ class QueryValidatorSpec extends PlaySpec {
         "unexpected_param" -> Seq(randomUUID.toString, randomUUID.toString)
       )
 
-      val result = QueryValidator("/media/hls/master", query)
+      val result = QueryHelper("/media/hls/master", query)
       result mustBe None
     }
 

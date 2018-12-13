@@ -7,7 +7,7 @@ import models.hls.HlsManifestFormatter
 import models.play.{HeimdallActionBuilder, HeimdallRequest}
 import play.api.http.HttpEntity
 import play.api.mvc._
-import services.rtm.{RtmClient, RtmRequestRoutes}
+import services.rtm.RtmClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,7 +17,7 @@ class HlsController @Inject()(action: HeimdallActionBuilder,
                               components: ControllerComponents)
                              (implicit ex: ExecutionContext)
   extends AbstractController(components)
-    with LazyLogging with RtmRequestRoutes {
+    with LazyLogging {
 
   def master: Action[AnyContent] = action.async { implicit request =>
     serveHlsManifest(request.rtmQuery.path, request)

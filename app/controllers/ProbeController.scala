@@ -8,7 +8,7 @@ import models.play.HeimdallActionBuilder
 import play.api.libs.json.Json
 import play.api.mvc._
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
-import services.rtm.{RtmClient, RtmRequestRoutes}
+import services.rtm.RtmClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -18,7 +18,7 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
                                 config: Config,
                                 components: ControllerComponents)
                                (implicit ex: ExecutionContext)
-  extends AbstractController(components) with LazyLogging with RtmRequestRoutes with AuditConversions {
+  extends AbstractController(components) with LazyLogging  with AuditConversions {
 
   def probe: Action[AnyContent] = action.async { implicit request =>
     rtm.send(request.rtmQuery).flatMap { response =>
