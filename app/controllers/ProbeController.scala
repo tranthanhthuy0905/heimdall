@@ -41,7 +41,7 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
           Ok(response.json).as(contentType)
         } recoverWith {
           case exception: Exception =>
-            logger.error(exception, "failedToSendAuditEvent")("exception" -> exception.getMessage)
+            logger.error(exception, "failedToSendProbeAuditEvent")("exception" -> exception.getMessage)
             Future.successful(InternalServerError(Json.obj( "exception" -> exception.getMessage)))
         }
       } else {

@@ -4,12 +4,12 @@ import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.Inject
 import models.hls.HlsManifestFormatter
-import models.play.{HeimdallActionBuilder, HeimdallRequest}
+import models.play.HeimdallActionBuilder
 import play.api.http.HttpEntity
 import play.api.mvc._
 import services.rtm.RtmClient
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class HlsController @Inject()(action: HeimdallActionBuilder,
                               rtm: RtmClient,
@@ -19,12 +19,21 @@ class HlsController @Inject()(action: HeimdallActionBuilder,
   extends AbstractController(components)
     with LazyLogging {
 
-  def master: Action[AnyContent] = action.async { implicit request =>
-    serveHlsManifest(request.rtmQuery.path, request)
-  }
-
-  def variant: Action[AnyContent] = action.async { implicit request =>
-    serveHlsManifest(request.rtmQuery.path, request)
+  def playlist: Action[AnyContent] = action.async { implicit request =>
+    rtm.send(request.rtmQuery) map { response =>
+      if (response.status == OK) {
+        val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/x-mpegURL")
+        val newManifest = HlsManifestFormatter(response.body, request.rtmQuery.file, config.getString("heimdall.api_prefix"))
+        Ok(newManifest).as(contentType)
+      } else {
+        logger.error(s"unexpectedHlsPlaylistReturnCode")(
+          "path" -> request.rtmQuery.path,
+          "status" -> response.status,
+          "message" -> response.body
+        )
+        InternalServerError
+      }
+    }
   }
 
   def segment: Action[AnyContent] = action.async { implicit request =>
@@ -39,22 +48,6 @@ class HlsController @Inject()(action: HeimdallActionBuilder,
         }
       } else {
         logger.error(s"unexpectedHlsSegmentReturnCode")("status" -> response.status)
-        InternalServerError
-      }
-    }
-  }
-
-  private def serveHlsManifest[A](path: String, request:  HeimdallRequest[A]): Future[Result] = {
-    rtm.send(request.rtmQuery) map { response =>
-      if (response.status == OK) {
-        val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/x-mpegURL")
-        val newManifest = HlsManifestFormatter(response.body, request.rtmQuery.file, config.getString("heimdall.api_prefix"))
-        Ok(newManifest).as(contentType)
-      } else {
-        logger.error(s"unexpectedHlsManifestReturnCode")(
-          "status" -> response.status,
-          "message" -> response.body
-        )
         InternalServerError
       }
     }
