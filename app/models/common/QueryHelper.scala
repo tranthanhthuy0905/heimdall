@@ -15,13 +15,13 @@ import scala.collection.immutable.Map
 case class RtmQueryParams(file: FileIdent, path: String, params: Map[String, String])
 
 trait HeimdallRoutes {
-  final val Health = "/media/alive"
-  final val Probe = "/media/start"
-  final val HlsMaster = "/media/hls/master"
-  final val HlsVariant = "/media/hls/variant"
-  final val HlsSegment = "/media/hls/segment"
-  final val Thumbnail = "/media/thumbnail"
-  final val Mp3 = "/media/mp3"
+  final val health = "/media/alive"
+  final val probe = "/media/start"
+  final val hlsMaster = "/media/hls/master"
+  final val hlsVariant = "/media/hls/variant"
+  final val hlsSegment = "/media/hls/segment"
+  final val thumbnail = "/media/thumbnail"
+  final val mp3 = "/media/mp3"
 }
 
 object QueryHelper extends LazyLogging with HeimdallRoutes {
@@ -63,11 +63,11 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
     * Note: /flv was deprecated. Thus, Heimdall does not support it.
     */
   private final val heimdallToRtmRoutes = Map(
-    Health -> MediaRoute("/health", List()),
-    Probe -> MediaRoute("/probe", commonParams),
-    HlsMaster -> MediaRoute("/hls/master", commonParams),
-    HlsVariant -> MediaRoute("/hls/variant", List.concat(commonParams, hlsVariantParams)),
-    HlsSegment -> MediaRoute("/hls/segment", List.concat(commonParams, hlsSegmentParams))
+    health -> MediaRoute("/health", List()),
+    probe -> MediaRoute("/probe", commonParams),
+    hlsMaster -> MediaRoute("/hls/master", commonParams),
+    hlsVariant -> MediaRoute("/hls/variant", List.concat(commonParams, hlsVariantParams)),
+    hlsSegment -> MediaRoute("/hls/segment", List.concat(commonParams, hlsSegmentParams))
     // TODO: "/media/thumbnail", "/media/mp3"
   )
 
@@ -89,25 +89,20 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
   }
 
   private def filterQueryForRoute(route: String, query: Map[String, Seq[String]]): Option[QueryWithPath] = {
-    if (route.startsWith(HlsMaster)) {
-      Some(filterAllowedParams(query, heimdallToRtmRoutes(HlsMaster)))
-    } else if (route.startsWith(HlsVariant)) {
-      Some(filterAllowedParams(query, heimdallToRtmRoutes(HlsVariant)))
-    } else if (route.startsWith(HlsSegment)) {
-      Some(filterAllowedParams(query, heimdallToRtmRoutes(HlsSegment)))
-    } else if (route.startsWith(Probe)) {
-      Some(filterAllowedParams(query, heimdallToRtmRoutes(Probe)))
-    } else {
-      logger.error("unexpectedQueryRoute")("route" -> route)
-      None
+    route match {
+      case str if str startsWith hlsMaster => Some(filterAllowedParams(query, heimdallToRtmRoutes(hlsMaster)))
+      case str if str startsWith hlsVariant => Some(filterAllowedParams(query, heimdallToRtmRoutes(hlsVariant)))
+      case str if str startsWith hlsSegment => Some(filterAllowedParams(query, heimdallToRtmRoutes(hlsSegment)))
+      case str if str startsWith probe => Some(filterAllowedParams(query, heimdallToRtmRoutes(probe)))
+      case _ =>
+        logger.error("unexpectedQueryRoute")("route" -> route)
+        None
     }
   }
 
   private def filterAllowedParams(query: Map[String, Seq[String]], mediaRoute: MediaRoute): QueryWithPath = {
-    val filteredParams = query.filterKeys(mediaRoute.whitelistedParams.contains(_))
-    val result = {
-      filteredParams map { case (k, v) => k -> v.head }
-    }
+    val filteredParams = query.filterKeys(mediaRoute.whitelistedParams.contains(_)).filter(_._2.nonEmpty)
+    val result = filteredParams.map { case (k, v) => k -> v.head }
     QueryWithPath(mediaRoute.rtmPath, result)
   }
 
