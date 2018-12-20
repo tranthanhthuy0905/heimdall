@@ -1,10 +1,9 @@
 package models.auth
 
-import scala.collection.JavaConverters._
-
 import com.evidence.service.common.auth.jwt.JWTConstants
+import com.nimbusds.jwt.{JWT, JWTClaimsSet}
 
-import com.nimbusds.jwt.{JWT,JWTClaimsSet}
+import scala.collection.JavaConverters._
 
 /**
  * General Axon wrapper over standard JWT abstraction.
@@ -71,6 +70,7 @@ class JWTWrapperV2(jwt: JWT) extends JWTWrapper(jwt) {
   val audienceType = claimSet.getStringClaim(JWTConstants.AudienceTypeClaim)
   val subjectDomain = Option(claimSet.getStringClaim(JWTConstants.SubjectDomainClaim))
   val audienceDomain = Option(claimSet.getStringClaim(JWTConstants.AudienceDomainClaim))
+  val sessionData = Option(claimSet.getClaims.get(JWTConstants.SessionDataClaim))
 }
 
 /**

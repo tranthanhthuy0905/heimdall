@@ -1,6 +1,6 @@
 package modules
 
-import models.auth.Authorizer
+import models.auth.{Authorizer, StreamingSessionData}
 import org.apache.curator.framework.CuratorFramework
 import org.scalatest.mockito.MockitoSugar
 import services.audit.AuditClient
@@ -17,6 +17,7 @@ class MockModule extends Module with MockitoSugar {
     bind(classOf[Authorizer]).toInstance(mock[Authorizer])
     bind(classOf[SessionsClient]).toInstance(mock[SessionsClient])
     bind(classOf[RtmClient]).toInstance(mock[RtmClient])
+    bind(classOf[StreamingSessionData]).toInstance(mock[StreamingSessionData])
 
     bind(classOf[CuratorFramework]).toInstance(mock[CuratorFramework])
     bind(classOf[ZookeeperServerSet]).toInstance(mock[ZookeeperServerSet])

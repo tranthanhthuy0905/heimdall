@@ -11,13 +11,13 @@ import javax.inject.{Inject, Singleton}
 
 import scala.collection.Set
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 trait SessionsClient {
-  def getAuthorization(tokenType: SessionTokenType, token: String): Try[Future[GetAuthorizationResponse]]
+  def getAuthorization(tokenType: SessionTokenType, token: String): Future[GetAuthorizationResponse]
+  def updateSessionData(tokenType: SessionTokenType, token: String, sessionData:Map[String, String] ): Future[UpdateSessionDataResponse]
   def createSession(subject: EntityDescriptor, audience: EntityDescriptor, subjectScopes: Set[String], tokenType: SessionTokenType,
-                    ttlSeconds: Option[Int], userRoleId: Option[Long], authClient: Option[SessionAuthClient]): Try[Future[CreateSessionResponse]]
-  def deleteSession(tokenType: SessionTokenType, token: String): Try[Future[Unit]]
+                    ttlSeconds: Option[Int], userRoleId: Option[Long], authClient: Option[SessionAuthClient]): Future[CreateSessionResponse]
+  def deleteSession(tokenType: SessionTokenType, token: String): Future[Unit]
 }
 
 @Singleton
@@ -34,8 +34,12 @@ class SessionsClientImpl @Inject()(config: Config)(implicit ec: ExecutionContext
     Option(config.getString("edc.service.sessions.thrift_auth_type")),
     Option(config.getString("edc.service.sessions.thrift_auth_secret")))
 
-  def getAuthorization(tokenType: SessionTokenType, token: String): Try[Future[GetAuthorizationResponse]] = {
-    Try(client.getAuthorization(auth, GetAuthorizationRequest(tokenType, token)).toScalaFuture)
+  def getAuthorization(tokenType: SessionTokenType, token: String): Future[GetAuthorizationResponse] = {
+    client.getAuthorization(auth, GetAuthorizationRequest(tokenType, token)).toScalaFuture
+  }
+
+  def updateSessionData(tokenType: SessionTokenType, token: String, sessionData:Map[String, String] ): Future[UpdateSessionDataResponse] = {
+    client.updateSessionData(auth, UpdateSessionDataRequest (tokenType, token, sessionData)).toScalaFuture
   }
 
   def createSession(subject: EntityDescriptor,
@@ -45,11 +49,11 @@ class SessionsClientImpl @Inject()(config: Config)(implicit ec: ExecutionContext
                     ttlSeconds: Option[Int],
                     userRoleId: Option[Long],
                     authClient: Option[SessionAuthClient]
-                    ): Try[Future[CreateSessionResponse]] = {
-    Try(client.createSession(auth, CreateSessionRequest(subject, audience, subjectScopes, tokenType, ttlSeconds, userRoleId, authClient)).toScalaFuture)
+                    ): Future[CreateSessionResponse] = {
+    client.createSession(auth, CreateSessionRequest(subject, audience, subjectScopes, tokenType, ttlSeconds, userRoleId, authClient)).toScalaFuture
   }
 
-  def deleteSession(tokenType: SessionTokenType, token: String): Try[Future[Unit]] = {
-    Try(client.deleteSession(auth, DeleteSessionRequest(tokenType, token)).toScalaFuture)
+  def deleteSession(tokenType: SessionTokenType, token: String): Future[Unit] = {
+    client.deleteSession(auth, DeleteSessionRequest(tokenType, token)).toScalaFuture
   }
 }
