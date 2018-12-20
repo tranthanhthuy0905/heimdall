@@ -62,3 +62,7 @@ mappings in Universal := {
     origMappings.filterNot { case (_, file) => file.endsWith("env/localdev.conf") }
 }
 
+coverageMinimum := 70
+coverageFailOnMinimum := false
+coverageHighlighting := true
+

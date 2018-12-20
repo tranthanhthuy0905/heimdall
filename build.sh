@@ -20,4 +20,5 @@ else
   export BUILD_QUALIFIER="-$BRANCH_NAME-SNAPSHOT"
 fi
 
-./bin/sbt compile test outputVersion package universal:packageBin -Dpackaging.buildQualifier="$BUILD_QUALIFIER" -Dpackaging.buildNumber="$BUILD_NUMBER"
+./bin/sbt compile outputVersion package universal:packageBin -Dpackaging.buildQualifier="$BUILD_QUALIFIER" -Dpackaging.buildNumber="$BUILD_NUMBER"
+./bin/sbt coverage test coverageReport
