@@ -1,4 +1,6 @@
 *.swp
+**/builddata
+**/scoverage-reports
 **/.idea_modules/
 **/target/
 **/*.swp
