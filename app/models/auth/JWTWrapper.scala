@@ -70,7 +70,6 @@ class JWTWrapperV2(jwt: JWT) extends JWTWrapper(jwt) {
   val audienceType = claimSet.getStringClaim(JWTConstants.AudienceTypeClaim)
   val subjectDomain = Option(claimSet.getStringClaim(JWTConstants.SubjectDomainClaim))
   val audienceDomain = Option(claimSet.getStringClaim(JWTConstants.AudienceDomainClaim))
-  val sessionData = Option(claimSet.getClaims.get(JWTConstants.SessionDataClaim))
 }
 
 /**

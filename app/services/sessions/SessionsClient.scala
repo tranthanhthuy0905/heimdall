@@ -14,7 +14,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait SessionsClient {
   def getAuthorization(tokenType: SessionTokenType, token: String): Future[GetAuthorizationResponse]
-  def updateSessionData(tokenType: SessionTokenType, token: String, sessionData:Map[String, String] ): Future[UpdateSessionDataResponse]
   def createSession(subject: EntityDescriptor, audience: EntityDescriptor, subjectScopes: Set[String], tokenType: SessionTokenType,
                     ttlSeconds: Option[Int], userRoleId: Option[Long], authClient: Option[SessionAuthClient]): Future[CreateSessionResponse]
   def deleteSession(tokenType: SessionTokenType, token: String): Future[Unit]
@@ -25,7 +24,7 @@ class SessionsClientImpl @Inject()(config: Config)(implicit ec: ExecutionContext
 
   private val client: SessionsService.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)
-    val dest = FinagleClient.newThriftUrl(s"com.evidence.service.sessions-service", env, "thrift")
+    val dest = FinagleClient.newThriftUrl("com.evidence.service.sessions-service", env, "thrift")
     val client = FinagleClient.newThriftClient().build[SessionsService.MethodPerEndpoint](dest)
     client
   }
@@ -36,10 +35,6 @@ class SessionsClientImpl @Inject()(config: Config)(implicit ec: ExecutionContext
 
   def getAuthorization(tokenType: SessionTokenType, token: String): Future[GetAuthorizationResponse] = {
     client.getAuthorization(auth, GetAuthorizationRequest(tokenType, token)).toScalaFuture
-  }
-
-  def updateSessionData(tokenType: SessionTokenType, token: String, sessionData:Map[String, String] ): Future[UpdateSessionDataResponse] = {
-    client.updateSessionData(auth, UpdateSessionDataRequest (tokenType, token, sessionData)).toScalaFuture
   }
 
   def createSession(subject: EntityDescriptor,

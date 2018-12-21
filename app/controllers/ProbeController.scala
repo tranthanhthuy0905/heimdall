@@ -20,32 +20,31 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
                                 config: Config,
                                 components: ControllerComponents)
                                (implicit ex: ExecutionContext)
-  extends AbstractController(components) with LazyLogging  with AuditConversions {
+  extends AbstractController(components) with LazyLogging with AuditConversions {
 
   def probe: Action[AnyContent] = action.async { implicit request =>
     rtm.send(request.rtmQuery).flatMap { response =>
       if (response.status == OK) {
         val authHandler = request.attrs(AuthorizationAttr.Key)
-        sessionData.createStreamingSessionToken(authHandler.token, SortedSet(request.rtmQuery.file.fileId)).flatMap { streamingSessionToken =>
 
-          val auditEvent = EvidenceRecordBufferedEvent(
-            evidenceTid(request.rtmQuery.file),
-            updatedByTid(authHandler.jwt),
-            fileTid(request.rtmQuery.file),
-            request.remoteAddress)
+        val streamingSessionToken = sessionData.createStreamingSessionToken(authHandler.token, SortedSet(request.rtmQuery.file.fileId))
 
-          val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
+        val auditEvent = EvidenceRecordBufferedEvent(
+          evidenceTid(request.rtmQuery.file),
+          updatedByTid(authHandler.jwt),
+          fileTid(request.rtmQuery.file),
+          request.remoteAddress)
 
-          audit.recordEndSuccess(auditEvent).map { _ =>
-            val responseWithToken = response.json.as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingSessionToken))
-            Ok(responseWithToken).as(contentType)
-          } recoverWith {
-            case exception: Exception =>
-              logger.error(exception, "failedToSendProbeAuditEvent")("exception" -> exception.getMessage)
-              Future.successful(InternalServerError(Json.obj("exception" -> exception.getMessage)))
-          }
+        val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
+
+        audit.recordEndSuccess(auditEvent).map { _ =>
+          val responseWithToken = response.json.as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingSessionToken))
+          Ok(responseWithToken).as(contentType)
+        } recoverWith {
+          case exception: Exception =>
+            logger.error(exception, "failedToSendProbeAuditEvent")("exception" -> exception.getMessage)
+            Future.successful(InternalServerError(Json.obj("exception" -> exception.getMessage)))
         }
-
       } else {
         logger.error(s"unexpectedProbeRequestReturnCode")("status" -> response.status)
         Future.successful(InternalServerError)
