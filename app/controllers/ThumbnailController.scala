@@ -18,9 +18,10 @@ class ThumbnailController @Inject()(action: HeimdallActionBuilder,
   def thumbnail: Action[AnyContent] = action.async { implicit request =>
     rtm.send(request.rtmQuery) map { response =>
       if (response.status == OK) {
-        Ok(response.bodyAsBytes)
+        val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("image/jpeg")
+        Ok(response.bodyAsBytes).as(contentType)
       } else {
-        logger.error(s"unexpectedThumbnailReturnCode")(
+        logger.error("unexpectedThumbnailReturnCode")(
           "path" -> request.rtmQuery.path,
           "status" -> response.status,
           "message" -> response.body
