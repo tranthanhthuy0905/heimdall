@@ -53,6 +53,17 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
     "boost"
   )
 
+  private final val thumbnailParams = List(
+    "time",
+    "download",
+    "width",
+    "height",
+    "left",
+    "top",
+    "right",
+    "bottom"
+  )
+
   /**
     * heimdallToRtmRoutes provides Heimdall to RTM routes mapping ,and a list of whitelisted parameters per RTM route.
     *
@@ -67,8 +78,9 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
     probe -> MediaRoute("/probe", commonParams),
     hlsMaster -> MediaRoute("/hls/master", commonParams),
     hlsVariant -> MediaRoute("/hls/variant", List.concat(commonParams, hlsVariantParams)),
-    hlsSegment -> MediaRoute("/hls/segment", List.concat(commonParams, hlsSegmentParams))
-    // TODO: "/media/thumbnail", "/media/mp3"
+    hlsSegment -> MediaRoute("/hls/segment", List.concat(commonParams, hlsSegmentParams)),
+    thumbnail -> MediaRoute("/thumbnail", List.concat(commonParams, thumbnailParams))
+    // TODO: "/media/mp3"
   )
 
   def apply(route: String, query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
@@ -94,6 +106,7 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
       case str if str startsWith hlsVariant => Some(filterAllowedParams(query, heimdallToRtmRoutes(hlsVariant)))
       case str if str startsWith hlsSegment => Some(filterAllowedParams(query, heimdallToRtmRoutes(hlsSegment)))
       case str if str startsWith probe => Some(filterAllowedParams(query, heimdallToRtmRoutes(probe)))
+      case str if str startsWith thumbnail => Some(filterAllowedParams(query, heimdallToRtmRoutes(thumbnail)))
       case _ =>
         logger.error("unexpectedQueryRoute")("route" -> route)
         None
