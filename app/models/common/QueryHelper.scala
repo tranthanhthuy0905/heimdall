@@ -30,7 +30,7 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
 
   case class QueryWithPath(rtmPath: String, params: Map[String, String])
 
-  private final val commonParams = List(
+  final val commonParams = List(
     "offset",
     "selectaudio",
     "customlayout",
@@ -43,17 +43,17 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
     "autorotate"
   )
 
-  private final val hlsVariantParams = List(
+  final val hlsVariantParams = List(
     "level"
   )
 
-  private final val hlsSegmentParams = List(
+  final val hlsSegmentParams = List(
     "level",
     "index",
     "boost"
   )
 
-  private final val thumbnailParams = List(
+  final val thumbnailParams = List(
     "time",
     "download",
     "width",

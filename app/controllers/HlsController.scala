@@ -4,14 +4,14 @@ import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.Inject
 import models.hls.HlsManifestFormatter
-import models.play.HeimdallActionBuilder
+import models.common.HeimdallActionBuilderWithToken
 import play.api.http.HttpEntity
 import play.api.mvc._
 import services.rtm.RtmClient
 
 import scala.concurrent.ExecutionContext
 
-class HlsController @Inject()(action: HeimdallActionBuilder,
+class HlsController @Inject()(action: HeimdallActionBuilderWithToken,
                               rtm: RtmClient,
                               config: Config,
                               components: ControllerComponents)
@@ -23,7 +23,13 @@ class HlsController @Inject()(action: HeimdallActionBuilder,
     rtm.send(request.rtmQuery) map { response =>
       if (response.status == OK) {
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/x-mpegURL")
-        val newManifest = HlsManifestFormatter(response.body, request.rtmQuery.file, config.getString("heimdall.api_prefix"))
+        val newManifest =
+          HlsManifestFormatter(
+            response.body,
+            request.rtmQuery.file,
+            config.getString("heimdall.api_prefix"),
+            request.streamingSessionToken
+          )
         Ok(newManifest).as(contentType)
       } else {
         logger.error(s"unexpectedHlsPlaylistReturnCode")(

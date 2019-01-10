@@ -4,7 +4,7 @@ import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.Inject
 import models.auth.{AuthorizationAttr, StreamingSessionData}
-import models.play.HeimdallActionBuilder
+import models.common.HeimdallActionBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc._
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
@@ -27,7 +27,7 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
       if (response.status == OK) {
         val authHandler = request.attrs(AuthorizationAttr.Key)
 
-        val streamingSessionToken = sessionData.createStreamingSessionToken(authHandler.token, SortedSet(request.rtmQuery.file.fileId))
+        val streamingSessionToken = sessionData.createToken(authHandler.token, SortedSet(request.rtmQuery.file.fileId))
 
         val auditEvent = EvidenceRecordBufferedEvent(
           evidenceTid(request.rtmQuery.file),

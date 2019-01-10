@@ -61,22 +61,27 @@ curl 'http://localhost:9000/media/test/get-session?token=2xrypzge7d570p94sw0n8dc
 
 #### HLS API:
 
-Note: Axon cookie is required
+1. Find or create a valid axon session cookie
+2. Run probe request, and receive streamingSessionToken 
+3. Use cookie and the token for HLS and thumbnail requests
 
 ```
+# Probe:
+curl -v  --cookie "AXONSESSION=1jmhyqyo8s8qva2bum9hw9w5z8c1s013rnircigd44tvztz96j" 'http://localhost:9000/media/start?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&index=0&offset=0' 
+
 # Master:
-ffplay 'http://localhost:9000/media/hls/master?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099'  -headers 'Cookie: AXONSESSION=2tffd7bp6pm6jz4ogbs9g7z9g7ttcx3gvscw5wcdnoq4ykullm'
+ffplay 'http://localhost:9000/media/hls/master?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&streamingSessionToken=u0YQazkQ0Y4OeCNhSaiRpW2RNmSPR46MsrkuNcJv5Oo='  -headers 'Cookie: AXONSESSION=2tffd7bp6pm6jz4ogbs9g7z9g7ttcx3gvscw5wcdnoq4ykullm'
 
 # Variant:
-ffplay 'http://localhost:9000/media/hls/variant?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0'  -headers 'Cookie: AXONSESSION=2tffd7bp6pm6jz4ogbs9g7z9g7ttcx3gvscw5wcdnoq4ykullm'
+ffplay 'http://localhost:9000/media/hls/variant?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&streamingSessionToken=u0YQazkQ0Y4OeCNhSaiRpW2RNmSPR46MsrkuNcJv5Oo='  -headers 'Cookie: AXONSESSION=2tffd7bp6pm6jz4ogbs9g7z9g7ttcx3gvscw5wcdnoq4ykullm'
 
 # Segment:
-curl -v --cookie "AXONSESSION=2ux6qd1b12z82rdr5ywjn695wv1pcv2c1ib3dm983z0aq69zh3" 'http://localhost:9000/media/hls/segment?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&index=0&offset=0&start=0&fast=1&label=AWESOME_LABEL' | ffplay -
+curl -v --cookie "AXONSESSION=2ux6qd1b12z82rdr5ywjn695wv1pcv2c1ib3dm983z0aq69zh3" 'http://localhost:9000/media/hls/segment?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&index=0&offset=0&start=0&fast=1&label=AWESOME_LABEL&streamingSessionToken=u0YQazkQ0Y4OeCNhSaiRpW2RNmSPR46MsrkuNcJv5Oo=' | ffplay -
 
-#Probe:
-curl -v  --cookie "AXONSESSION=1jmhyqyo8s8qva2bum9hw9w5z8c1s013rnircigd44tvztz96j" 'http://localhost:9000/media/start?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&index=0&offset=0' 
+# Thumbnail:
+ffplay 'http://localhost:9000/media/thumbnail?file_id=79aea236e59442ccae2c6cd95af937d8&evidence_id=2b111cf1-d42b-4edd-b0ed-1a5d63f81b23&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&time=57&width=120&height=52&autorotate=true&streamingSessionToken=u0YQazkQ0Y4OeCNhSaiRpW2RNmSPR46MsrkuNcJv5Oo=' -headers 'Cookie: AXONSESSION=2rvqb4wcqh3xubuaea8xqmvo8msuddq9pmxzckwx48djzdfptd'
+
 ```
-
 
 ## Heimdall Anatomy
 ```

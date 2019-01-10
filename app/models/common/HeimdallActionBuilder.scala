@@ -1,12 +1,10 @@
-package models.play
+package models.common
 
 import javax.inject.Inject
-import models.common.{QueryHelper, RtmQueryParams}
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class HeimdallRequest[A](rtmQuery: RtmQueryParams, request: Request[A]) extends WrappedRequest[A](request) with RequestHeader
 
 class HeimdallActionBuilder @Inject()(defaultParser: BodyParsers.Default)
                                      (implicit ex: ExecutionContext)
@@ -15,7 +13,7 @@ class HeimdallActionBuilder @Inject()(defaultParser: BodyParsers.Default)
   override def invokeBlock[A](request: Request[A],
                               block: HeimdallRequest[A] => Future[Result]): Future[Result] = {
     QueryHelper(request.path, request.queryString).map(
-      extendedQuery => block(HeimdallRequest(extendedQuery, request))
+      rtmQuery => block(HeimdallRequest(rtmQuery, request, None))
     ).getOrElse(Future.successful(Results.BadRequest))
   }
 

@@ -2,13 +2,13 @@ package controllers
 
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
-import models.play.HeimdallActionBuilder
+import models.common.HeimdallActionBuilderWithToken
 import play.api.mvc._
 import services.rtm.RtmClient
 
 import scala.concurrent.ExecutionContext
 
-class ThumbnailController @Inject()(action: HeimdallActionBuilder,
+class ThumbnailController @Inject()(action: HeimdallActionBuilderWithToken,
                                     rtm: RtmClient,
                                     components: ControllerComponents)
                                    (implicit ex: ExecutionContext)

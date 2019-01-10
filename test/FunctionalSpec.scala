@@ -15,8 +15,12 @@ class FunctionalSpec extends PlaySpec with GuiceOneAppPerSuite {
       route(app, FakeRequest(GET, "/boum")).map(status(_)) mustBe Some(NOT_FOUND)
     }
 
-    "send 400 on a bad request - missing query parameters" in  {
+    "send 400 on a HLS bad request - missing query parameters" in  {
       route(app, FakeRequest(GET, "/media/hls/segment")).map(status(_)) mustBe Some(BAD_REQUEST)
+    }
+
+    "send 400 on a probe bad request - missing query parameters" in  {
+      route(app, FakeRequest(GET, "/media/start")).map(status(_)) mustBe Some(BAD_REQUEST)
     }
 
     "send 200 on a good request" in  {

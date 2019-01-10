@@ -46,7 +46,8 @@ class AxonAuthFilter @Inject()
       }
       val endTime = System.currentTimeMillis
       val requestTime = endTime - startTime
-      logger.info("requestComplete")("action" -> action, "durationMs" -> requestTime, "status" -> result.header.status)
+      // TODO the log below should be replaced with metrics
+      logger.debug("requestComplete")("action" -> action, "durationMs" -> requestTime, "status" -> result.header.status)
       result
     }
   }
