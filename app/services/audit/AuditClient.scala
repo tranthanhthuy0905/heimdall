@@ -2,6 +2,7 @@ package services.audit
 
 import com.evidence.service.audit._
 import com.evidence.service.common.finagle.FinagleClient
+import com.evidence.service.common.finagle.FutureConverters._
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
@@ -10,6 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait AuditClient {
   def recordEndSuccess(event: AuditEvent): Future[String]
+  def recordEndSuccess(event: List[AuditEvent]): Future[List[String]]
 }
 
 @Singleton
@@ -28,10 +30,11 @@ class AuditClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
     Authorization(authType, "N/A", "N/A", secret)
   }
 
+  override def recordEndSuccess(events: List[AuditEvent]): Future[List[String]] = {
+    Future.traverse(events)(recordEndSuccess)
+  }
+
   override def recordEndSuccess(event: AuditEvent): Future[String] = {
-
-    import com.evidence.service.common.finagle.FutureConverters._
-
     val eventJson = event.toJsonString
     logger.info("auditRecordEventEndWithSuccess")(
       "eventTypeUuid" -> event.eventTypeUuid,

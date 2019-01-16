@@ -30,8 +30,8 @@ class RtmRequest(path: String, endpoint: ServiceEndpoint, query: Map[String, Str
 }
 
 object RtmRequest {
-  def apply(path: String, endpoint: ServiceEndpoint, presignedUrl: URL, query: Map[String, String]): String = {
-    val request = new RtmRequest(path, endpoint, query ++ Map("source" -> presignedUrl.toString))
+  def apply(path: String, endpoint: ServiceEndpoint, presignedUrls: List[URL], query: Map[String, String]): String = {
+    val request = new RtmRequest(path, endpoint, query ++ Map("source" -> presignedUrls.mkString(",")))
     request.toString
   }
 }

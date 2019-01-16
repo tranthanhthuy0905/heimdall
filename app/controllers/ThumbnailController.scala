@@ -2,13 +2,13 @@ package controllers
 
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
-import models.common.HeimdallActionBuilderWithToken
+import models.common.HeimdallActionBuilder
 import play.api.mvc._
 import services.rtm.RtmClient
 
 import scala.concurrent.ExecutionContext
 
-class ThumbnailController @Inject()(action: HeimdallActionBuilderWithToken,
+class ThumbnailController @Inject()(action: HeimdallActionBuilder,
                                     rtm: RtmClient,
                                     components: ControllerComponents)
                                    (implicit ex: ExecutionContext)
@@ -19,7 +19,7 @@ class ThumbnailController @Inject()(action: HeimdallActionBuilderWithToken,
     rtm.send(request.rtmQuery) map { response =>
       if (response.status == OK) {
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("image/jpeg")
-        Ok(response.bodyAsBytes).as(contentType)
+        Ok.chunked(response.bodyAsSource).as(contentType)
       } else {
         logger.error("unexpectedThumbnailReturnCode")(
           "path" -> request.rtmQuery.path,

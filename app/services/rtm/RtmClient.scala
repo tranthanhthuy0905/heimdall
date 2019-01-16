@@ -6,13 +6,13 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.zookeeper.ServiceEndpoint
 import com.google.inject.Inject
 import javax.inject.Singleton
+import models.common.RtmQueryParams
 import play.api.libs.ws.{WSClient, WSResponse}
 import services.dredd.DreddClient
 import services.zookeeper.ZookeeperServerSet
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
-import models.common.RtmQueryParams
 
 trait RtmClient {
   def send(query: RtmQueryParams): Future[WSResponse]
@@ -23,12 +23,11 @@ class RtmClientImpl @Inject()(dredd: DreddClient,
                               zookeeper: ZookeeperServerSet,
                               ws: WSClient)(implicit ex: ExecutionContext) extends RtmClient with LazyLogging {
 
-
   def send(rtmQuery: RtmQueryParams): Future[WSResponse] = {
     for {
-      presignedUrl <- dredd.getUrl(rtmQuery.file.partnerId, rtmQuery.file.evidenceId, rtmQuery.file.fileId)
-      endpoint <- getEndpoint(rtmQuery.file.fileId)
-      request = RtmRequest(rtmQuery.path, endpoint, presignedUrl, rtmQuery.params)
+      presignedUrls <- Future.traverse(rtmQuery.media.toList)(dredd.getUrl)
+      endpoint <- getEndpoint(rtmQuery.media.fileIds.head)
+      request = RtmRequest(rtmQuery.path, endpoint, presignedUrls, rtmQuery.params)
       response <- ws.url(request).withMethod("GET").stream
     } yield response
   }

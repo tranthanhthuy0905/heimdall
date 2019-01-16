@@ -26,7 +26,7 @@ class HlsController @Inject()(action: HeimdallActionBuilderWithToken,
         val newManifest =
           HlsManifestFormatter(
             response.body,
-            request.rtmQuery.file,
+            request.rtmQuery.media,
             config.getString("heimdall.api_prefix"),
             request.streamingSessionToken
           )

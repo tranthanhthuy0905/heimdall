@@ -1,13 +1,13 @@
 package models.hls
 
-import models.common.FileIdent
+import models.common.MediaIdent
 
 object HlsManifestFormatter {
-  def apply(manifest: String, fileIdent: FileIdent, pathPrefix: String, token: Option[String]): String = {
+  def apply(manifest: String, mediaIdent: MediaIdent, pathPrefix: String, token: Option[String]): String = {
     manifest.replaceAll(
       "(?m)^/hls/", s"$pathPrefix/media/hls/"
     ).replaceAll(
-      "(?m)(?<=[?&])source=[^&]*(?=($|&))", s"${fileIdent.toString}${tokenToParam(token)}"
+      "(?m)(?<=[?&])source=[^&]*(?=($|&))", s"${mediaIdent.toQueryString}${tokenToParam(token)}"
     )
   }
 

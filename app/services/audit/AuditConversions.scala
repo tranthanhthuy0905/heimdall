@@ -1,24 +1,25 @@
 package services.audit
 
+import java.util.UUID
+
 import com.evidence.api.thrift.v1.TidEntities
 import com.evidence.service.audit.Tid
 import models.auth.JWTWrapper
-import models.common.FileIdent
 
 trait AuditConversions {
-  def fileTid(file: FileIdent): Tid = {
+  def fileTid(fileId: UUID,  partnerId: UUID): Tid = {
     Tid(
       TidEntities.File,
-      Some(file.fileId.toString),
-      Some(file.partnerId.toString)
+      Some(fileId.toString),
+      Some(partnerId.toString)
     )
   }
 
-  def evidenceTid(file: FileIdent): Tid = {
+  def evidenceTid(evidenceId: UUID, partnerId: UUID): Tid = {
     Tid(
       TidEntities.Evidence,
-      Some(file.evidenceId.toString),
-      Some(file.partnerId.toString)
+      Some(evidenceId.toString),
+      Some(partnerId.toString)
     )
   }
 

@@ -5,7 +5,6 @@ import javax.inject.Inject
 import models.auth.{AuthorizationAttr, StreamingSessionData}
 import play.api.mvc._
 
-import scala.collection.SortedSet
 import scala.concurrent.{ExecutionContext, Future}
 
 class HeimdallActionBuilderWithToken @Inject()(defaultParser: BodyParsers.Default)
@@ -19,7 +18,7 @@ class HeimdallActionBuilderWithToken @Inject()(defaultParser: BodyParsers.Defaul
         getStreamingSessionToken(request) match {
           case Some(streamingSessionToken) =>
             val authHandler = request.attrs(AuthorizationAttr.Key)
-            if (sessionData.validateToken(streamingSessionToken, authHandler.token, SortedSet(rtmQuery.file.fileId))) {
+            if (sessionData.validateToken(streamingSessionToken, authHandler.token, rtmQuery.media.getSortedFileIds)) {
               block(HeimdallRequest(rtmQuery, request, Some(streamingSessionToken)))
             } else {
               logger.error("invalidStreamingSessionToken")("streamingSessionToken" -> streamingSessionToken, "query" -> request.queryString)

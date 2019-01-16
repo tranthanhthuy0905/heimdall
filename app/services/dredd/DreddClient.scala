@@ -5,14 +5,17 @@ import java.util.UUID
 
 import com.evidence.api.thrift.v1.TidEntities
 import com.evidence.service.common.finagle.FinagleClient
+import com.evidence.service.common.finagle.FutureConverters._
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.dredd.thrift._
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
+import models.common.FileIdent
 
 import scala.concurrent.{ExecutionContext, Future}
 
 trait DreddClient {
+  def getUrl (file: FileIdent) : Future[URL]
   def getUrl (agencyId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int = 60) : Future[URL]
 }
 
@@ -30,6 +33,10 @@ class DreddClientImpl @Inject() (config: Config) (implicit ex: ExecutionContext)
     val secret = config.getString("edc.service.dredd.thrift_auth_secret")
     val authType = config.getString("edc.service.dredd.thrift_auth_type")
     Authorization(authType, secret)
+  }
+
+  override def getUrl (file: FileIdent) : Future[URL] = {
+    getUrl(file.partnerId, file.evidenceId, file.fileId)
   }
 
   override def getUrl (partnerId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int) : Future[URL] = {
@@ -53,8 +60,6 @@ class DreddClientImpl @Inject() (config: Config) (implicit ex: ExecutionContext)
   }
 
   private def getPresignedUrl (agencyId: UUID, evidenceId: UUID, fileId: UUID, expiresSecs: Int) : Future[PresignedUrlResponse] = {
-    import com.evidence.service.common.finagle.FutureConverters._
-
     val ip = "127.0.0.1" // TODO: add request context (see lantern)
     val dreddUpdatedBy = Tid(TidEntities.valueOf("AuthClient"), None, None) // TODO: add subjectId, and subjectDomain
     val requestContext = RequestContext(dreddUpdatedBy, Option(ip))

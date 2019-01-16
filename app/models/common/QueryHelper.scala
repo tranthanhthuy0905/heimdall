@@ -12,7 +12,7 @@ import scala.collection.immutable.Map
   * It contains RTM path/route/API, and validated and filtered query parameters.
   * I.e. needed values to perform a RTM request.
   */
-case class RtmQueryParams(file: FileIdent, path: String, params: Map[String, String])
+case class RtmQueryParams(media: MediaIdent, path: String, params: Map[String, String])
 
 trait HeimdallRoutes {
   final val health = "/media/alive"
@@ -85,11 +85,19 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
 
   def apply(route: String, query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
     for {
-      fileId <- getUuidValue(query, "file_id")
-      evidenceId <- getUuidValue(query, "evidence_id")
+      fileIds <- getUuidList(query, "file_id")
+      evidenceIds <- getUuidList(query, "evidence_id")
       partnerId <- getUuidValue(query, "partner_id")
       query <- filterQueryForRoute(route, query)
-    } yield RtmQueryParams(FileIdent(fileId, evidenceId, partnerId), query.rtmPath, query.params)
+    } yield RtmQueryParams(MediaIdent(fileIds, evidenceIds, partnerId), query.rtmPath, query.params)
+  }
+
+  private def getUuidList(query: Map[String, Seq[String]], key: String): Option[List[UUID]] = {
+    for {
+      seq <- query.get(key)
+      value <- seq.headOption
+      uuidList <- parseStringToUuidList(value)
+    } yield uuidList
   }
 
   private def getUuidValue(query: Map[String, Seq[String]], key: String): Option[UUID] = {
@@ -98,6 +106,18 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
       value <- seq.headOption
       uuid <- Convert.tryToUuid(value)
     } yield uuid
+  }
+
+  private def parseStringToUuidList(value: String): Option[List[UUID]] = {
+    val strUuidList = value.split(",").toList
+    val uuidList = strUuidList.map(x => Convert.tryToUuid(x)).collect {
+      case Some(uuid) => uuid
+    }
+    if (uuidList.length == strUuidList.length) {
+      Some(uuidList)
+    } else {
+      None
+    }
   }
 
   private def filterQueryForRoute(route: String, query: Map[String, Seq[String]]): Option[QueryWithPath] = {

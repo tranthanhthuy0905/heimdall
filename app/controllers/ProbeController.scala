@@ -9,8 +9,6 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc._
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
 import services.rtm.RtmClient
-
-import scala.collection.SortedSet
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProbeController @Inject()(action: HeimdallActionBuilder,
@@ -26,18 +24,19 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
     rtm.send(request.rtmQuery).flatMap { response =>
       if (response.status == OK) {
         val authHandler = request.attrs(AuthorizationAttr.Key)
+        val streamingSessionToken = sessionData.createToken(authHandler.token, request.rtmQuery.media.getSortedFileIds)
 
-        val streamingSessionToken = sessionData.createToken(authHandler.token, SortedSet(request.rtmQuery.file.fileId))
-
-        val auditEvent = EvidenceRecordBufferedEvent(
-          evidenceTid(request.rtmQuery.file),
-          updatedByTid(authHandler.jwt),
-          fileTid(request.rtmQuery.file),
-          request.remoteAddress)
+        val auditEvents: List[EvidenceRecordBufferedEvent] =
+          request.rtmQuery.media.toList.map(file => EvidenceRecordBufferedEvent(
+            evidenceTid(file.evidenceId, file.partnerId),
+            updatedByTid(authHandler.jwt),
+            fileTid(file.fileId, file.partnerId),
+            request.remoteAddress
+          ))
 
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
 
-        audit.recordEndSuccess(auditEvent).map { _ =>
+        audit.recordEndSuccess(auditEvents).map { _ =>
           val responseWithToken = response.json.as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingSessionToken))
           Ok(responseWithToken).as(contentType)
         } recoverWith {

@@ -18,7 +18,7 @@ class QueryValidatorSpec extends PlaySpec {
       )
 
       val result = QueryHelper("/media/hls/master", query)
-      result mustBe Some(RtmQueryParams(file = FileIdent(uuid, uuid, uuid), path = "/hls/master", params = Map()))
+      result mustBe Some(RtmQueryParams(media = MediaIdent(List(uuid), List(uuid), uuid), path = "/hls/master", params = Map()))
     }
 
     "filter out extra params" in {
@@ -31,7 +31,7 @@ class QueryValidatorSpec extends PlaySpec {
       )
 
       val result = QueryHelper("/media/hls/master", query)
-      result mustBe Some(RtmQueryParams(file = FileIdent(uuid, uuid, uuid), path = "/hls/master", params = Map()))
+      result mustBe Some(RtmQueryParams(media = MediaIdent(List(uuid), List(uuid), uuid), path = "/hls/master", params = Map()))
     }
 
     "return None because of missing file_id" in {
