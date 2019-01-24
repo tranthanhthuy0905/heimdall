@@ -1,7 +1,6 @@
 package controllers
 
 import com.evidence.service.common.logging.LazyLogging
-import com.typesafe.config.Config
 import javax.inject.Inject
 import models.auth.{AuthorizationAttr, StreamingSessionData}
 import models.common.HeimdallActionBuilder
@@ -15,7 +14,6 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
                                 rtm: RtmClient,
                                 sessionData: StreamingSessionData,
                                 audit: AuditClient,
-                                config: Config,
                                 components: ControllerComponents)
                                (implicit ex: ExecutionContext)
   extends AbstractController(components) with LazyLogging with AuditConversions {
@@ -45,7 +43,7 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
             Future.successful(InternalServerError(Json.obj("exception" -> exception.getMessage)))
         }
       } else {
-        logger.error(s"unexpectedProbeRequestReturnCode")("status" -> response.status)
+        logger.error("unexpectedProbeRequestReturnCode")("status" -> response.status)
         Future.successful(InternalServerError)
       }
     }

@@ -8,10 +8,10 @@ GET /media/alive controllers.HealthController.isItUp
 
 # Heimdall API
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 'v0' means pre-alpha version.
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GET /media/start controllers.ProbeController.probe
+
+GET /media/streamed controllers.AuditController.recordMediaStreamedEvent
 
 GET /media/thumbnail controllers.ThumbnailController.thumbnail
 

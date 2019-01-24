@@ -32,7 +32,7 @@ class HlsController @Inject()(action: HeimdallActionBuilderWithToken,
           )
         Ok(newManifest).as(contentType)
       } else {
-        logger.error(s"unexpectedHlsPlaylistReturnCode")(
+        logger.error("unexpectedHlsPlaylistReturnCode")(
           "path" -> request.rtmQuery.path,
           "status" -> response.status,
           "message" -> response.body
@@ -53,7 +53,7 @@ class HlsController @Inject()(action: HeimdallActionBuilderWithToken,
             Ok.chunked(response.bodyAsSource).as(contentType)
         }
       } else {
-        logger.error(s"unexpectedHlsSegmentReturnCode")("status" -> response.status)
+        logger.error("unexpectedHlsSegmentReturnCode")("status" -> response.status)
         InternalServerError
       }
     }

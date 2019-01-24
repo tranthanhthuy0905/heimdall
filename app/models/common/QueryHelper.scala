@@ -22,6 +22,7 @@ trait HeimdallRoutes {
   final val hlsSegment = "/media/hls/segment"
   final val thumbnail = "/media/thumbnail"
   final val mp3 = "/media/mp3"
+  final val streamed = "/media/streamed"
 }
 
 object QueryHelper extends LazyLogging with HeimdallRoutes {
@@ -79,8 +80,8 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
     hlsMaster -> MediaRoute("/hls/master", commonParams),
     hlsVariant -> MediaRoute("/hls/variant", List.concat(commonParams, hlsVariantParams)),
     hlsSegment -> MediaRoute("/hls/segment", List.concat(commonParams, hlsSegmentParams)),
-    thumbnail -> MediaRoute("/thumbnail", List.concat(commonParams, thumbnailParams))
-    // TODO: "/media/mp3"
+    thumbnail -> MediaRoute("/thumbnail", List.concat(commonParams, thumbnailParams)),
+    streamed -> MediaRoute("", List())
   )
 
   def apply(route: String, query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
@@ -110,12 +111,13 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
 
   private def parseStringToUuidList(value: String): Option[List[UUID]] = {
     val strUuidList = value.split(",").toList
-    val uuidList = strUuidList.map(x => Convert.tryToUuid(x)).collect {
+    val uuidList = strUuidList.map(uuidStr => Convert.tryToUuid(uuidStr)).collect {
       case Some(uuid) => uuid
     }
     if (uuidList.length == strUuidList.length) {
       Some(uuidList)
     } else {
+      logger.error("failedToParseStringValueToUuidList")("value" -> value)
       None
     }
   }
@@ -127,6 +129,7 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
       case str if str startsWith hlsSegment => Some(filterAllowedParams(query, heimdallToRtmRoutes(hlsSegment)))
       case str if str startsWith probe => Some(filterAllowedParams(query, heimdallToRtmRoutes(probe)))
       case str if str startsWith thumbnail => Some(filterAllowedParams(query, heimdallToRtmRoutes(thumbnail)))
+      case str if str startsWith streamed => Some(filterAllowedParams(query, heimdallToRtmRoutes(streamed)))
       case _ =>
         logger.error("unexpectedQueryRoute")("route" -> route)
         None

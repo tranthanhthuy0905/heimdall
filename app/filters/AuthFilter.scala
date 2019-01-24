@@ -1,3 +1,4 @@
+package filters
 
 import akka.stream.Materializer
 import com.evidence.service.common.logging.LazyLogging

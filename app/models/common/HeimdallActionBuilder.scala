@@ -12,8 +12,8 @@ class HeimdallActionBuilder @Inject()(defaultParser: BodyParsers.Default)
 
   override def invokeBlock[A](request: Request[A],
                               block: HeimdallRequest[A] => Future[Result]): Future[Result] = {
-    QueryHelper(request.path, request.queryString).map(
-      rtmQuery => block(HeimdallRequest(rtmQuery, request, None))
+    QueryHelper(request.path, request.queryString).map( rtmQuery =>
+      block(HeimdallRequest(rtmQuery, request, None))
     ).getOrElse(Future.successful(Results.BadRequest))
   }
 

@@ -24,7 +24,7 @@ class DreddClientImpl @Inject() (config: Config) (implicit ex: ExecutionContext)
 
   private val client: DreddService.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)
-    val dest = FinagleClient.newThriftUrl(s"com.evidence.service.dredd-service", env, "thrift")
+    val dest = FinagleClient.newThriftUrl("com.evidence.service.dredd-service", env, "thrift")
     val client = FinagleClient.newThriftClient().build[DreddService.MethodPerEndpoint](dest)
     client
   }

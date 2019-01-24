@@ -19,7 +19,7 @@ class AuditClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
 
   private val client: AuditService.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)
-    val dest = FinagleClient.newThriftUrl(s"com.evidence.service.audit-service", env, "thrift")
+    val dest = FinagleClient.newThriftUrl("com.evidence.service.audit-service", env, "thrift")
     val client = FinagleClient.newThriftClient().build[AuditService.MethodPerEndpoint](dest)
     client
   }
