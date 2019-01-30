@@ -5,7 +5,6 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-
 class HeimdallActionBuilder @Inject()(defaultParser: BodyParsers.Default)
                                      (implicit ex: ExecutionContext)
   extends ActionBuilder[HeimdallRequest, AnyContent] {

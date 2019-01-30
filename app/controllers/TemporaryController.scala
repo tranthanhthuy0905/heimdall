@@ -9,6 +9,7 @@ import javax.inject.Inject
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.dredd.DreddClient
+import services.komrade.KomradeClient
 import services.sessions.SessionsClient
 import services.zookeeper.ZookeeperServerSet
 
@@ -21,22 +22,43 @@ class TemporaryController @Inject()(
                                      components: ControllerComponents,
                                      sessions: SessionsClient,
                                      zookeeper: ZookeeperServerSet,
-                                     dredd: DreddClient)(implicit assetsFinder: AssetsFinder, ex: ExecutionContext)
+                                     dredd: DreddClient,
+                                     komrade: KomradeClient
+                                   )(implicit assetsFinder: AssetsFinder, ex: ExecutionContext)
   extends AbstractController(components) with LazyLogging {
+
+  def getUser: Action[AnyContent] = Action.async {
+    komrade.getUser("f3d719bc-db2b-4b71-bfb1-436240fb9099","bda513fe-cfb9-4acb-bb25-a665387c12bd") map { u =>
+      Ok(Json.obj("status" -> "ok", "response" -> u.toString()))
+    }
+  }
+
+  def getPartner: Action[AnyContent] = Action.async {
+    komrade.getPartner("f3d719bc-db2b-4b71-bfb1-436240fb9099") map { u =>
+      Ok(Json.obj("status" -> "ok", "response" -> u.toString()))
+    }
+  }
 
   def getSession: Action[AnyContent] = Action.async { implicit request =>
     val token = request.queryString("token").head //XXX: no need to check because this is a temp test controller.
     sessions.getAuthorization(SessionTokenType.SessionCookie, token) map { u =>
       Ok(Json.obj("status" -> "ok", "response" -> u.authorization.toString()))
     }
-
   }
 
   def createSession: Action[AnyContent] = Action.async { implicit request =>
     //XXX: no need to check because this is a temp test controller.
-    val agencyId = request.queryString("agency").head
-    val entity = EntityDescriptor(TidEntities.Subscriber, UUID.randomUUID().toString.toUpperCase, Option(agencyId))
-    val domain = EntityDescriptor(TidEntities.Partner, agencyId.toString, Option(agencyId))
+    val partnerId = request.queryString("partner").head
+    val userId = request.queryString("user").headOption match {
+      case Some(id) => id
+      case None => "bda513fe-cfb9-4acb-bb25-a665387c12bd"
+    }
+    val entity = EntityDescriptor(
+      TidEntities.Subscriber,
+      userId,
+      Option(partnerId)
+    )
+    val domain = EntityDescriptor(TidEntities.Partner, partnerId.toString, Option(partnerId))
     // TODO this method will be removed, it is needed for testing only
     val scopes = Set[String](ECOMScopes.EVIDENCE_ANY_LIST, ECOMScopes.CASES_ANY_MODIFY)
     val tokenType = SessionTokenType.SessionCookie

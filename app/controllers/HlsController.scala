@@ -3,16 +3,17 @@ package controllers
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.Inject
-import models.hls.HlsManifestFormatter
-import models.common.HeimdallActionBuilderWithToken
+import models.auth.AuthorizationAttr
+import models.hls.{HeimdallHlsActionBuilder, HlsManifestFormatter, Watermark}
 import play.api.http.HttpEntity
 import play.api.mvc._
 import services.rtm.RtmClient
 
 import scala.concurrent.ExecutionContext
 
-class HlsController @Inject()(action: HeimdallActionBuilderWithToken,
+class HlsController @Inject()(action: HeimdallHlsActionBuilder,
                               rtm: RtmClient,
+                              watermark: Watermark,
                               config: Config,
                               components: ControllerComponents)
                              (implicit ex: ExecutionContext)
@@ -43,19 +44,26 @@ class HlsController @Inject()(action: HeimdallActionBuilderWithToken,
   }
 
   def segment: Action[AnyContent] = action.async { implicit request =>
-    rtm.send(request.rtmQuery) map { response =>
-      if (response.status == OK) {
-        val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("video/MP2T")
-        response.headers.get("Content-Length") match {
-          case Some(Seq(length)) =>
-            Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.toLong), Some(contentType)))
-          case _ =>
-            Ok.chunked(response.bodyAsSource).as(contentType)
+    val authHandler = request.attrs(AuthorizationAttr.Key)
+    val rtmResponse = for {
+      queryWithWatermark <- watermark.augmentQuery(request.rtmQuery, authHandler.jwt)
+      response <- rtm.send(queryWithWatermark)
+    } yield response
+
+    rtmResponse map {
+      response =>
+        if (response.status == OK) {
+          val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("video/MP2T")
+          response.headers.get("Content-Length") match {
+            case Some(Seq(length)) =>
+              Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.toLong), Some(contentType)))
+            case _ =>
+              Ok.chunked(response.bodyAsSource).as(contentType)
+          }
+        } else {
+          logger.error("failedToInteractWithRtmOrKomrade")("status" -> response.status)
+          InternalServerError
         }
-      } else {
-        logger.error("unexpectedHlsSegmentReturnCode")("status" -> response.status)
-        InternalServerError
-      }
     }
   }
 

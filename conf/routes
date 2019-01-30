@@ -23,3 +23,5 @@ GET /media/test/create-session                        controllers.TemporaryContr
 GET /media/test/get-session                           controllers.TemporaryController.getSession
 GET /media/test/get-url/:agencyId/:evidenceId/:fileId controllers.TemporaryController.getUrl(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
 GET /media/test/get-rtm/:key                          controllers.TemporaryController.getRtmInstance(key: String)
+GET /media/test/get-user                              controllers.TemporaryController.getUser
+GET /media/test/get-partner                           controllers.TemporaryController.getPartner

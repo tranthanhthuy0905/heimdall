@@ -15,7 +15,13 @@ class AxonAuthFilter @Inject()
   extends Filter with LazyLogging {
 
   // TODO delete /media/test routes from the nonRestrictedRoutes
-  final val nonRestrictedRoutes = List("/media/alive", "/media/test/create-session",  "/media/test/get-session")
+  final val nonRestrictedRoutes = List(
+    "/media/alive",
+    "/media/test/create-session",
+    "/media/test/get-session",
+    "/media/test/get-user",
+    "/media/test/get-partner"
+  )
 
   def apply(nextFilter: RequestHeader => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {

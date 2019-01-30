@@ -1,13 +1,14 @@
-package models.common
+package models.hls
 
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import models.auth.{AuthorizationAttr, StreamingSessionData}
+import models.common.{HeimdallRequest, QueryHelper}
 import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class HeimdallActionBuilderWithToken @Inject()(defaultParser: BodyParsers.Default)
+class HeimdallHlsActionBuilder @Inject()(defaultParser: BodyParsers.Default)
                                               (implicit ex: ExecutionContext, sessionData: StreamingSessionData)
   extends ActionBuilder[HeimdallRequest, AnyContent] with LazyLogging {
 

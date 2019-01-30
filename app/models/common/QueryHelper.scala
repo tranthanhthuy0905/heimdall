@@ -4,6 +4,7 @@ import java.util.UUID
 
 import com.evidence.service.common.Convert
 import com.evidence.service.common.logging.LazyLogging
+import utils.UUIDHelper
 
 import scala.collection.immutable.Map
 
@@ -97,7 +98,7 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
     for {
       seq <- query.get(key)
       value <- seq.headOption
-      uuidList <- parseStringToUuidList(value)
+      uuidList <- UUIDHelper.parseStringToUuidList(value)
     } yield uuidList
   }
 
@@ -109,18 +110,6 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
     } yield uuid
   }
 
-  private def parseStringToUuidList(value: String): Option[List[UUID]] = {
-    val strUuidList = value.split(",").toList
-    val uuidList = strUuidList.map(uuidStr => Convert.tryToUuid(uuidStr)).collect {
-      case Some(uuid) => uuid
-    }
-    if (uuidList.length == strUuidList.length) {
-      Some(uuidList)
-    } else {
-      logger.error("failedToParseStringValueToUuidList")("value" -> value)
-      None
-    }
-  }
 
   private def filterQueryForRoute(route: String, query: Map[String, Seq[String]]): Option[QueryWithPath] = {
     route match {
