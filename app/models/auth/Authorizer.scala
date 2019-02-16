@@ -12,7 +12,7 @@ import services.sessions.SessionsClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class AuthorizationData(jwt: JWTWrapper, token: String)
+case class AuthorizationData(jwt: JWTWrapper, token: String, jwtString: String)
 
 object AuthorizationAttr {
   val Key: TypedKey[AuthorizationData] = TypedKey.apply[AuthorizationData]("auth")
@@ -45,7 +45,7 @@ class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implici
   private def getAuthorizationData(token: String): Future[Either[Result, AuthorizationData]] = {
     sessions.getAuthorization(SessionTokenType.SessionCookie, token) map { u =>
       parser.parse(u.authorization.jwt) match {
-        case Right(jwt) => Right(AuthorizationData(JWTWrapper(jwt), token))
+        case Right(jwt) => Right(AuthorizationData(JWTWrapper(jwt), token, u.authorization.jwt))
         case Left(error) =>
           logger.error("failedToParseAuthToken")("token" -> u.authorization.jwt, "error" -> error)
           Left(Results.Unauthorized)

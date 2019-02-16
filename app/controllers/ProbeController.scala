@@ -7,21 +7,32 @@ import models.common.HeimdallActionBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc._
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
+import services.nino.{NinoClient, NinoClientAction}
 import services.rtm.RtmClient
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProbeController @Inject()(action: HeimdallActionBuilder,
                                 rtm: RtmClient,
                                 sessionData: StreamingSessionData,
                                 audit: AuditClient,
+                                nino: NinoClient,
                                 components: ControllerComponents)
                                (implicit ex: ExecutionContext)
   extends AbstractController(components) with LazyLogging with AuditConversions {
 
   def probe: Action[AnyContent] = action.async { implicit request =>
-    rtm.send(request.rtmQuery).flatMap { response =>
+    val authHandler = request.attrs(AuthorizationAttr.Key)
+    val rtmResponse = for {
+      // TODO: refactor actions and move the access logic into a separate action builder.
+      // TODO: this can be done after performance requirements are determined and met.
+      accessResult <- nino.enforce(authHandler.jwtString, request.rtmQuery.media, NinoClientAction.View)
+      _ <- utils.Predicate(accessResult)(new Exception(s"media [${request.rtmQuery.media}] does not have ${NinoClientAction.View} access"))
+      response <- rtm.send(request.rtmQuery)
+    } yield response
+
+    rtmResponse flatMap { response =>
       if (response.status == OK) {
-        val authHandler = request.attrs(AuthorizationAttr.Key)
         val streamingSessionToken = sessionData.createToken(authHandler.token, request.rtmQuery.media.getSortedFileIds)
 
         val auditEvents: List[EvidenceRecordBufferedEvent] =
@@ -33,7 +44,6 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
           ))
 
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
-
         audit.recordEndSuccess(auditEvents).map { _ =>
           val responseWithToken = response.json.as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingSessionToken))
           Ok(responseWithToken).as(contentType)

@@ -7,6 +7,7 @@ import models.auth.AuthorizationAttr
 import models.hls.{HeimdallHlsActionBuilder, HlsManifestFormatter, Watermark}
 import play.api.http.HttpEntity
 import play.api.mvc._
+import services.nino.{NinoClient, NinoClientAction}
 import services.rtm.RtmClient
 
 import scala.concurrent.ExecutionContext
@@ -14,6 +15,7 @@ import scala.concurrent.ExecutionContext
 class HlsController @Inject()(action: HeimdallHlsActionBuilder,
                               rtm: RtmClient,
                               watermark: Watermark,
+                              nino: NinoClient,
                               config: Config,
                               components: ControllerComponents)
                              (implicit ex: ExecutionContext)
@@ -21,7 +23,19 @@ class HlsController @Inject()(action: HeimdallHlsActionBuilder,
     with LazyLogging {
 
   def playlist: Action[AnyContent] = action.async { implicit request =>
-    rtm.send(request.rtmQuery) map { response =>
+    val authHandler = request.attrs(AuthorizationAttr.Key)
+    logger.warn("HlsPlaylistRequestIsCheckingForViewAccess-FIXME")()
+    val rtmResponse = for {
+      // TODO: refactor actions and move the access logic into a separate action builder.
+      // TODO: this can be done after performance requirements are determined and met.
+      accessResult <- nino.enforce(authHandler.jwtString, request.rtmQuery.media, NinoClientAction.View)
+      _ <- utils.Predicate(accessResult)(new Exception(
+        s"${request.path}: media [${request.rtmQuery.media}] does not have ${NinoClientAction.View} access"
+      ))
+      response <- rtm.send(request.rtmQuery)
+    } yield response
+
+    rtmResponse map { response =>
       if (response.status == OK) {
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/x-mpegURL")
         val newManifest =
@@ -45,7 +59,12 @@ class HlsController @Inject()(action: HeimdallHlsActionBuilder,
 
   def segment: Action[AnyContent] = action.async { implicit request =>
     val authHandler = request.attrs(AuthorizationAttr.Key)
+    logger.warn("HlsSegmentRequestIsCheckingForViewAccess-FIXME")()
     val rtmResponse = for {
+      // TODO: refactor actions and move the access logic into a separate action builder.
+      // TODO: this can be done after performance requirements are determined and met.
+      accessResult <- nino.enforce(authHandler.jwtString, request.rtmQuery.media, NinoClientAction.View)
+      _ <- utils.Predicate(accessResult)(new Exception(s"${request.path}: media [${request.rtmQuery.media}] does not have ${NinoClientAction.View} access"))
       queryWithWatermark <- watermark.augmentQuery(request.rtmQuery, authHandler.jwt)
       response <- rtm.send(queryWithWatermark)
     } yield response

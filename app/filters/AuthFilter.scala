@@ -48,7 +48,7 @@ class AxonAuthFilter @Inject()
         case Success(handlerDef) =>
           handlerDef.controller + "." + handlerDef.method
         case Failure(exception) =>
-          logger.error("unsupportedRequest")("message"->exception.getMessage, "path" -> requestHeader.path)
+          logger.error("unsupportedRequest")("message" -> exception.getMessage, "path" -> requestHeader.path)
           "unknown.unknown"
       }
       val endTime = System.currentTimeMillis

@@ -23,7 +23,7 @@ trait HeimdallRoutes {
   final val hlsSegment = "/media/hls/segment"
   final val thumbnail = "/media/thumbnail"
   final val mp3 = "/media/mp3"
-  final val streamed = "/media/streamed"
+  final val streamed = "/media/streamed" // Non-related to RTM.
 }
 
 object QueryHelper extends LazyLogging with HeimdallRoutes {
@@ -109,7 +109,6 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
       uuid <- Convert.tryToUuid(value)
     } yield uuid
   }
-
 
   private def filterQueryForRoute(route: String, query: Map[String, Seq[String]]): Option[QueryWithPath] = {
     route match {

@@ -2,6 +2,8 @@ package models.common
 
 import java.util.UUID
 
+import com.evidence.api.thrift.v1.{EntityDescriptor, TidEntities}
+
 import scala.collection.SortedSet
 
 case class FileIdent(fileId: UUID, evidenceId: UUID, partnerId: UUID)
@@ -12,6 +14,16 @@ case class MediaIdent(fileIds: List[UUID], evidenceIds: List[UUID], partnerId: U
       s"file_id=${listToString(fileIds)}&evidence_id=${listToString(evidenceIds)}&partner_id=$partnerId"
     } else {
       ""
+    }
+  }
+
+  def toEntityDescriptors: List[EntityDescriptor] = {
+    if (isValid(fileIds, evidenceIds)) {
+      evidenceIds.map(
+        evidenceId => EntityDescriptor(TidEntities.Evidence, evidenceId.toString, Option(partnerId.toString))
+      )
+    } else {
+      List()
     }
   }
 
