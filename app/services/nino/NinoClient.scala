@@ -1,26 +1,27 @@
 package services.nino
 
+import com.evidence.api.thrift.v1.EntityDescriptor
 import com.evidence.service.common.finagle.FinagleClient
-import com.evidence.service.thrift.v2.{Authorization, RequestInfo}
+import com.evidence.service.common.finagle.FutureConverters._
+import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.nino.api.thrift.{BatchAccessCheckRequest, Nino}
+import com.evidence.service.thrift.v2.{Authorization, RequestInfo}
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
-import models.common.MediaIdent
-import com.evidence.service.common.finagle.FutureConverters._
+
 import scala.concurrent.{ExecutionContext, Future}
 
 object NinoClientAction extends Enumeration {
   final val View = Value("view")
-  /** Stream is not currently supported */
   final val Stream = Value("stream")
 }
 
 trait NinoClient {
-  def enforce(jwtString: String, media: MediaIdent, action: NinoClientAction.Value): Future[Boolean]
+  def enforce(jwtString: String, entities: List[EntityDescriptor], action: NinoClientAction.Value): Future[Boolean]
 }
 
 @Singleton
-class NinoClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) extends NinoClient {
+class NinoClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) extends NinoClient with LazyLogging {
 
   private val client: Nino.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)
@@ -35,8 +36,8 @@ class NinoClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) ex
     Authorization(Option(authType), Option(secret))
   }
 
-  def enforce(jwtString: String, media: MediaIdent, action: NinoClientAction.Value): Future[Boolean] = {
-    val request = BatchAccessCheckRequest(jwtString, media.toEntityDescriptors, action.toString)
+  def enforce(jwtString: String, entities: List[EntityDescriptor], action: NinoClientAction.Value): Future[Boolean] = {
+    val request = BatchAccessCheckRequest(jwtString, entities, action.toString)
     client.enforceBatch(auth, request, RequestInfo()).map {
       seqOfAccessResults =>
         seqOfAccessResults.filter(!_.granted).isEmpty

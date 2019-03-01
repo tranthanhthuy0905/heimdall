@@ -24,13 +24,12 @@ class HlsController @Inject()(action: HeimdallHlsActionBuilder,
 
   def playlist: Action[AnyContent] = action.async { implicit request =>
     val authHandler = request.attrs(AuthorizationAttr.Key)
-    logger.warn("HlsPlaylistRequestIsCheckingForViewAccess-FIXME")()
     val rtmResponse = for {
       // TODO: refactor actions and move the access logic into a separate action builder.
       // TODO: this can be done after performance requirements are determined and met.
-      accessResult <- nino.enforce(authHandler.jwtString, request.rtmQuery.media, NinoClientAction.View)
+      accessResult <- nino.enforce(authHandler.jwtString, request.rtmQuery.media.toFileEntityDescriptors, NinoClientAction.Stream)
       _ <- utils.Predicate(accessResult)(new Exception(
-        s"${request.path}: media [${request.rtmQuery.media}] does not have ${NinoClientAction.View} access"
+        s"${request.path}: media [${request.rtmQuery.media}] does not have ${NinoClientAction.Stream} access"
       ))
       response <- rtm.send(request.rtmQuery)
     } yield response
@@ -59,12 +58,11 @@ class HlsController @Inject()(action: HeimdallHlsActionBuilder,
 
   def segment: Action[AnyContent] = action.async { implicit request =>
     val authHandler = request.attrs(AuthorizationAttr.Key)
-    logger.warn("HlsSegmentRequestIsCheckingForViewAccess-FIXME")()
     val rtmResponse = for {
       // TODO: refactor actions and move the access logic into a separate action builder.
       // TODO: this can be done after performance requirements are determined and met.
-      accessResult <- nino.enforce(authHandler.jwtString, request.rtmQuery.media, NinoClientAction.View)
-      _ <- utils.Predicate(accessResult)(new Exception(s"${request.path}: media [${request.rtmQuery.media}] does not have ${NinoClientAction.View} access"))
+      accessResult <- nino.enforce(authHandler.jwtString, request.rtmQuery.media.toFileEntityDescriptors, NinoClientAction.Stream)
+      _ <- utils.Predicate(accessResult)(new Exception(s"${request.path}: media [${request.rtmQuery.media}] does not have ${NinoClientAction.Stream} access"))
       queryWithWatermark <- watermark.augmentQuery(request.rtmQuery, authHandler.jwt)
       response <- rtm.send(queryWithWatermark)
     } yield response

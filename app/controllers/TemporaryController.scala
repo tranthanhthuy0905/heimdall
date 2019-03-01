@@ -18,8 +18,7 @@ import scala.util.{Failure, Success}
 
 // TODO Delete this controller and test routes after heimdall has sufficient unit tests and before launch in prod.
 // TODO XXX Ignore codacy warnings related to this controller.
-class TemporaryController @Inject()(
-                                     components: ControllerComponents,
+class TemporaryController @Inject()( components: ControllerComponents,
                                      sessions: SessionsClient,
                                      zookeeper: ZookeeperServerSet,
                                      dredd: DreddClient,

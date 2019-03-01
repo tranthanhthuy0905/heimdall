@@ -26,7 +26,7 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
     val rtmResponse = for {
       // TODO: refactor actions and move the access logic into a separate action builder.
       // TODO: this can be done after performance requirements are determined and met.
-      accessResult <- nino.enforce(authHandler.jwtString, request.rtmQuery.media, NinoClientAction.View)
+      accessResult <- nino.enforce(authHandler.jwtString, request.rtmQuery.media.toEvidenceEntityDescriptors, NinoClientAction.View)
       _ <- utils.Predicate(accessResult)(new Exception(s"media [${request.rtmQuery.media}] does not have ${NinoClientAction.View} access"))
       response <- rtm.send(request.rtmQuery)
     } yield response

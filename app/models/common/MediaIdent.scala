@@ -17,10 +17,20 @@ case class MediaIdent(fileIds: List[UUID], evidenceIds: List[UUID], partnerId: U
     }
   }
 
-  def toEntityDescriptors: List[EntityDescriptor] = {
+  def toEvidenceEntityDescriptors: List[EntityDescriptor] = {
     if (isValid(fileIds, evidenceIds)) {
       evidenceIds.map(
         evidenceId => EntityDescriptor(TidEntities.Evidence, evidenceId.toString, Option(partnerId.toString))
+      )
+    } else {
+      List()
+    }
+  }
+
+  def toFileEntityDescriptors: List[EntityDescriptor] = {
+    if (isValid(fileIds, evidenceIds)) {
+      fileIds.map(
+        fileIds => EntityDescriptor(TidEntities.File, fileIds.toString, Option(partnerId.toString))
       )
     } else {
       List()
