@@ -2,16 +2,18 @@ package controllers
 
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
-import models.auth.AuthorizationAttr
-import models.common.HeimdallActionBuilder
+import models.auth.{AuthorizationAttr, JWTWrapper}
+import models.common.{HeimdallActionBuilder, RtmQueryParams}
+import models.hls.Watermark
 import play.api.mvc._
 import services.nino.{NinoClient, NinoClientAction}
 import services.rtm.RtmClient
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ThumbnailController @Inject()(action: HeimdallActionBuilder,
                                     rtm: RtmClient,
+                                    watermark: Watermark,
                                     nino: NinoClient,
                                     components: ControllerComponents)
                                    (implicit ex: ExecutionContext)
@@ -27,7 +29,8 @@ class ThumbnailController @Inject()(action: HeimdallActionBuilder,
       _ <- utils.Predicate(accessResult)(
         new Exception(s"${request.path}: media [${request.rtmQuery.media}] does not have ${NinoClientAction.View} access")
       )
-      response <- rtm.send(request.rtmQuery)
+      maybeUpdatedQuery <- maybeAddLabel(request.rtmQuery, authHandler.jwt)
+      response <- rtm.send(maybeUpdatedQuery)
     } yield response
 
     rtmResponse map { response =>
@@ -43,6 +46,42 @@ class ThumbnailController @Inject()(action: HeimdallActionBuilder,
         InternalServerError
       }
     }
+  }
+
+  private def maybeAddLabel(query: RtmQueryParams, jwt: JWTWrapper): Future[RtmQueryParams] = {
+    /** isMulticam determines if heimdall is dealing with multicam request or not.
+      * Normally thumbnails multicam requests contain `customlayout`. However, in some cases when customlayout is not
+      * provided, RTM will ignore width and height values and generate thumbnails using `defaultLayout`.
+      * See https://git.taservs.net/ecom/rtm/blob/6a7a6d1d2b2413c244262b49c5dfd151c4b67145/src/rtm/server/core/combine.go#L130
+      * Because of the variety of use-cases, heimdall simply generates label for all multicam thumbnail requests.
+      */
+    if (isMulticam(query) || isResolutionHighEnough(query)) {
+      watermark.augmentQuery(query, jwt)
+    } else {
+      Future.successful(query)
+    }
+  }
+
+  private def isResolutionHighEnough(query: RtmQueryParams): Boolean = {
+    isAboveThreshold(query, "width", 400 ) &&
+      isAboveThreshold(query, "height", 200 )
+  }
+
+  /**
+    * isAboveThreshold checks if a certain parameter value is equal to or above a threshold.
+    *
+    *  @param query query map
+    *  @param paramName name of a parameter that will be validated.
+    *  @param threshold empirically chosen threshold value.
+    *  @return Boolean value indicating if validated parameter presents in the query and equal to or
+    *          greater than the threshold.
+    */
+  private def isAboveThreshold(query: RtmQueryParams, paramName: String, threshold: Int): Boolean = {
+    query.params.getOrElse(paramName, "0").toInt >= threshold
+  }
+
+  private def isMulticam(query: RtmQueryParams): Boolean = {
+    query.media.evidenceIds.length > 1
   }
 
 }
