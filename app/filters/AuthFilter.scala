@@ -2,6 +2,7 @@ package filters
 
 import akka.stream.Materializer
 import com.evidence.service.common.logging.LazyLogging
+import com.evidence.service.common.monitoring.statsd.utils.MetricUtils
 import javax.inject.Inject
 import models.auth.{AuthorizationAttr, Authorizer}
 import play.api.mvc.{Filter, RequestHeader, Result}
@@ -11,8 +12,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class AxonAuthFilter @Inject()
-  (implicit val mat: Materializer, ec: ExecutionContext, authorizer: Authorizer)
-  extends Filter with LazyLogging {
+(implicit val mat: Materializer, ec: ExecutionContext, authorizer: Authorizer)
+  extends Filter with LazyLogging with MetricUtils {
 
   // TODO delete /media/test routes from the nonRestrictedRoutes
   final val nonRestrictedRoutes = List(
@@ -26,37 +27,53 @@ class AxonAuthFilter @Inject()
   def apply(nextFilter: RequestHeader => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {
     val startTime = System.currentTimeMillis
-    if (isNonRestricted(requestHeader)) {
-      executeRequest(startTime, nextFilter, requestHeader)
-    } else {
-      authorizer.authorize(requestHeader).flatMap {
-        case Right(authData) =>
-          executeRequest(startTime, nextFilter, requestHeader.addAttr(AuthorizationAttr.Key, authData))
-        case Left(e) =>
-          Future.successful(e)
+    val actionName = getActionName(requestHeader)
+    time(s"heimdall.$actionName") {
+      if (isNonRestricted(requestHeader)) {
+        executeRequest(startTime, nextFilter, requestHeader, actionName)
+      } else {
+        authorizer.authorize(requestHeader).flatMap {
+          case Right(authData) =>
+            executeRequest(startTime, nextFilter, requestHeader.addAttr(AuthorizationAttr.Key, authData), actionName)
+          case Left(e) =>
+            Future.successful(e)
+        }
       }
     }
   }
 
-  private def isNonRestricted(requestHeader: RequestHeader) : Boolean = {
+  private def isNonRestricted(requestHeader: RequestHeader): Boolean = {
     nonRestrictedRoutes.contains(requestHeader.path)
   }
 
-  private def executeRequest(startTime: Long, nextFilter: RequestHeader => Future[Result], requestHeader: RequestHeader) : Future[Result] = {
+  private def executeRequest(
+                              startTime: Long,
+                              nextFilter: RequestHeader => Future[Result],
+                              requestHeader: RequestHeader,
+                              actionName: String): Future[Result] = {
     nextFilter(requestHeader).map { result =>
-      val action = Try(requestHeader.attrs(Router.Attrs.HandlerDef)) match {
-        case Success(handlerDef) =>
-          handlerDef.controller + "." + handlerDef.method
-        case Failure(exception) =>
-          logger.error("unsupportedRequest")("message" -> exception.getMessage, "path" -> requestHeader.path)
-          "unknown.unknown"
-      }
       val endTime = System.currentTimeMillis
       val requestTime = endTime - startTime
-      // TODO the log below should be replaced with metrics
-      logger.debug("requestComplete")("action" -> action, "durationMs" -> requestTime, "status" -> result.header.status)
+      logger.debug("requestComplete")(
+        "action" -> actionName,
+        "durationMs" -> requestTime,
+        "status" -> result.header.status,
+        "path" -> requestHeader.path
+      )
+      increment(s"heimdall.$actionName", Map("status" -> result.header.status.toString))
       result
     }
+  }
+
+  private def getActionName(requestHeader: RequestHeader): String = {
+    val action = Try(requestHeader.attrs(Router.Attrs.HandlerDef)) match {
+      case Success(handlerDef) =>
+        handlerDef.controller + "." + handlerDef.method
+      case Failure(exception) =>
+        logger.error("unsupportedRequest")("message" -> exception.getMessage, "path" -> requestHeader.path)
+        "unknown.unknown"
+    }
+    action
   }
 
 }
