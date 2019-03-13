@@ -2,7 +2,7 @@ package filters
 
 import akka.stream.Materializer
 import com.evidence.service.common.logging.LazyLogging
-import com.evidence.service.common.monitoring.statsd.utils.MetricUtils
+import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import javax.inject.Inject
 import models.auth.{AuthorizationAttr, Authorizer}
 import play.api.mvc.{Filter, RequestHeader, Result}
@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 
 class AxonAuthFilter @Inject()
 (implicit val mat: Materializer, ec: ExecutionContext, authorizer: Authorizer)
-  extends Filter with LazyLogging with MetricUtils {
+  extends Filter with LazyLogging with StrictStatsD {
 
   // TODO delete /media/test routes from the nonRestrictedRoutes
   final val nonRestrictedRoutes = List(
@@ -28,7 +28,8 @@ class AxonAuthFilter @Inject()
            (requestHeader: RequestHeader): Future[Result] = {
     val startTime = System.currentTimeMillis
     val actionName = getActionName(requestHeader)
-    time(s"heimdall.$actionName") {
+    val namespace = s"heimdall.$actionName"
+    executionTime(namespace) {
       if (isNonRestricted(requestHeader)) {
         executeRequest(startTime, nextFilter, requestHeader, actionName)
       } else {
@@ -54,13 +55,17 @@ class AxonAuthFilter @Inject()
     nextFilter(requestHeader).map { result =>
       val endTime = System.currentTimeMillis
       val requestTime = endTime - startTime
+      val namespace = s"heimdall.$actionName"
+      val tags = s"status:${result.header.status.toString.toLowerCase}"
       logger.debug("requestComplete")(
         "action" -> actionName,
         "durationMs" -> requestTime,
         "status" -> result.header.status,
-        "path" -> requestHeader.path
+        "path" -> requestHeader.path,
+        "datadogNamespace" -> namespace,
+        "datadogTags" -> tags
       )
-      increment(s"heimdall.$actionName", Map("status" -> result.header.status.toString))
+      statsd.increment(namespace, tags)
       result
     }
   }
