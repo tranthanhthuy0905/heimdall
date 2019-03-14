@@ -28,7 +28,7 @@ class AxonAuthFilter @Inject()
            (requestHeader: RequestHeader): Future[Result] = {
     val startTime = System.currentTimeMillis
     val actionName = getActionName(requestHeader)
-    executionTime(actionName) {
+    executionTime(s"$actionName.time") {
       if (isNonRestricted(requestHeader)) {
         executeRequest(startTime, nextFilter, requestHeader, actionName)
       } else {
@@ -62,7 +62,7 @@ class AxonAuthFilter @Inject()
         "path" -> requestHeader.path,
         "tags" -> tags
       )
-      statsd.increment(actionName, tags)
+      statsd.increment(s"$actionName.requests", tags)
       result
     }
   }
