@@ -28,8 +28,7 @@ class AxonAuthFilter @Inject()
            (requestHeader: RequestHeader): Future[Result] = {
     val startTime = System.currentTimeMillis
     val actionName = getActionName(requestHeader)
-    val namespace = s"heimdall.$actionName"
-    executionTime(namespace) {
+    executionTime(actionName) {
       if (isNonRestricted(requestHeader)) {
         executeRequest(startTime, nextFilter, requestHeader, actionName)
       } else {
@@ -55,17 +54,15 @@ class AxonAuthFilter @Inject()
     nextFilter(requestHeader).map { result =>
       val endTime = System.currentTimeMillis
       val requestTime = endTime - startTime
-      val namespace = s"heimdall.$actionName"
       val tags = s"status:${result.header.status.toString.toLowerCase}"
       logger.debug("requestComplete")(
         "action" -> actionName,
         "durationMs" -> requestTime,
         "status" -> result.header.status,
         "path" -> requestHeader.path,
-        "datadogNamespace" -> namespace,
-        "datadogTags" -> tags
+        "tags" -> tags
       )
-      statsd.increment(namespace, tags)
+      statsd.increment(actionName, tags)
       result
     }
   }
