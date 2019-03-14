@@ -4,6 +4,7 @@ import models.hls.{Watermark, WatermarkImpl}
 import org.apache.curator.framework.CuratorFramework
 import services.audit.{AuditClient, AuditClientImpl}
 import services.dredd.{DreddClient, DreddClientImpl}
+import services.global.HeimdallApplicationLifecycle
 import services.komrade.{KomradeClient, KomradeClientImpl}
 import services.nino.{NinoClient, NinoClientImpl}
 import services.rtm.{RtmClient, RtmClientImpl}
@@ -12,6 +13,7 @@ import services.zookeeper.{ZookeeperClientProvider, ZookeeperServerSet, Zookeepe
 
 class Module extends AbstractModule {
   override def configure() = {
+    bind(classOf[HeimdallApplicationLifecycle]).asEagerSingleton()
     // Bindings
     bind(classOf[AuditClient]).to(classOf[AuditClientImpl])
     bind(classOf[Authorizer]).to(classOf[AuthorizerImpl])
