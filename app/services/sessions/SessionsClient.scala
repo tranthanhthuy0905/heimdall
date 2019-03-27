@@ -34,7 +34,7 @@ class SessionsClientImpl @Inject()(config: Config)(implicit ec: ExecutionContext
     Option(config.getString("edc.service.sessions.thrift_auth_secret")))
 
   def getAuthorization(tokenType: SessionTokenType, token: String): Future[GetAuthorizationResponse] = {
-    client.getAuthorization(auth, GetAuthorizationRequest(tokenType, token)).toScalaFuture
+    client.getAuthorizationWithoutExtending(auth, GetAuthorizationRequest(tokenType, token)).toScalaFuture
   }
 
   def createSession(subject: EntityDescriptor,
