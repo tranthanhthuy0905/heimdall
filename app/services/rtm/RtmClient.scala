@@ -28,7 +28,7 @@ class RtmClientImpl @Inject()(dredd: DreddClient,
       presignedUrls <- Future.traverse(rtmQuery.media.toList)(dredd.getUrl)
       endpoint <- getEndpoint(rtmQuery.media.fileIds.head)
       request = RtmRequest(rtmQuery.path, endpoint, presignedUrls, rtmQuery.params)
-      response <- ws.url(request).withMethod("GET").stream
+      response <- ws.url(request).get()
     } yield response
   }
 
