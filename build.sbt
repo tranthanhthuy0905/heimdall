@@ -46,7 +46,7 @@ libraryDependencies ++= Seq(
 // Test
 libraryDependencies ++= Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,
-  "org.mockito" % "mockito-core" % "2.10.0" % Test
+  "org.mockito" % "mockito-core" % "2.21.0" % Test
 )
 
 // Exclusions
@@ -55,7 +55,6 @@ libraryDependencies ~= {
 }
 
 updateOptions := updateOptions.value.withCachedResolution(true)
-
 javaOptions in Test += "-Dconfig.file=conf/env/test.conf"
 
 // Exclude development configs from zip package
