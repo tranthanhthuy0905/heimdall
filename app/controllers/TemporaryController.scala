@@ -13,7 +13,7 @@ import services.komrade.KomradeClient
 import services.sessions.SessionsClient
 import services.zookeeper.ZookeeperServerSet
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 // TODO Delete this controller and test routes after heimdall has sufficient unit tests and before launch in prod.
@@ -25,6 +25,11 @@ class TemporaryController @Inject()( components: ControllerComponents,
                                      komrade: KomradeClient
                                    )(implicit assetsFinder: AssetsFinder, ex: ExecutionContext)
   extends AbstractController(components) with LazyLogging {
+
+  def throwException: Action[AnyContent] = Action.async {
+    throw new Exception("HELLO!!!")
+    Future.successful(Ok(Json.obj("status" -> "ok")))
+  }
 
   def getUser: Action[AnyContent] = Action.async {
     komrade.getUser("f3d719bc-db2b-4b71-bfb1-436240fb9099","bda513fe-cfb9-4acb-bb25-a665387c12bd") map { u =>

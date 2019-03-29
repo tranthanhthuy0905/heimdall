@@ -25,3 +25,4 @@ GET /media/test/get-url/:agencyId/:evidenceId/:fileId controllers.TemporaryContr
 GET /media/test/get-rtm/:key                          controllers.TemporaryController.getRtmInstance(key: String)
 GET /media/test/get-user                              controllers.TemporaryController.getUser
 GET /media/test/get-partner                           controllers.TemporaryController.getPartner
+GET /media/test/throw                                 controllers.TemporaryController.throwException

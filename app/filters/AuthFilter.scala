@@ -21,7 +21,8 @@ class AxonAuthFilter @Inject()
     "/media/test/create-session",
     "/media/test/get-session",
     "/media/test/get-user",
-    "/media/test/get-partner"
+    "/media/test/get-partner",
+    "/media/test/throw"
   )
 
   def apply(nextFilter: RequestHeader => Future[Result])
