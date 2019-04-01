@@ -34,13 +34,14 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
     rtmResponse flatMap { response =>
       if (response.status == OK) {
         val streamingSessionToken = sessionData.createToken(authHandler.token, request.rtmQuery.media.getSortedFileIds)
-
+        val remoteAddress = request.remoteAddress
+        logger.debug("probeRemoteAddress")("remoteAddress" -> remoteAddress)
         val auditEvents: List[EvidenceRecordBufferedEvent] =
           request.rtmQuery.media.toList.map(file => EvidenceRecordBufferedEvent(
             evidenceTid(file.evidenceId, file.partnerId),
             updatedByTid(authHandler.jwt),
             fileTid(file.fileId, file.partnerId),
-            request.remoteAddress
+            remoteAddress
           ))
 
         val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")

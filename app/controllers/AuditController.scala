@@ -19,12 +19,14 @@ class AuditController @Inject()(action: HeimdallActionBuilder,
   def recordMediaStreamedEvent: Action[AnyContent] = action.async { implicit request =>
     val authHandler = request.attrs(AuthorizationAttr.Key)
 
+    val remoteAddress = request.remoteAddress
+    logger.debug("recordMediaStreamedEventRemoteAddress")("remoteAddress" -> remoteAddress)
     val auditEvents: List[EvidenceFileStreamedEvent] =
       request.rtmQuery.media.toList.map(file => EvidenceFileStreamedEvent(
         evidenceTid(file.evidenceId, file.partnerId),
         updatedByTid(authHandler.jwt),
         fileTid(file.fileId, file.partnerId),
-        request.remoteAddress
+        remoteAddress
       ))
 
     audit.recordEndSuccess(auditEvents).map { _ =>

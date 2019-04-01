@@ -14,6 +14,8 @@ class HeimdallHlsActionBuilder @Inject()(defaultParser: BodyParsers.Default)
 
   override def invokeBlock[A](request: Request[A],
                               block: HeimdallRequest[A] => Future[Result]): Future[Result] = {
+    val remoteAddress = request.remoteAddress
+    logger.debug("heimdallHlsActionBuilderRemoteAddress")("remoteAddress" -> remoteAddress)
     QueryHelper(request.path, request.queryString) match {
       case Some(rtmQuery) =>
         getStreamingSessionToken(request) match {
