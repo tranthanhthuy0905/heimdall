@@ -40,25 +40,6 @@ edc.service.sessions {
 ./bin/sbt run
 ```
 
-#### Heimdall's test routes (will be removed before the launch):
-
-Note [2018-09-26]: agency, evidence, and file ID-s must be provided in UUID format, including '-'.<br/>
-I.e. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
-```
-# With partnerId: f3d719bc-db2b-4b71-bfb1-436240fb9099 and userId: bda513fe-cfb9-4acb-bb25-a665387c12bd
-
-curl 'http://localhost:9000/media/v0/test/create-session?partner=f3d719bc-db2b-4b71-bfb1-436240fb9099&user=bda513fe-cfb9-4acb-bb25-a665387c12bd'
-
-> {"status":"ok","response":"CreateSessionResponse(SessionAuthorization(2xrypzge7d570p94sw0n8dc05kh9868sclqelvdznew698e5pi,EntityDescriptor(Subscriber,DB20158D-E501-4F1E-9689-E2EDDA39068E,Some(F3D719BC-DB2B-4B71-BFB1-436240FB9099)),eyJraWQiOiI1ZjBlZTM4Y2YyYTdkZWVkY2Q5ZTFiNGFjZDYwYTQ3NSIsImFsZyI6IkhTMjU2In0.eyJzdWIiOiJkYjIwMTU4ZC1lNTAxLTRmMWUtOTY4OS1lMmVkZGEzOTA2OGUiLCJ2ZXIiOiIyIiwicm9sZXMiOltdLCJpc3MiOiJodHRwczpcL1wvYXV0aC5ldmlkZW5jZS5jb20iLCJzdWJfdHlwIjoiU3Vic2NyaWJlciIsImF1ZF90eXAiOiJQYXJ0bmVyIiwic3ViX2QiOiJmM2Q3MTliYy1kYjJiLTRiNzEtYmZiMS00MzYyNDBmYjkwOTkiLCJhdWQiOiJmM2Q3MTliYy1kYjJiLTRiNzEtYmZiMS00MzYyNDBmYjkwOTkiLCJzZCI6e30sIm5iZiI6MTU0MTgwNTE1OSwiYXVkX2QiOiJmM2Q3MTliYy1kYjJiLTRiNzEtYmZiMS00MzYyNDBmYjkwOTkiLCJzY29wZXMiOlsiZXZpZGVuY2UuYW55Lmxpc3QiLCJjYXNlcy5hbnkubW9kaWZ5Il0sImV4cCI6MTU0MTgxOTU1OCwiaWF0IjoxNTQxODA1MTU5LCJqdGkiOiI4OTdlMDUyOC0yYjhiLTQyYjItYjg2OS1iOGFiMGFlMDY0MDIifQ.FEzcBjlW9qBoqd9CO65a1pC1G0kLFaPOUtxBNsrQSsc,Bearer,2018-11-09T23:12:39Z,2018-11-10T03:12:38.984Z),AuthToken,Some({\"access_token\":\"2xrypzge7d570p94sw0n8dc05kh9868sclqelvdznew698e5pi\",\"token_type\":\"Bearer\",\"expires_in\":\"14399\",\"expires_on\":\"1541819558984\",\"not_before\":\"1541805159000\",\"version\":\"1\",\"entity\":{\"type\":\"Subscriber\",\"id\":\"db20158d-e501-4f1e-9689-e2edda39068e\",\"partner_id\":\"f3d719bc-db2b-4b71-bfb1-436240fb9099\"}}))"}%
-```
-```
-# With token: 2xrypzge7d570p94sw0n8dc05kh9868sclqelvdznew698e5pi
-
-curl 'http://localhost:9000/media/test/get-session?token=2xrypzge7d570p94sw0n8dc05kh9868sclqelvdznew698e5pi'
-
-> {"status":"ok","response":"SessionAuthorization(2xrypzge7d570p94sw0n8dc05kh9868sclqelvdznew698e5pi,EntityDescriptor(Subscriber,DB20158D-E501-4F1E-9689-E2EDDA39068E,Some(F3D719BC-DB2B-4B71-BFB1-436240FB9099)),eyJraWQiOiI1ZjBlZTM4Y2YyYTdkZWVkY2Q5ZTFiNGFjZDYwYTQ3NSIsImFsZyI6IkhTMjU2In0.eyJzdWIiOiJkYjIwMTU4ZC1lNTAxLTRmMWUtOTY4OS1lMmVkZGEzOTA2OGUiLCJ2ZXIiOiIyIiwicm9sZXMiOltdLCJpc3MiOiJodHRwczpcL1wvYXV0aC5ldmlkZW5jZS5jb20iLCJzdWJfdHlwIjoiU3Vic2NyaWJlciIsImF1ZF90eXAiOiJQYXJ0bmVyIiwic3ViX2QiOiJmM2Q3MTliYy1kYjJiLTRiNzEtYmZiMS00MzYyNDBmYjkwOTkiLCJhdWQiOiJmM2Q3MTliYy1kYjJiLTRiNzEtYmZiMS00MzYyNDBmYjkwOTkiLCJzZCI6e30sIm5iZiI6MTU0MTgwNTM2NiwiYXVkX2QiOiJmM2Q3MTliYy1kYjJiLTRiNzEtYmZiMS00MzYyNDBmYjkwOTkiLCJzY29wZXMiOlsiZXZpZGVuY2UuYW55Lmxpc3QiLCJjYXNlcy5hbnkubW9kaWZ5Il0sImV4cCI6MTU0MTgxOTU1OCwiaWF0IjoxNTQxODA1MzY2LCJqdGkiOiIzY2ExYjYxNy1kNWNmLTQyNDAtYjBmMi03MjZhZDI2OTg4MmMifQ.fnYGZnx3Vh96tWwoeq7cbqoDH2gSFDsRI1GkGLmUnNk,Bearer,2018-11-09T23:16:06Z,2018-11-10T03:12:38.984Z)"}%
-```
-
 #### HLS API:
 
 1. Find or create a valid axon session cookie

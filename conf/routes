@@ -10,19 +10,8 @@ GET /media/alive controllers.HealthController.isItUp
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GET /media/start controllers.ProbeController.probe
-
 GET /media/streamed controllers.AuditController.recordMediaStreamedEvent
-
 GET /media/thumbnail controllers.ThumbnailController.thumbnail
-
 GET /media/hls/master  controllers.HlsController.playlist
 GET /media/hls/variant controllers.HlsController.playlist
 GET /media/hls/segment controllers.HlsController.segment
-
-GET /media/test/create-session                        controllers.TemporaryController.createSession
-GET /media/test/get-session                           controllers.TemporaryController.getSession
-GET /media/test/get-url/:agencyId/:evidenceId/:fileId controllers.TemporaryController.getUrl(agencyId: java.util.UUID, evidenceId: java.util.UUID, fileId: java.util.UUID)
-GET /media/test/get-rtm/:key                          controllers.TemporaryController.getRtmInstance(key: String)
-GET /media/test/get-user                              controllers.TemporaryController.getUser
-GET /media/test/get-partner                           controllers.TemporaryController.getPartner
-GET /media/test/throw                                 controllers.TemporaryController.throwException
