@@ -7,7 +7,7 @@ object Common {
   val scalaTestVersion = "3.0.5"
   val scalaMockVersion = "4.1.0"
   val json4sTestVersion = "3.5.3"
-  val serviceThriftVersion = "23.36.1679"
+  val serviceThriftVersion = "23.43.1773"
 
   val resolvers = Seq(
     "Nexus" at "https://nexus.taservs.net/content/groups/public",
