@@ -19,6 +19,8 @@ class HeimdallApplicationLifecycle @Inject()(lifecycle: ApplicationLifecycle, co
     new StatsdConfig(config)
   )
 
+  ServiceGlobal.statsd.increment("startup")
+
   logger.info("heimdallApplicationLifecycle")("message" -> "Nagios and StatsD Checks Initialized")
   lifecycle.addStopHook { () =>
     Future.successful(ServiceGlobal.shutdown())
