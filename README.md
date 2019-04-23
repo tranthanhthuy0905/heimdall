@@ -3,101 +3,132 @@
 ## Naming
 Heimdall the Gatekeeper is a servant of All-Father and ally of Thor. He was the guardian of Asgard, standing on the rainbow bifrost bridge and denying access to any unauthorised beings.
 
-## Running
+## Documentation
 
-```bash
+### Run Book
+
+Run Book is located in [./doc/run-book.md](https://git.taservs.net/ecom/heimdall/blob/master/doc/run-book.md).
+
+### Heimdall dependencies
+
+![heimdall-dependencies](https://git.taservs.net/ecom/heimdall/blob/master/doc/heimdall-dependencies.svg)
+
+#### Updating diagrams
+
+Sources and generated diagrams can be found in [`./doc/`](https://git.taservs.net/ecom/heimdall/tree/master/doc) of the repository.<br/>
+
+There are two diagrams:
+* Heimdall Dependencies diagram reflecting Heimdall's direct relationships (`heimdall-dependencies.dot`).
+* Heimdall HLS sequence diagram reflecting flow of Heimdall calls to other services during HLS (`heimdall-hls-work-flow.sequence`).
+
+The Heimdall Dependencies diagram uses [The DOT Language](https://www.graphviz.org/doc/info/lang.html) syntax.<br/>
+ `heimdall-dependencies.svg` is generated out of `heimdall-dependencies.dot` by running:
+```
+dot -Tsvg heimdall-dependencies.dot > heimdall-dependencies.svg
+``` 
+
+HLS work flow diagram uses syntax and powered by https://www.websequencediagrams.com/. 
+In order to update `heimdall-hls-work-flow`, use WebWequenceDiagrams' editor and SVG generator.
+
+## Run and Debug Heimdall Locally
+
+This instruction explains how to hit Heimdall directly and have it to contact QA/Dev services.
+I.e. the requests will not hit `nginx` and have it forward traffic to the local Heimdall.
+Forwarding requests though `nginx` will require changes to `nginx` config in Dev or QA.
+
+**1. Update application config**
+
+Copy `/opt/heimdall/heimdall/conf/application.conf` from heimdall host of an environment that the local 
+instance of heimdall is going to connect to.<br/>
+Replace `./conf/env/localdev.conf` with `application.conf`.<br/>
+Update `api_prefix` in `./conf/env/localdev.conf` as following: `heimdall.api_prefix = ""`.
+
+**2. Run heimdall**
+
+```
 ./bin/sbt run
 ```
+Endpoint named `/media/alive` can be requested by `curl` or simply through the browser: <http://localhost:9000/media/alive>.
 
-And then go to <http://localhost:9000/media/alive> to see the healthcheck endpoint.
-
-
-### Testing API
-* Update conf/env/localdev.conf with dev twobox number and thrift_auth_secret. For example:
-```
-service {
-  environment {
-    type = "dbox001" # twobox number
-  }
-  properties = {}
-}
-```
-Provide dredd thrift auth secret.
-It can be found on machine hosting dredd-service in /opt/dredd-service/dredd-service/conf/application.conf.
-```
-edc.service.dredd {
-  thrift_auth_secret = "05FF04474A8B4049AB59579FA9469272"
-}
-```
-The same for sessions-service, see:
-```
-edc.service.sessions {
-  thrift_auth_secret = "wED6ff2yzJZXcAI99e9dB7+H64vG4la2"
-}
-```
-* Start the service
-```
-./bin/sbt run
-```
-
-#### HLS API:
-
-1. Find or create a valid axon session cookie
-2. Run probe request, and receive streamingSessionToken 
-3. Use cookie and the token for HLS and thumbnail requests
+**3. Using Heimdall API**
 
 ```
-# Probe:
-curl -v  --cookie "AXONSESSION=1jmhyqyo8s8qva2bum9hw9w5z8c1s013rnircigd44tvztz96j" 'http://localhost:9000/media/start?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&index=0&offset=0' 
+export FILEID=815fc051-e956-4ea8-aa08-f634338d3a95
+export EVIDENCEID=edd113b6-74ef-4f58-919a-38567f8ff88c
+export PARTNERID=48f4901b-3d7b-4fb9-9ed3-54c596d052bf
+export USERID=f081396a-b496-40e7-bfdd-1f33f9f8bcef
 
-# Master:
-ffplay 'http://localhost:9000/media/hls/master?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&streamingSessionToken=u0YQazkQ0Y4OeCNhSaiRpW2RNmSPR46MsrkuNcJv5Oo='  -headers 'Cookie: AXONSESSION=2tffd7bp6pm6jz4ogbs9g7z9g7ttcx3gvscw5wcdnoq4ykullm'
+# Log into your agency and copy AXONSESSION cookie:
+#
+export COOKIE=vqdzw5fx0folp8ljdmlqpsnp0fb64b6sttdx7exgwtfclxd67
+
+# Run probe request to generate streamingSessionToken: 
+#
+curl -v --cookie "AXONSESSION=$COOKIE" "http://localhost:9000/media/start?file_id=$FILEID&evidence_id=$EVIDENCEID&partner_id=$PARTNERID&level=0&index=0&offset=0"
+
+# Save streamingSessionToken:
+#
+export SSTOKEN=db6cMxwE7m6ALKsfBByG7mNpCEZZsKCGvxBohfOUn9c=
+
+# Use cookie and streamingSessionToken to start a HLS playback session:
+#
+ffplay "http://localhost:9000/media/hls/master?file_id=$FILEID&evidence_id=$EVIDENCEID&partner_id=$PARTNERID&offset=0&streamingSessionToken=$SSTOKEN" -headers "Cookie: AXONSESSION=$COOKIE"
+
 
 # Variant:
-ffplay 'http://localhost:9000/media/hls/variant?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&streamingSessionToken=u0YQazkQ0Y4OeCNhSaiRpW2RNmSPR46MsrkuNcJv5Oo='  -headers 'Cookie: AXONSESSION=2tffd7bp6pm6jz4ogbs9g7z9g7ttcx3gvscw5wcdnoq4ykullm'
+#
+ffplay "http://localhost:9000/media/hls/variant?file_id=$FILEID&evidence_id=$EVIDENCEID&partner_id=$PARTNERID&offset=0&level=0&streamingSessionToken=$SSTOKEN" -headers "Cookie: AXONSESSION=$COOKIE"
 
 # Segment:
-curl -v --cookie "AXONSESSION=2ux6qd1b12z82rdr5ywjn695wv1pcv2c1ib3dm983z0aq69zh3" 'http://localhost:9000/media/hls/segment?file_id=4f706842-e602-4287-b80b-a74b09d8995a&evidence_id=31b4f97f-20cd-40de-acb8-7a6fe95357eb&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&level=0&index=0&offset=0&start=0&fast=1&label=AWESOME_LABEL&streamingSessionToken=u0YQazkQ0Y4OeCNhSaiRpW2RNmSPR46MsrkuNcJv5Oo=' | ffplay -
+#
+curl -v --cookie "AXONSESSION=$COOKIE" "http://localhost:9000/media/hls/segment?file_id=$FILEID&evidence_id=$EVIDENCEID&partner_id=$PARTNERID&level=0&index=0&offset=0&start=0&fast=1&label=AWESOME_LABEL&streamingSessionToken=$SSTOKEN" | ffplay -
 
 # Thumbnail:
-ffplay 'http://localhost:9000/media/thumbnail?file_id=79aea236e59442ccae2c6cd95af937d8&evidence_id=2b111cf1-d42b-4edd-b0ed-1a5d63f81b23&partner_id=f3d719bc-db2b-4b71-bfb1-436240fb9099&time=57&width=120&height=52&autorotate=true&streamingSessionToken=u0YQazkQ0Y4OeCNhSaiRpW2RNmSPR46MsrkuNcJv5Oo=' -headers 'Cookie: AXONSESSION=2rvqb4wcqh3xubuaea8xqmvo8msuddq9pmxzckwx48djzdfptd'
+#
+ffplay "http://localhost:9000/media/thumbnail?file_id=$FILEID&evidence_id=$EVIDENCEID&partner_id=$PARTNERID&time=57&width=120&height=52&autorotate=true&streamingSessionToken=$SSTOKEN" -headers "Cookie: AXONSESSION=$COOKIE"
 
 ```
 
 ## Heimdall Anatomy
 ```
-app                        → Application sources
- └ controllers             → Heimdall controllers
- └ models                  → Application business layer
-    └ auth                 → Axon request authorization model
- └ services                → Heimdall's dependencies clients 
-    └ dredd                → [dredd-service](https://git.taservs.net/ecom/dredd-service) client 
-    └ sessions             → [sessions](https://git.taservs.net/ecom/sessions) client 
-build.sbt                  → Application build script
-conf                       → Configurations files and other non-compiled resources (on classpath)
- └ env                     → Environment configurations directory
-    └ key_manager.conf     → Defins edc key values, Id-s, and types
-    └ localdev.conf        → Development configuration
-    └ test.conf            → Currently unused, meant for unit testing configuration
- └ application.conf        → Main configuration file
- └ filters.conf            → Play framework filters, such as CSRFFilter, AllowedHostFilters, and SecurityHeadersFilters
- └ logback.xml             → Logs configuration file
- └ reference.conf          → Default settings, reference.conf files are aggregated together at runtime, and they are overridden by any settings defined in the application.conf
- └ routes                  → Routes definition
-project                    → sbt configuration files
- └ build.properties        → Marker for sbt project
- └ Common.scala            → Common settings or code of the root projects
- └ ConfigurationHook.scala → Hooking into Play’s dev mode
- └ plugins.sbt             → sbt plugins including the declaration for Play itself
-lib                        → Unmanaged libraries dependencies
-logs                       → Logs folder
- └ application.log         → Default log file
-target                     → Generated stuff
- └ scala-2.XX
-    └ classes              → Compiled class files
-    └ routes               → Sources generated from routes
-    └ twirl                → Sources generated from templates
-    └ ...
- └ universal               → Application packaging
-test                       → source folder for unit or functional tests
+├── app                         → Application sources
+│   ├── controllers             → Heimdall controllers
+│   ├── filters                 → Heimdall's custom filters 
+│   ├── models                  → Application business layer
+│   │   ├── auth                → Axon request authorization model
+│   │   ├── common
+│   │   └── hls
+│   ├── services                → Heimdall's dependencies 
+│   │   ├── audit               → Audit client
+│   │   ├── dredd               → Dredd client
+│   │   ├── global              → Heimdall application lifecycle
+│   │   ├── komrade             → Komrade client
+│   │   ├── nino                → Nino client
+│   │   ├── rtm                 → RTM client
+│   │   ├── sessions            → Sessions-service client 
+│   │   └── zookeeper
+│   └── utils
+├── build.sbt                   → Application build script
+├── build.sh                    → TeamCity build, test, and packing script
+├── common.sbt                  → Common settings
+├── conf                        → Configuration files and other non-compiled resources (on classpath)
+│   ├── application.conf        → Main configuration file
+│   ├── env                     → Environment configuration directory
+│   │   ├── key_manager.conf    → Definitions of edc key values, IDs, and types
+│   │   ├── localdev.conf       → Development configuration
+│   │   └── test.conf           → Currently unused, meant for unit testing configuration
+│   ├── filters.conf            → Play framework filters, such as CSRFFilter, AllowedHostFilters, and SecurityHeadersFilters
+│   ├── logback.xml             → Logs configuration file
+│   ├── reference.conf          → Default settings, reference.conf files are aggregated together at runtime, and they are overridden by any settings defined in the application.conf
+│   └── routes                  → Routes definitions
+├── doc
+│   └── run-book.md             → Heimdall's Run Book
+├── project
+│   ├── Common.scala            → Common settings or code of the root projects
+│   ├── ConfigurationHook.scala → Hooking into Play’s dev mode
+│   ├── build.properties        → Marker for sbt project
+│   └── plugins.sbt             → sbt plugins including the declaration for Play itself
+├── test                        → Source folder for unit or functional tests
+├── tests.sh
+└── version.sbt                 → Definition of the service version
 ```
