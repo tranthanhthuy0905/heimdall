@@ -20,7 +20,7 @@ Heimdall is meant to serve as a proxy for on-demand media streaming service.
 
 > What kind of system is this? Web-connected order processing? Back-end batch system? Internal HTTP-based API? ETL control system?
 
-Internal REST API for on-demand HLS, thumbnails generation, and submitting streaming related audit events. 
+Internal REST API for on-demand HTTP Live Streaming (HLS), thumbnails generation, and submitting streaming related audit events. 
 Heimdall is written in Scala, based on Play Framework (https://www.playframework.com).
 
 Heimdall determines which ODT2/RTM URL should be used for a given key, where the key is an evidence `file_id`.<br/>
@@ -100,14 +100,14 @@ The Heimdall HLS Work Flow diagram uses syntax and powered by https://www.webseq
 
 |                  |QA|US2|BR1|EU1|
 |:-----------------|:---:|:---:|:---:|:---:|
-|activation date   |[2019/03/28](https://git.taservs.net/ops/puppet/pull/7272)|[2019/04/16](https://git.taservs.net/ops/puppet/pull/7556)|ETA: 2019/04/26-2019/05/03|
+|activation date   |[2019/03/28](https://git.taservs.net/ops/puppet/pull/7272)|[2019/04/16](https://git.taservs.net/ops/puppet/pull/7556)|[2019/04/30](https://git.taservs.net/ops/puppet/pull/7738)||
 |hostname          |qus1uw2lhdl001|sus2uw1lhdl001|pbr1se1lhdl001|-|
 |num of instances  |1|1|1|-|
 |cloud             |AWS|Azure|AWS|AWS|
-|instance type     |m3.large|Standard_DS3_v2|[TBD](https://taserintl.atlassian.net/browse/SP1-1827)|-|
-|terraform PR #     |[1180](https://git.taservs.net/ops/terraform/pull/1180)|[1250](https://git.taservs.net/ops/terraform/pull/1250)|-|-|
+|instance type     |m3.large|Standard_DS3_v2|m3.large|-|
+|terraform PR #     |[1180](https://git.taservs.net/ops/terraform/pull/1180)|[1250](https://git.taservs.net/ops/terraform/pull/1250)|[1287](https://git.taservs.net/ops/terraform/pull/1287)|-|
 |port #            |9438|9438|9438|9438|
-|debug port #      |9448|9448|9448|9438|
+|debug port #      |9448|9448|9448|9448|
 
 ### Expected traffic and load
 
@@ -151,11 +151,12 @@ Secrets are managed per environment by
 
 ### Log aggregation solution, metrics and health checks
 
-|                  |QA|US2|
-|:-----------------|:---:|:---:|
-|nagios/thruk board|_[qus1uw2lhdl001](https://thruk.taservs.net/thruk/cgi-bin/extinfo.cgi?type=1&host=qus1uw2lhdl001)_|_[sus2uw1lhdl001](https://thruk.us2.taservs.net/thruk/cgi-bin/extinfo.cgi?type=1&host=sus2uw1lhdl001)_|
-|datadog board     |_[heimdall board](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall)_||
-|splunk board      |_[heimdall qa info](https://dus1uw2lspm001.taservs.net/en-US/app/search/heimdall_qa)_|_[heimdall us2 info](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=sus2)_|
+|                  |QA|US2|BR1|
+|:-----------------|:---:|:---:|:---:|
+|nagios/thruk board|[qus1uw2lhdl001](https://thruk.taservs.net/thruk/cgi-bin/extinfo.cgi?type=1&host=qus1uw2lhdl001)|[sus2uw1lhdl001](https://thruk.us2.taservs.net/thruk/cgi-bin/extinfo.cgi?type=1&host=sus2uw1lhdl001)|https://nagios.br1.taservs.net/|
+|datadog board     |[QA during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=q&tpl_var_dep=us1)|[US2 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=s&tpl_var_dep=us2)|[BR1 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=p&tpl_var_dep=br1)|
+|splunk board      |[QA log aggregation](https://dus1uw2lspm001.taservs.net/en-US/app/search/heimdall_qa)|[US2 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=sus2)|[BR1 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=pbr1)|
+
 
 ## Operational tasks
 
