@@ -1,6 +1,8 @@
 # Heimdall Run Book
 
-_Document Revision Date: 2019-04-23_ 
+_Document Revision Date: 2019-05-02_ 
+
+If you got yourself on call and reading this document, see [Troubleshooting](https://git.taservs.net/ecom/heimdall/blob/master/doc/run-book.md#troubleshooting).
 
 ## Service overview
 
@@ -200,10 +202,30 @@ Currently, load testing is under development. However, the script allows to test
 
 > How should troubleshooting happen? What tools are available?
 
-* Check nagios dashboards.
-* Check the `Error Rate` splunk dashboard in [qa](https://dus1uw2lspm001.taservs.net/en-US/app/search/heimdall_qa) or in [staging and prod](https://splunk.taservs.net/en-US/app/search/heimdall).
+##### Symptoms
+
+If Heimdall VM or the service or dependencies are down:
+* Evidence detail page media playback won't be possible
+* Thumbnails won't be generated
+* Streamed audit event won't be emitted 
+* Media requests will return error HTTP code
+* Nagios alerts will be triggered
+
+Keep in mind that it's unlikely that Heimdall service is down because Heimdall is set up to restart automatically by `systemd`.
+
+##### List of actions
+* *Don't panic.*
+* Check the `Error Count` splunk dashboard in [qa](https://dus1uw2lspm001.taservs.net/en-US/app/search/heimdall_qa) or in [staging and prod](https://splunk.taservs.net/en-US/app/search/heimdall).
 * Check DataDog [dashboard](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall).
-* While being connected to VPN, `ssh` to the host and check logs `/var/log/heimdall/heimdall`.
+* Make sure Heimdall host(s) is(are) up with Nagios.
+  * If Heimdall host(s) is(are) down, go to AWS or Azure console and start the VM(s).
+    * If starting hosts from AWS or Azure console didn't help, escalate to SRE using **#operations** slack channel and **@sre_team** slack group tag.
+* Connect to VPN.
+* Ssh to the host `ssh pxx1xx2lhdl001`.
+* Check logs in `sudo cat /var/log/heimdall/heimdall | grep -i "error\|warn\|exception"`.
+* Check Heimdall status `sudo systemctl status heimdall`.
+  * If Heimdall service is down, start it `sudo systectl start heimdall; sleep 1; sudo systemctl status heimdall`.
+  * Escalate to the service owners.
 
 ## Maintenance tasks
 
