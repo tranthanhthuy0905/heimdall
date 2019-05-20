@@ -5,10 +5,11 @@ import javax.inject.Inject
 import models.auth.{AuthorizationAttr, StreamingSessionData}
 import models.common.HeimdallActionBuilder
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc._
+import play.api.libs.ws.WSResponse
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Results}
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
 import services.nino.{NinoClient, NinoClientAction}
-import services.rtm.RtmClient
+import services.rtm.{RtmClient, RtmResponseHandler}
 import utils.RequestUtils
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,28 +34,34 @@ class ProbeController @Inject()(action: HeimdallActionBuilder,
     } yield response
 
     rtmResponse flatMap { response =>
-      if (response.status == OK) {
-        val streamingSessionToken = sessionData.createToken(authHandler.token, request.rtmQuery.media.getSortedFileIds)
-        val auditEvents: List[EvidenceRecordBufferedEvent] =
-          request.rtmQuery.media.toList.map(file => EvidenceRecordBufferedEvent(
-            evidenceTid(file.evidenceId, file.partnerId),
-            updatedByTid(authHandler.jwt),
-            fileTid(file.fileId, file.partnerId),
-            RequestUtils.getClientIpAddress(request)
-          ))
+      RtmResponseHandler(response, (_: WSResponse) => Results.Ok, Seq[(String, Any)](
+        "path" -> request.rtmQuery.path,
+        "media" -> request.rtmQuery.media,
+        "status" -> response.status,
+        "message" -> response.body
+      )) match {
+        case Results.Ok =>
+          val streamingSessionToken = sessionData.createToken(authHandler.token, request.rtmQuery.media.getSortedFileIds)
 
-        val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
-        audit.recordEndSuccess(auditEvents).map { _ =>
-          val responseWithToken = response.json.as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingSessionToken))
-          Ok(responseWithToken).as(contentType)
-        } recoverWith {
-          case exception: Exception =>
-            logger.error(exception, "failedToSendProbeAuditEvent")("exception" -> exception.getMessage)
-            Future.successful(InternalServerError(Json.obj("exception" -> exception.getMessage)))
-        }
-      } else {
-        logger.error("unexpectedProbeRequestReturnCode")("status" -> response.status)
-        Future.successful(InternalServerError)
+          val auditEvents: List[EvidenceRecordBufferedEvent] =
+            request.rtmQuery.media.toList.map(file => EvidenceRecordBufferedEvent(
+              evidenceTid(file.evidenceId, file.partnerId),
+              updatedByTid(authHandler.jwt),
+              fileTid(file.fileId, file.partnerId),
+              RequestUtils.getClientIpAddress(request)
+            ))
+
+          val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("application/json")
+          audit.recordEndSuccess(auditEvents).map { _ =>
+            val responseWithToken = response.json.as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingSessionToken))
+            Ok(responseWithToken).as(contentType)
+          } recoverWith {
+            case exception: Exception =>
+              logger.error(exception, "failedToSendProbeAuditEvent")("exception" -> exception.getMessage)
+              Future.successful(InternalServerError(Json.obj("exception" -> exception.getMessage)))
+          }
+        case notOk =>
+          Future.successful(notOk)
       }
     }
   }

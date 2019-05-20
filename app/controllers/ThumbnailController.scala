@@ -1,13 +1,13 @@
 package controllers
 
-import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import models.auth.{AuthorizationAttr, JWTWrapper}
 import models.common.{HeimdallActionBuilder, RtmQueryParams}
 import models.hls.Watermark
-import play.api.mvc._
+import play.api.libs.ws.WSResponse
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.nino.{NinoClient, NinoClientAction}
-import services.rtm.RtmClient
+import services.rtm.{RtmClient, RtmResponseHandler}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,8 +17,7 @@ class ThumbnailController @Inject()(action: HeimdallActionBuilder,
                                     nino: NinoClient,
                                     components: ControllerComponents)
                                    (implicit ex: ExecutionContext)
-  extends AbstractController(components)
-    with LazyLogging {
+  extends AbstractController(components) {
 
   def thumbnail: Action[AnyContent] = action.async { implicit request =>
     val authHandler = request.attrs(AuthorizationAttr.Key)
@@ -33,18 +32,18 @@ class ThumbnailController @Inject()(action: HeimdallActionBuilder,
       response <- rtm.send(maybeUpdatedQuery)
     } yield response
 
+    val okCallback = (response: WSResponse) => {
+      val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("image/jpeg")
+      Ok.chunked(response.bodyAsSource).as(contentType)
+    }
+
     rtmResponse map { response =>
-      if (response.status == OK) {
-        val contentType = response.headers.get("Content-Type").flatMap(_.headOption).getOrElse("image/jpeg")
-        Ok.chunked(response.bodyAsSource).as(contentType)
-      } else {
-        logger.error("unexpectedThumbnailReturnCode")(
-          "path" -> request.rtmQuery.path,
-          "status" -> response.status,
-          "message" -> response.body
-        )
-        InternalServerError
-      }
+      RtmResponseHandler(response, okCallback, Seq[(String, Any)](
+        "path" -> request.rtmQuery.path,
+        "media" -> request.rtmQuery.media,
+        "status" -> response.status,
+        "message" -> response.body
+      ))
     }
   }
 
