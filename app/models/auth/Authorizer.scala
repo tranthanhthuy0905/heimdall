@@ -4,6 +4,7 @@ import com.evidence.api.thrift.v1.SessionTokenType
 import com.evidence.service.common.auth.jwt.VerifyingJWTParser
 import com.evidence.service.common.auth.{CachingJOSEComponentFactory, KeyManager}
 import com.evidence.service.common.logging.LazyLogging
+import com.evidence.service.sessions.api.thrift.v1.SessionsServiceErrorCode
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
 import play.api.libs.typedmap.TypedKey
@@ -37,18 +38,25 @@ class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implici
           case Right(authData) => Right(authData)
         }
       case None =>
-        logger.error("failedToFindACookie")("message" -> "Could not find Axon Cookie")
+        logger.warn("failedToFindCookie")("message" -> "Could not find Axon Cookie")
         Future.successful(Left(Results.Unauthorized))
     }
   }
 
   private def getAuthorizationData(token: String): Future[Either[Result, AuthorizationData]] = {
-    sessions.getAuthorization(SessionTokenType.SessionCookie, token) map { u =>
-      parser.parse(u.authorization.jwt) match {
-        case Right(jwt) => Right(AuthorizationData(JWTWrapper(jwt), token, u.authorization.jwt))
-        case Left(error) =>
-          logger.error("failedToParseAuthToken")("token" -> u.authorization.jwt, "error" -> error)
-          Left(Results.Unauthorized)
+    sessions.getAuthorization(SessionTokenType.SessionCookie, token) map { response =>
+      response match {
+        case Right(response) => parser.parse(response.authorization.jwt) match {
+          case Right(jwt) => Right(AuthorizationData(JWTWrapper(jwt), token, response.authorization.jwt))
+          case Left(error) =>
+            logger.warn("failedToParseAuthToken")("token" -> response.authorization.jwt, "error" -> error)
+            Left(Results.Unauthorized)
+        }
+        case Left(sessionErrorCode) =>
+          sessionErrorCode match {
+            case SessionsServiceErrorCode.NotFound => Left(Results.NotFound)
+            case _ => Left(Results.InternalServerError)
+          }
       }
     }
   }
