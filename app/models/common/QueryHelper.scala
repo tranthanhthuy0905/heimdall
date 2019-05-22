@@ -28,10 +28,9 @@ trait HeimdallRoutes {
 
 object QueryHelper extends LazyLogging with HeimdallRoutes {
 
-  case class MediaRoute(rtmPath: String, whitelistedParams: List[String])
-
-  case class QueryWithPath(rtmPath: String, params: Map[String, String])
-
+  /**
+    * TODO: Heimdall and RTM are case sensitive. This may cause issues with processing of requests.
+    */
   final val commonParams = List(
     "offset",
     "selectaudio",
@@ -41,8 +40,10 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
     "t", "l", "w", "h",
     "fast",
     "dants",
-    "disablebframes",
-    "autorotate"
+    "disableBFrames",
+    "autorotate",
+    "autoFixPTS",
+    "streamingSessionToken"
   )
 
   final val hlsVariantParams = List(
@@ -112,22 +113,37 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
 
   private def filterQueryForRoute(route: String, query: Map[String, Seq[String]]): Option[QueryWithPath] = {
     route match {
-      case str if str startsWith hlsMaster => Some(filterAllowedParams(query, heimdallToRtmRoutes(hlsMaster)))
-      case str if str startsWith hlsVariant => Some(filterAllowedParams(query, heimdallToRtmRoutes(hlsVariant)))
-      case str if str startsWith hlsSegment => Some(filterAllowedParams(query, heimdallToRtmRoutes(hlsSegment)))
-      case str if str startsWith probe => Some(filterAllowedParams(query, heimdallToRtmRoutes(probe)))
-      case str if str startsWith thumbnail => Some(filterAllowedParams(query, heimdallToRtmRoutes(thumbnail)))
-      case str if str startsWith streamed => Some(filterAllowedParams(query, heimdallToRtmRoutes(streamed)))
+      case str if str startsWith hlsMaster => filterAllowedParams(query, heimdallToRtmRoutes(hlsMaster))
+      case str if str startsWith hlsVariant => filterAllowedParams(query, heimdallToRtmRoutes(hlsVariant))
+      case str if str startsWith hlsSegment => filterAllowedParams(query, heimdallToRtmRoutes(hlsSegment))
+      case str if str startsWith probe => filterAllowedParams(query, heimdallToRtmRoutes(probe))
+      case str if str startsWith thumbnail => filterAllowedParams(query, heimdallToRtmRoutes(thumbnail))
+      case str if str startsWith streamed => filterAllowedParams(query, heimdallToRtmRoutes(streamed))
       case _ =>
         logger.error("unexpectedQueryRoute")("route" -> route)
         None
     }
   }
 
-  private def filterAllowedParams(query: Map[String, Seq[String]], mediaRoute: MediaRoute): QueryWithPath = {
-    val filteredParams = query.filterKeys(mediaRoute.whitelistedParams.contains(_)).filter(_._2.nonEmpty)
-    val result = filteredParams.map { case (k, v) => k -> v.head }
-    QueryWithPath(mediaRoute.rtmPath, result)
+  private def filterAllowedParams(query: Map[String, Seq[String]], mediaRoute: MediaRoute): Option[QueryWithPath] = {
+    // TODO: Converting strings to lower case can be implemented here.
+    val filteredParams = query
+      .filterKeys(mediaRoute.whitelistedParams.contains(_))
+      .filter(_._2.nonEmpty)
+      .map { case (k, v) => k -> v.head }
+
+    val result = QueryWithPath(mediaRoute.rtmPath, filteredParams)
+    if (query.keySet.size != (3 + filteredParams.keySet.size)) {
+      logger.info("filteredOutRequestParameters")(
+        "originalQuery" -> query,
+        "filteredQuery" -> filteredParams
+      )
+    }
+    Some(result)
   }
+
+  case class MediaRoute(rtmPath: String, whitelistedParams: List[String])
+
+  case class QueryWithPath(rtmPath: String, params: Map[String, String])
 
 }

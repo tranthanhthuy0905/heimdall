@@ -15,13 +15,20 @@ class QueryValidatorSpec extends PlaySpec {
         "file_id" -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
         "evidence_id" -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
         "partner_id" -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
+        "autoFixPTS" -> Seq("true")
       )
 
       val result = QueryHelper("/media/hls/master", query)
-      result mustBe Some(RtmQueryParams(media = MediaIdent(List(uuid), List(uuid), uuid), path = "/hls/master", params = Map()))
+      result mustBe Some(
+        RtmQueryParams(
+          media = MediaIdent(List(uuid), List(uuid), uuid),
+          path = "/hls/master",
+          params = Map("autoFixPTS" -> "true")
+        )
+      )
     }
 
-    "filter out extra params" in {
+    "filter out extra parameter" in {
 
       val query = Map(
         "file_id" -> Seq(uuid.toString),
