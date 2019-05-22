@@ -43,7 +43,13 @@ object QueryHelper extends LazyLogging with HeimdallRoutes {
     "disableBFrames",
     "autorotate",
     "autoFixPTS",
-    "streamingSessionToken"
+    "streamingSessionToken",
+    /**
+      * The "speculative" query parameter is not used by RTM.
+      *  It allows to calculate statistics about the number of segments
+      *  that are pre-loaded vs on demand based on the access logs.
+      */
+    "speculative"
   )
 
   final val hlsVariantParams = List(
