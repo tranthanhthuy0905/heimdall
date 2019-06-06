@@ -100,16 +100,17 @@ The Heimdall HLS Work Flow diagram uses syntax and powered by https://www.webseq
  
 ### Infrastructure and network overview
 
-|                  |QA|US2|BR1|EU1|
-|:-----------------|:---:|:---:|:---:|:---:|
-|activation date   |[2019/03/28](https://git.taservs.net/ops/puppet/pull/7272)|[2019/04/16](https://git.taservs.net/ops/puppet/pull/7556)|[2019/04/30](https://git.taservs.net/ops/puppet/pull/7738)||
-|hostname          |qus1uw2lhdl001|sus2uw1lhdl001|pbr1se1lhdl001|-|
-|num of instances  |1|1|1|-|
-|cloud             |AWS|Azure|AWS|AWS|
-|instance type     |m3.large|Standard_DS3_v2|m3.large|-|
-|terraform PR #     |[1180](https://git.taservs.net/ops/terraform/pull/1180)|[1250](https://git.taservs.net/ops/terraform/pull/1250)|[1287](https://git.taservs.net/ops/terraform/pull/1287)|-|
-|port #            |9438|9438|9438|9438|
-|debug port #      |9448|9448|9448|9448|
+|                    |QA|US2|BR1|EU1|CA1|AU1|AU2|UK2|US1|
+|:-------------------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|Activation Date     |[2019/03/28](https://git.taservs.net/ops/puppet/pull/7272)|[2019/04/16](https://git.taservs.net/ops/puppet/pull/7556)|[2019/04/30](https://git.taservs.net/ops/puppet/pull/7738)|[2019/05/15](https://git.taservs.net/ops/puppet/pull/7887)|[2019/05/15](https://git.taservs.net/ops/puppet/pull/7887)|||||
+|Host Name           |qus1uw2lhdl001|sus2uw1lhdl001|pbr1se1lhdl001|peu1ew1lhdl001<br/>peu1ew1lhdl002|pca1cc1lhdl001<br/>pca1cc1lhdl002|pau1ae1lhdl001<br/>pau1ae1lhdl002<br/>pau1ae1lhdl003|pau2ac1lhdl001<br/>pau2ac1lhdl002<br/>pau2ac1lhdl003|puk2es1lhdl001<br/>puk2es1lhdl002<br/>puk2es1lhdl003||
+|Number of Instances |1|1|1|2|2|3|3|3|-|
+|Cloud Type          |AWS|Azure|AWS|AWS|Azure|Azure|Azure|Azure|Azure|
+|Instance Type       |m3.large|Standard_DS3_v2|m3.large|m3.large|Standard_DS3_V2|Standard_DS3_V2|Standard_DS3_V2|Standard_DS3_V2|
+|Terraform PR #      |[1180](https://git.taservs.net/ops/terraform/pull/1180)|[1250](https://git.taservs.net/ops/terraform/pull/1250)|[1287](https://git.taservs.net/ops/terraform/pull/1287)|[1319](https://git.taservs.net/ops/terraform/pull/1319)|[1319](https://git.taservs.net/ops/terraform/pull/1319)|[1375](https://git.taservs.net/ops/terraform/pull/1375)|[1375](https://git.taservs.net/ops/terraform/pull/1375)|[1375](https://git.taservs.net/ops/terraform/pull/1375)
+|Port #              |9438|9438|9438|9438|9438|9438|9438|9438|9438|
+|Debug Port #        |9448|9448|9448|9448|9448|9448|9448|9448|9448|
+|DataDog Port #      |9458|9458|9458|9458|9458|9458|9458|9458|9458|
 
 ### Expected traffic and load
 
@@ -153,12 +154,53 @@ Secrets are managed per environment by
 
 ### Log aggregation solution, metrics and health checks
 
-|                  |QA|US2|BR1|
-|:-----------------|:---:|:---:|:---:|
-|nagios/thruk board|[qus1uw2lhdl001](https://thruk.taservs.net/thruk/cgi-bin/extinfo.cgi?type=1&host=qus1uw2lhdl001)|[sus2uw1lhdl001](https://thruk.us2.taservs.net/thruk/cgi-bin/extinfo.cgi?type=1&host=sus2uw1lhdl001)|https://nagios.br1.taservs.net/|
-|datadog board     |[QA during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=q&tpl_var_dep=us1)|[US2 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=s&tpl_var_dep=us2)|[BR1 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=p&tpl_var_dep=br1)|
-|splunk board      |[QA log aggregation](https://dus1uw2lspm001.taservs.net/en-US/app/search/heimdall_qa)|[US2 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=sus2)|[BR1 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=pbr1)|
+Quick links:
 
+* QA 
+    * Nagios: https://nagios.taservs.net
+    * Thruk: [qus1uw2lhdl001](https://thruk.taservs.net/thruk/cgi-bin/extinfo.cgi?type=1&host=qus1uw2lhdl001)
+    * DataDog: [QA during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=q&tpl_var_dep=us1)
+    * Splunk: [QA log aggregation](https://dus1uw2lspm001.taservs.net/en-US/app/search/heimdall_qa)
+* US2
+    * Nagios: https://nagios.us2.taservs.net
+    * Thruk: [sus2uw1lhdl001](https://thruk.us2.taservs.net/thruk/cgi-bin/extinfo.cgi?type=1&host=sus2uw1lhdl001)
+    * DataDog: [US2 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=s&tpl_var_dep=us2)
+    * Splunk: [US2 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=sus2)
+* BR1
+    * Nagios: https://nagios.br1.taservs.net
+    * Thruk: https://thruk.br1.taservs.net
+    * DataDog: [BR1 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=p&tpl_var_dep=br1)
+    * Splunk: [BR1 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=pbr1)
+* EU1
+    * Nagios: https://nagios.eu1.taservs.net
+    * Thruk: https://thruk.br1.taservs.net
+    * DataDog: [EU1 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=p&tpl_var_dep=eu1)
+    * Splunk: [EU1 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=peu1)
+* CA1
+    * Nagios: https://nagios.ca1.taservs.net
+    * Thruk: https://thruk.br1.taservs.net
+    * DataDog: [CA1 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=p&tpl_var_dep=ca1)
+    * Splunk: [CA1 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=pca1)
+* AU1
+    * Nagios: https://nagios.au1.taservs.net
+    * Thruk: https://thruk.br1.taservs.net
+    * DataDog: [AU1 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=p&tpl_var_dep=au1)
+    * Splunk: [AU1 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=pau1)
+* AU2
+    * Nagios: https://nagios.au2.taservs.net
+    * Thruk: https://thruk.br1.taservs.net
+    * DataDog: [AU2 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=p&tpl_var_dep=au2)
+    * Splunk: [AU2 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=pau2)
+* UK2
+    * Nagios: https://nagios.uk2.taservs.net
+    * Thruk: https://thruk.br1.taservs.net
+    * DataDog: [UK2 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=p&tpl_var_dep=uk2)
+    * Splunk: [UK2 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=puk2)
+* US1
+    * Nagios: https://nagios.us1.taservs.net
+    * Thruk: https://thruk.us1.taservs.net
+    * DataDog: [US1 during last 24h](https://app.datadoghq.com/dashboard/vhv-v2h-3ty/heimdall?tile_size=m&page=0&is_auto=false&from_ts=1556580600000&to_ts=1556667000000&live=true&tpl_var_scope=p&tpl_var_dep=us1)
+    * Splunk: [US1 log aggregation](https://splunk.taservs.net/en-US/app/search/heimdall?earliest=-24h&latest=now&form.environment=pus1)
 
 ## Operational tasks
 
