@@ -7,6 +7,7 @@ import services.dredd.{DreddClient, DreddClientImpl}
 import services.global.HeimdallApplicationLifecycle
 import services.komrade.{KomradeClient, KomradeClientImpl}
 import services.nino.{NinoClient, NinoClientImpl}
+import services.rti.{RtiClient, RtiClientImpl}
 import services.rtm.{RtmClient, RtmClientImpl}
 import services.sessions.{SessionsClient, SessionsClientImpl}
 import services.zookeeper.{ZookeeperClientProvider, ZookeeperServerSet, ZookeeperServerSetProvider}
@@ -21,6 +22,7 @@ class Module extends AbstractModule {
     bind(classOf[KomradeClient]).to(classOf[KomradeClientImpl])
     bind(classOf[NinoClient]).to(classOf[NinoClientImpl])
     bind(classOf[RtmClient]).to(classOf[RtmClientImpl])
+    bind(classOf[RtiClient]).to(classOf[RtiClientImpl])
     bind(classOf[SessionsClient]).to(classOf[SessionsClientImpl])
     bind(classOf[StreamingSessionData]).to(classOf[StreamingSessionDataImpl])
     bind(classOf[Watermark]).to(classOf[WatermarkImpl])

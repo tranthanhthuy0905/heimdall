@@ -14,12 +14,17 @@ case class WatermarkDetails(partner: Partner, user: User)
 
 trait Watermark {
   def augmentQuery(query: RtmQueryParams, jwt: JWTWrapper): Future[RtmQueryParams]
+  def createWatermarkForRti(jwt: JWTWrapper): Future[Option[String]]
 }
 
 class WatermarkImpl @Inject()(komrade: KomradeClient)
                              (implicit ex: ExecutionContext)
   extends Watermark with LazyLogging {
   final val labelParam = "label"
+
+def createWatermarkForRti(jwt: JWTWrapper): Future[Option[String]] = {
+  getWatermarkDetails(jwt.audienceId, jwt.subjectId).map(data => generateWatermark(data))
+}
 
   override def augmentQuery(query: RtmQueryParams, jwt: JWTWrapper): Future[RtmQueryParams] = {
     getWatermarkDetails(jwt.audienceId, jwt.subjectId) flatMap { u =>

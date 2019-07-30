@@ -15,3 +15,5 @@ GET /media/thumbnail controllers.ThumbnailController.thumbnail
 GET /media/hls/master  controllers.HlsController.playlist
 GET /media/hls/variant controllers.HlsController.playlist
 GET /media/hls/segment controllers.HlsController.segment
+
+GET /media/images/view controllers.ImageController.view

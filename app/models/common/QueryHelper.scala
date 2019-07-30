@@ -24,6 +24,7 @@ trait HeimdallRoutes {
   final val thumbnail = "/media/thumbnail"
   final val mp3 = "/media/mp3"
   final val streamed = "/media/streamed" // Non-related to RTM.
+  final val imageThumbnail = "/media/images/view"
 }
 
 object QueryHelper extends LazyLogging with HeimdallRoutes {
