@@ -1,6 +1,5 @@
 import com.google.inject.{AbstractModule, Singleton}
 import models.auth.{Authorizer, AuthorizerImpl, StreamingSessionData, StreamingSessionDataImpl}
-import models.hls.{Watermark, WatermarkImpl}
 import org.apache.curator.framework.CuratorFramework
 import services.audit.{AuditClient, AuditClientImpl}
 import services.dredd.{DreddClient, DreddClientImpl}
@@ -25,7 +24,6 @@ class Module extends AbstractModule {
     bind(classOf[RtiClient]).to(classOf[RtiClientImpl])
     bind(classOf[SessionsClient]).to(classOf[SessionsClientImpl])
     bind(classOf[StreamingSessionData]).to(classOf[StreamingSessionDataImpl])
-    bind(classOf[Watermark]).to(classOf[WatermarkImpl])
     // Providers
     bind(classOf[CuratorFramework]).toProvider(classOf[ZookeeperClientProvider]).in(classOf[Singleton])
     bind(classOf[ZookeeperServerSet]).toProvider(classOf[ZookeeperServerSetProvider]).in(classOf[Singleton])

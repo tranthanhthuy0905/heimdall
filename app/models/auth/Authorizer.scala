@@ -7,17 +7,12 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.sessions.api.thrift.v1.SessionsServiceErrorCode
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
-import play.api.libs.typedmap.TypedKey
 import play.api.mvc.{RequestHeader, Result, Results}
 import services.sessions.SessionsClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class AuthorizationData(jwt: JWTWrapper, token: String, jwtString: String)
-
-object AuthorizationAttr {
-  val Key: TypedKey[AuthorizationData] = TypedKey.apply[AuthorizationData]("auth")
-}
+case class AuthorizationData(token: String, jwt: String, parsedJwt: JWTWrapper)
 
 trait Authorizer {
   def authorize(requestHeader: RequestHeader): Future[Either[Result, AuthorizationData]]
@@ -34,11 +29,19 @@ class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implici
     getCookieValue(requestHeader) match {
       case Some(t) =>
         getAuthorizationData(t).map {
-          case Left(sessionsError) => Left(sessionsError)
+          case Left(sessionsError) =>
+            logger.warn("failedToAuthorizeRequest")(
+              "request" -> requestHeader,
+              "error" -> sessionsError
+            )
+            Left(sessionsError)
           case Right(authData) => Right(authData)
         }
       case None =>
-        logger.warn("failedToFindCookie")("message" -> "Could not find Axon Cookie")
+        logger.warn("requestWithoutCookie")(
+          "message" -> "Cannot fulfill request without Axon Cookie",
+          "request" -> requestHeader
+        )
         Future.successful(Left(Results.Unauthorized))
     }
   }
@@ -47,9 +50,10 @@ class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implici
     sessions.getAuthorization(SessionTokenType.SessionCookie, token) map { response =>
       response match {
         case Right(response) => parser.parse(response.authorization.jwt) match {
-          case Right(jwt) => Right(AuthorizationData(JWTWrapper(jwt), token, response.authorization.jwt))
+          case Right(jwt) =>
+            Right(AuthorizationData(token, response.authorization.jwt, JWTWrapper(jwt)))
           case Left(error) =>
-            logger.warn("failedToParseAuthToken")("token" -> response.authorization.jwt, "error" -> error)
+            logger.info("failedToParseAuthToken")("token" -> response.authorization.jwt, "error" -> error)
             Left(Results.Unauthorized)
         }
         case Left(sessionErrorCode) =>

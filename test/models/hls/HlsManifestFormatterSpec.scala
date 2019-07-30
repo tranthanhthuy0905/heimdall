@@ -9,7 +9,7 @@ class HlsManifestFormatterSpec extends PlaySpec {
 
   "HLS Manifest Formatter" must {
 
-    val mediaIdent = MediaIdent(List(randomUUID), List(randomUUID), randomUUID)
+    val mediaIdent = new MediaIdent(List(randomUUID), List(randomUUID), randomUUID)
 
     val manifest =
       """#EXTM3U

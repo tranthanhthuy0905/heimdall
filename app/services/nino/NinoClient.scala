@@ -8,25 +8,30 @@ import com.evidence.service.nino.api.thrift.{BatchAccessCheckRequest, Nino}
 import com.evidence.service.thrift.v2.{Authorization, RequestInfo}
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
+import models.common.PermissionType
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object NinoClientAction extends Enumeration {
-  final val View = Value("view")
-  final val Stream = Value("stream")
-}
-
 trait NinoClient {
-  def enforce(jwtString: String, entities: List[EntityDescriptor], action: NinoClientAction.Value): Future[Boolean]
+  def enforce(jwtString: String,
+              entities: List[EntityDescriptor],
+              action: PermissionType.Value): Future[Boolean]
 }
 
 @Singleton
-class NinoClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) extends NinoClient with LazyLogging {
+class NinoClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
+    extends NinoClient
+    with LazyLogging {
 
   private val client: Nino.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)
-    val dest = FinagleClient.newThriftUrl("com.evidence.service.nino-service", env, "thrift")
-    val client = FinagleClient.newThriftClient().build[Nino.MethodPerEndpoint](dest)
+    val dest = FinagleClient.newThriftUrl(
+      "com.evidence.service.nino-service",
+      env,
+      "thrift"
+    )
+    val client =
+      FinagleClient.newThriftClient().build[Nino.MethodPerEndpoint](dest)
     client
   }
 
@@ -36,11 +41,15 @@ class NinoClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) ex
     Authorization(Option(authType), Option(secret))
   }
 
-  def enforce(jwtString: String, entities: List[EntityDescriptor], action: NinoClientAction.Value): Future[Boolean] = {
+  def enforce(jwtString: String,
+              entities: List[EntityDescriptor],
+              action: PermissionType.Value): Future[Boolean] = {
     val request = BatchAccessCheckRequest(jwtString, entities, action.toString)
-    client.enforceBatch(auth, request, RequestInfo()).map {
-      seqOfAccessResults =>
+    client
+      .enforceBatch(auth, request, RequestInfo())
+      .map { seqOfAccessResults =>
         seqOfAccessResults.filter(!_.granted).isEmpty
-    }.toScalaFuture
+      }
+      .toScalaFuture
   }
 }

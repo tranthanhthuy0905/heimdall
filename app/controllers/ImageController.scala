@@ -1,11 +1,10 @@
 package controllers
 
+import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, TokenValidationAction, WatermarkAction}
 import akka.stream.scaladsl.Source
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
-import models.auth.AuthorizationAttr
-import models.common.HeimdallRtiActionBuilder
-import models.hls.Watermark
+import models.common.{HeimdallRtiActionBuilder, PermissionType}
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSResponse
@@ -14,45 +13,46 @@ import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponent
 import scala.concurrent.{ExecutionContext, ExecutionException, Future}
 import services.audit.{AuditClient, AuditConversions, EvidenceViewed}
 import services.dredd.DreddClient
-import services.nino.{NinoClient, NinoClientAction}
 import services.rti.RtiClient
 import utils.RequestUtils
 
-class ImageController @Inject()(action: HeimdallRtiActionBuilder,
+class ImageController @Inject()(heimdallRequestAction: HeimdallRequestAction,
+                                tokenValidationAction: TokenValidationAction,
+                                permValidation: PermValidationActionBuilder,
+                                watermarkAction: WatermarkAction,
+                                action: HeimdallRtiActionBuilder,
                                 rti: RtiClient,
-                                nino: NinoClient,
-                                dredd: DreddClient,
                                 audit: AuditClient,
-                                watermarkProvider: Watermark,
                                 components: ControllerComponents)
                                (implicit ex: ExecutionContext)
   extends AbstractController(components) with LazyLogging with AuditConversions {
 
-  def view: Action[AnyContent] = action.async { implicit request =>
-    val authHandler = request.attrs(AuthorizationAttr.Key)
-    val sizeID = request.getQueryString("size_id")
-    val image = request.rtiQuery.image
-    for {
-      accessResult <- nino.enforce(authHandler.jwtString, image.toEvidenceEntityDescriptors, NinoClientAction.View)
-      _ <- utils.Predicate(accessResult)(
-        new Exception(s"${request.path}: media [$image] does not have ${NinoClientAction.View} access")
-      )
-      presignedUrl <- dredd.getUrl(image)
-      watermark <- watermarkProvider.createWatermarkForRti(authHandler.jwt)
-      response <- rti.getImage(sizeID.get, presignedUrl.toString, watermark.get)
-      _ <- audit.recordEndSuccess(EvidenceViewed(
-        evidenceTid(image.evidenceId, image.partnerId),
-        updatedByTid(authHandler.jwt),
-        fileTid(image.fileId, image.partnerId),
-        RequestUtils.getClientIpAddress(request)
-      ))
-      httpEntity <- Future.successful(toHttpEntity(response))
-    } yield httpEntity.fold(
-      BadRequest(_),
-      entity => {
-        Ok.sendEntity(entity)
-      })
-  }
+    def view: Action[AnyContent] = ???
+
+//  def view: Action[AnyContent] = (
+//    heimdallRequestAction andThen
+//      permValidation.build(PermissionType.View) andThen
+//      watermarkAction
+//    ).async { implicit request =>
+//      val authHandler = request.attrs(AuthorizationAttr.Key)
+//      val sizeID = request.getQueryString("size_id")
+//      val image = request.rtiQuery.image
+//      for {
+//        watermark <- watermarkProvider.createWatermarkForRti(authHandler.jwt)
+//        response <- rti.getImage(sizeID.get, presignedUrl.toString, watermark.get)
+//        _ <- audit.recordEndSuccess(EvidenceViewed(
+//          evidenceTid(image.evidenceId, image.partnerId),
+//          updatedByTid(authHandler.jwt),
+//          fileTid(image.fileId, image.partnerId),
+//          RequestUtils.getClientIpAddress(request)
+//        ))
+//        httpEntity <- Future.successful(toHttpEntity(response))
+//      } yield httpEntity.fold(
+//        BadRequest(_),
+//        entity => {
+//          Ok.sendEntity(entity)
+//        })
+//    }
 
   private def toHttpEntity(response: WSResponse): Either[JsObject, HttpEntity] = {
     Some(response.status)

@@ -4,6 +4,8 @@ import com.evidence.service.common.Convert
 import com.evidence.service.common.logging.LazyLogging
 import java.util.UUID
 
+import services.rtm.HeimdallRoutes
+
 case class RtiQueryHelper(image: FileIdent, path: String, params: Map[String, String])
 
 object RtiQueryHelper extends LazyLogging with HeimdallRoutes {
@@ -11,6 +13,8 @@ object RtiQueryHelper extends LazyLogging with HeimdallRoutes {
     "size_id",
     "watermark"
   )
+
+  private final val imageThumbnail = "/media/images/view"
 
   private final val heimdallToRtiRoutes = Map(
     imageThumbnail -> ImageRoute("/media/images/thumbnail", imageThumbnailWhitelistedParams),

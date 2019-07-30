@@ -25,7 +25,7 @@ trait SessionsConversions extends LazyLogging with Results {
   private val translator: RescueTranslator = {
     case se: SessionsServiceException =>
       description: String =>
-        logger.warn("sessionsServiceException")(
+        logger.info("sessionsServiceException")(
           "description" -> description,
           "errorCode" -> se.errorCode,
           "message" -> se.errorMessage

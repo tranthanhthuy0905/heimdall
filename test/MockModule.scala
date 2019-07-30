@@ -1,5 +1,4 @@
 import models.auth.{Authorizer, StreamingSessionData}
-import models.hls.Watermark
 import org.apache.curator.framework.CuratorFramework
 import org.scalatest.mockito.MockitoSugar
 import services.audit.AuditClient
@@ -22,7 +21,6 @@ class MockModule extends Module with MockitoSugar {
     bind(classOf[RtmClient]).toInstance(mock[RtmClient])
     bind(classOf[SessionsClient]).toInstance(mock[SessionsClient])
     bind(classOf[StreamingSessionData]).toInstance(mock[StreamingSessionData])
-    bind(classOf[Watermark]).toInstance(mock[Watermark])
 
     bind(classOf[CuratorFramework]).toInstance(mock[CuratorFramework])
     bind(classOf[ZookeeperServerSet]).toInstance(mock[ZookeeperServerSet])

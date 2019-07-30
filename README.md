@@ -5,9 +5,11 @@ Heimdall the Gatekeeper is a servant of All-Father and ally of Thor. He was the 
 
 ## Documentation
 
+Quip Heimdall folder: https://axon.quip.com/folder/heimdall
+
 ### Run Book
 
-Run Book is located in [./doc/run-book.md](https://git.taservs.net/ecom/heimdall/blob/master/doc/run-book.md).
+Run Book is located in https://git.taservs.net/ecom/heimdall/wiki/Heimdall-Run-Book and its duplicate is stored in Quip https://axon.quip.com/hSYKA9Y9c09T/Heimdall-Run-Book.
 
 ### Heimdall dependencies
 

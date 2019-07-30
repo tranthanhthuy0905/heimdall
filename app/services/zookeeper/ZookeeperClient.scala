@@ -1,5 +1,7 @@
 package services.zookeeper
 
+import java.util.UUID
+
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.zookeeper.{ConsistentHashLb, ServiceEndpoint, ZookeeperBuilder, ZookeeperConfig}
 import com.google.inject.{Inject, Provider}
@@ -7,6 +9,7 @@ import com.typesafe.config.Config
 import javax.inject.Singleton
 import org.apache.curator.framework.CuratorFramework
 
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 class ZookeeperClientProvider @Inject() (config: Config) extends Provider[CuratorFramework] {
@@ -16,6 +19,7 @@ class ZookeeperClientProvider @Inject() (config: Config) extends Provider[Curato
 @Singleton
 class ZookeeperServerSet @Inject() (lb: String => Option[ServiceEndpoint])
   extends LazyLogging {
+
   def getInstance(key: String): Try[ServiceEndpoint] = {
     Try(lb(key)) match {
       case Success(Some(server)) => Try(server)
@@ -25,6 +29,15 @@ class ZookeeperServerSet @Inject() (lb: String => Option[ServiceEndpoint])
       case Failure(e) =>
         logger.error("failedToGetAnInstance")("key" -> key, "error" -> e.getMessage)
         Failure(e)
+    }
+  }
+
+
+  // TODO: change the method signature to receive request instead of fileId to be more uniform
+  def getInstanceAsFuture(fileId: UUID): Future[ServiceEndpoint] = {
+    getInstance(fileId.toString) match {
+      case Success(server) => Future.successful(server)
+      case Failure(exception) => Future.failed(exception)
     }
   }
 }

@@ -10,7 +10,7 @@ class MediaIdentSpec extends PlaySpec {
       val fileId = randomUUID
       val evidenceId = randomUUID
       val partnerId = randomUUID
-      val result: String = MediaIdent(List(fileId), List(evidenceId), partnerId).toQueryString
+      val result: String = new MediaIdent(List(fileId), List(evidenceId), partnerId).toQueryString
       result mustBe s"file_id=$fileId&evidence_id=$evidenceId&partner_id=$partnerId"
     }
 
@@ -18,7 +18,7 @@ class MediaIdentSpec extends PlaySpec {
       val fileIds = List(randomUUID, randomUUID)
       val evidenceIds = List(randomUUID, randomUUID)
       val partnerId = randomUUID
-      val result: String = MediaIdent(fileIds, evidenceIds, partnerId).toQueryString
+      val result: String = new MediaIdent(fileIds, evidenceIds, partnerId).toQueryString
       val expected: String = s"file_id=${fileIds(0)},${fileIds(1)}&evidence_id=${evidenceIds(0)},${evidenceIds(1)}&partner_id=$partnerId"
       result mustBe expected
     }
