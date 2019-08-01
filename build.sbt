@@ -30,7 +30,8 @@ libraryDependencies ++= Seq(
   "com.evidence" %% "service-common-finagle" % Common.serviceThriftVersion,
   "com.evidence" %% "service-common-zookeeper" % Common.serviceCommonVersion,
   "com.evidence" %% "service-common-cache" % Common.serviceCommonVersion,
-  "com.evidence" %  "service-common-crypto" % Common.serviceCommonCryptoVersion
+  "com.evidence" %  "service-common-crypto" % Common.serviceCommonCryptoVersion,
+  "com.evidence" %% "service-common-monad" % Common.serviceCommonVersion,
 )
 
 // Thrift Services
