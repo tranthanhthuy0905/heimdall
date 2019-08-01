@@ -1,9 +1,8 @@
 package services.rti
 
 import java.net.URL
-import java.util.UUID
 
-import models.common.HeimdallRequest
+import models.common.{FileIdent, HeimdallRequest}
 import play.api.mvc.WrappedRequest
 
 /**
@@ -11,9 +10,7 @@ import play.api.mvc.WrappedRequest
   *
   * @return Generated URI as a string.
   */
-case class RtiRequest[A](partnerId: UUID,
-                         evidenceId: UUID,
-                         fileId: UUID,
+case class RtiRequest[A](file: FileIdent,
                          presignedUrl: URL,
                          watermark: String,
                          request: HeimdallRequest[A])

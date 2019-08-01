@@ -71,6 +71,8 @@ class MediaIdent(val fileIds: List[UUID],
     }
   }
 
+  def headOption: Option[FileIdent] = toList.headOption
+
   def length: Int = {
     if (isValid(fileIds, evidenceIds)) {
       fileIds.length

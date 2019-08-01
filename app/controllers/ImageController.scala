@@ -37,9 +37,9 @@ class ImageController @Inject()(heimdallRequestAction: HeimdallRequestAction,
         for {
           response <- rti.getImage(request.presignedUrl.toString, request.watermark)
           _ <- audit.recordEndSuccess(EvidenceViewed(
-            evidenceTid(request.evidenceId, request.partnerId),
+            evidenceTid(request.file.evidenceId, request.file.partnerId),
             updatedByTid(authHandler.parsedJwt),
-            fileTid(request.fileId, request.partnerId),
+            fileTid(request.file.fileId, request.file.partnerId),
             request.request.clientIpAddress
           ))
           httpEntity <- Future.successful(toHttpEntity(response))
