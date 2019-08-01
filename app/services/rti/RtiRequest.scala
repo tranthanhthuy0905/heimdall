@@ -17,6 +17,4 @@ case class RtiRequest[A](partnerId: UUID,
                          presignedUrl: URL,
                          watermark: String,
                          request: HeimdallRequest[A])
-  extends WrappedRequest[A](request) {
-
-}
+  extends WrappedRequest[A](request)

@@ -5,11 +5,11 @@ import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common._
 import play.api.mvc.{ActionRefiner, Results}
+import scala.concurrent.ExecutionContext
 import services.dredd.DreddClient
 import services.rti.RtiRequest
 import utils.UUIDHelper
 
-import scala.concurrent.ExecutionContext
 
 case class RtiRequestAction @Inject()(
                                      dreddClient: DreddClient
