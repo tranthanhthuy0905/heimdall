@@ -21,9 +21,7 @@ case class EmptyMediaIdent()
       UUID.fromString("00000000-0000-0000-0000-000000000000")
     )
 
-class MediaIdent(val fileIds: List[UUID],
-                 val evidenceIds: List[UUID],
-                 val partnerId: UUID) {
+class MediaIdent(val fileIds: List[UUID], val evidenceIds: List[UUID], val partnerId: UUID) {
 
   def toQueryString: String = {
     if (isValid(fileIds, evidenceIds)) {
@@ -41,7 +39,7 @@ class MediaIdent(val fileIds: List[UUID],
             TidEntities.Evidence,
             evidenceId.toString,
             Option(partnerId.toString)
-          )
+        )
       )
     } else {
       List()
@@ -56,7 +54,7 @@ class MediaIdent(val fileIds: List[UUID],
             TidEntities.File,
             fileIds.toString,
             Option(partnerId.toString)
-          )
+        )
       )
     } else {
       List()

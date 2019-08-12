@@ -87,7 +87,7 @@ class HlsManifestFormatterSpec extends PlaySpec {
            |#EXT-X-STREAM-INF:BANDWIDTH=2856770,RESOLUTION=856x368
            |/media/hls/variant?${mediaIdent.toQueryString}&level=0&autorotate=false""".stripMargin
     }
-    
+
     "return manifest with replaced source in the middle" in {
       val manifestWithSources =
         s"""#EXTM3U

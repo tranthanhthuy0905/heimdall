@@ -14,9 +14,10 @@ trait RtmClient {
 }
 
 @Singleton
-class RtmClientImpl @Inject()(dredd: DreddClient,
-                              zookeeper: ZookeeperServerSet,
-                              ws: WSClient)(implicit ex: ExecutionContext) extends RtmClient with LazyLogging {
+class RtmClientImpl @Inject()(dredd: DreddClient, zookeeper: ZookeeperServerSet, ws: WSClient)(
+  implicit ex: ExecutionContext)
+    extends RtmClient
+    with LazyLogging {
 
   def send(rtmRequest: String): Future[WSResponse] = {
     ws.url(rtmRequest).get()

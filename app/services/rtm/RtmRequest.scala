@@ -16,11 +16,12 @@ import scala.collection.immutable.Map
   * @param query RTM request parameters, filtered and validated.
   * @return Generated URI as a string.
   */
-class RtmRequest[A](path: String,
-                    endpoint: ServiceEndpoint,
-                    presignedUrls: List[URL],
-                    query: Map[String, String],
-                    request: HeimdallRequest[A])
+class RtmRequest[A](
+  path: String,
+  endpoint: ServiceEndpoint,
+  presignedUrls: List[URL],
+  query: Map[String, String],
+  request: HeimdallRequest[A])
     extends HeimdallRequest[A](request) {
   override def toString: String = {
     val queryWithSources = query ++ Map("source" -> presignedUrls.mkString(","))

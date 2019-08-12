@@ -11,18 +11,21 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait SessionsClient {
-  def getAuthorization(tokenType: SessionTokenType, token: String): Future[Either[SessionsServiceErrorCode, GetAuthorizationResponse]]
+
+  def getAuthorization(
+    tokenType: SessionTokenType,
+    token: String): Future[Either[SessionsServiceErrorCode, GetAuthorizationResponse]]
 }
 
 @Singleton
 class SessionsClientImpl @Inject()(config: Config)(implicit ec: ExecutionContext)
-  extends SessionsClient
+    extends SessionsClient
     with SessionsConversions
     with LazyLogging {
 
   private val client: SessionsService.MethodPerEndpoint = {
-    val env = FinagleClient.getEnvironment(config)
-    val dest = FinagleClient.newThriftUrl("com.evidence.service.sessions-service", env, "thrift")
+    val env    = FinagleClient.getEnvironment(config)
+    val dest   = FinagleClient.newThriftUrl("com.evidence.service.sessions-service", env, "thrift")
     val client = FinagleClient.newThriftClient().build[SessionsService.MethodPerEndpoint](dest)
     client
   }
@@ -31,7 +34,9 @@ class SessionsClientImpl @Inject()(config: Config)(implicit ec: ExecutionContext
     Option(config.getString("edc.service.sessions.thrift_auth_type")),
     Option(config.getString("edc.service.sessions.thrift_auth_secret")))
 
-  def getAuthorization(tokenType: SessionTokenType, token: String): Future[Either[SessionsServiceErrorCode, GetAuthorizationResponse]] = {
+  def getAuthorization(
+    tokenType: SessionTokenType,
+    token: String): Future[Either[SessionsServiceErrorCode, GetAuthorizationResponse]] = {
     rescueSessionsCalls(
       client.getAuthorizationWithoutExtending(auth, GetAuthorizationRequest(tokenType, token)),
       "getAuthorization"

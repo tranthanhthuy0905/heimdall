@@ -13,12 +13,12 @@ import scala.collection.immutable.Map
 case class RtmQueryParams(path: String, params: Map[String, String])
 
 trait HeimdallRoutes {
-  final val probe = "/media/start"
-  final val hlsMaster = "/media/hls/master"
+  final val probe      = "/media/start"
+  final val hlsMaster  = "/media/hls/master"
   final val hlsVariant = "/media/hls/variant"
   final val hlsSegment = "/media/hls/segment"
-  final val thumbnail = "/media/thumbnail"
-  final val mp3 = "/media/mp3"
+  final val thumbnail  = "/media/thumbnail"
+  final val mp3        = "/media/mp3"
 }
 
 object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
@@ -70,7 +70,7 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
     * Note: /flv was deprecated. Thus, Heimdall does not support it.
     */
   private final val heimdallToRtmRoutes = Map(
-    probe -> MediaRoute("/probe", commonParams),
+    probe     -> MediaRoute("/probe", commonParams),
     hlsMaster -> MediaRoute("/hls/master", commonParams),
     hlsVariant -> MediaRoute(
       "/hls/variant",
@@ -86,8 +86,7 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
     ),
   )
 
-  def apply(route: String,
-            query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
+  def apply(route: String, query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
     route match {
       case str if str startsWith hlsMaster =>
         filterAllowedParams(query, heimdallToRtmRoutes(hlsMaster))
@@ -120,8 +119,8 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
 
     val result = RtmQueryParams(mediaRoute.rtmPath, filteredParams)
     logger.debug("filterAllowedParamsResult")(
-      "originalQuery" -> query,
-      "mediaRoute" -> mediaRoute,
+      "originalQuery"       -> query,
+      "mediaRoute"          -> mediaRoute,
       "filteredQueryParams" -> result
     )
 

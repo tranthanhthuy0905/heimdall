@@ -7,17 +7,18 @@ import play.api.mvc.{ActionFilter, Result, Results}
 import services.nino.NinoClient
 import scala.concurrent.{ExecutionContext, Future}
 
-
 case class PermValidationActionBuilder @Inject()(nino: NinoClient)(implicit val executionContext: ExecutionContext) {
+
   def build(permission: PermissionType.Value) = {
     PermValidationAction(permission)(nino)(executionContext)
   }
 }
 
-case class PermValidationAction @Inject()(permission: PermissionType.Value)(nino: NinoClient)
-                                    (implicit val executionContext: ExecutionContext)
+case class PermValidationAction @Inject()(permission: PermissionType.Value)(nino: NinoClient)(
+  implicit val executionContext: ExecutionContext)
     extends ActionFilter[HeimdallRequest]
     with LazyLogging {
+
   def filter[A](request: HeimdallRequest[A]): Future[Option[Result]] = {
     val entities = permission match {
       case PermissionType.Stream =>
@@ -31,10 +32,10 @@ case class PermValidationAction @Inject()(permission: PermissionType.Value)(nino
       case _ =>
         logger.error("failedToEnforcePermissions")(
           "streamingSessionToken" -> request.streamingSessionToken,
-          "path" -> request.path,
-          "query" -> request.queryString,
-          "cookie" -> request.cookie,
-          "permission" -> permission
+          "path"                  -> request.path,
+          "query"                 -> request.queryString,
+          "cookie"                -> request.cookie,
+          "permission"            -> permission
         )
         Some(Results.Forbidden)
     }

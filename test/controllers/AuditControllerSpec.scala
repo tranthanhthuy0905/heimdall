@@ -8,12 +8,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.nimbusds.jwt.SignedJWT
 import com.typesafe.config.Config
-import models.auth.{
-  AuthorizationData,
-  JWTWrapper,
-  StreamingSessionData,
-  StreamingSessionDataImpl
-}
+import models.auth.{AuthorizationData, JWTWrapper, StreamingSessionData, StreamingSessionDataImpl}
 import models.common.{AuthorizationAttr, MediaIdent, MediaIdentAttr}
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
@@ -62,15 +57,18 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
 
     val streamingSessionData: StreamingSessionData =
       new StreamingSessionDataImpl(configMock)
+
     val heimdallRequestAction = new HeimdallRequestAction(
       new BodyParsers.Default(PlayBodyParsers())
     )
     val tokenValidationAction = new TokenValidationAction(streamingSessionData)
+
     val controllerComponents = Helpers.stubControllerComponents(
       playBodyParsers = Helpers.stubPlayBodyParsers(materializer)
     )
 
     val mockAuditClient = mock[AuditClient]
+
     val controller = new AuditController(
       heimdallRequestAction,
       tokenValidationAction,

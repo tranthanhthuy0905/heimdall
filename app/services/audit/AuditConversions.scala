@@ -7,7 +7,8 @@ import com.evidence.service.audit.Tid
 import models.auth.JWTWrapper
 
 trait AuditConversions {
-  def fileTid(fileId: UUID,  partnerId: UUID): Tid = {
+
+  def fileTid(fileId: UUID, partnerId: UUID): Tid = {
     Tid(
       TidEntities.File,
       Some(fileId.toString),

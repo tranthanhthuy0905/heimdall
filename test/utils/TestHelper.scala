@@ -25,7 +25,7 @@ object TestHelper {
 
   def getJWTWrapper(partnerId: String, userId: String): JWTWrapper = {
     val claimsSet = new JWTClaimsSet.Builder().subject(userId).audience(partnerId).claim("ver", "2")
-    val jwt= new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet.build())
+    val jwt       = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet.build())
     JWTWrapper(jwt)
   }
 

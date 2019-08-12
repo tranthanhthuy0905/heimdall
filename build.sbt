@@ -67,4 +67,3 @@ mappings in Universal := {
 coverageMinimum := 70
 coverageFailOnMinimum := false
 coverageHighlighting := true
-

@@ -22,9 +22,7 @@ import scala.util.{Failure, Success, Try}
   *   - Extract required query parameters from the queryString as UUIDs (media identifiers - MediaIdent).
   *   - Store MediaIdent as request attribute.
   */
-class HeimdallRequestFilter @Inject()(implicit val mat: Materializer,
-                                      ec: ExecutionContext,
-                                      authorizer: Authorizer)
+class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: ExecutionContext, authorizer: Authorizer)
     extends Filter
     with LazyLogging
     with StrictStatsD
@@ -40,14 +38,14 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer,
   def apply(
     nextFilter: RequestHeader => Future[Result]
   )(requestHeader: RequestHeader): Future[Result] = {
-    val startTime = System.currentTimeMillis
+    val startTime  = System.currentTimeMillis
     val actionName = this.getActionName(requestHeader)
 
     executionTime(s"$actionName.time") {
       logger.info("requestBegin")(
         "action" -> actionName,
-        "path" -> requestHeader.path,
-        "query" -> requestHeader.queryString
+        "path"   -> requestHeader.path,
+        "query"  -> requestHeader.queryString
       )
       if (InternalRoutes.contains(requestHeader.path)) {
         executeRequest(startTime, nextFilter, requestHeader, actionName)
@@ -69,10 +67,10 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer,
                 val details =
                   "one or more parameters were not provided in incoming request"
                 logger.info("badRequest")(
-                  "action" -> actionName,
-                  "path" -> requestHeader.path,
+                  "action"      -> actionName,
+                  "path"        -> requestHeader.path,
                   "queryString" -> requestHeader.queryString,
-                  "details" -> details
+                  "details"     -> details
                 )
                 Future.successful(Results.BadRequest)
             }
@@ -83,18 +81,19 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer,
     }
   }
 
-  private def executeRequest(startTime: Long,
-                             nextFilter: RequestHeader => Future[Result],
-                             requestHeader: RequestHeader,
-                             actionName: String): Future[Result] = {
+  private def executeRequest(
+    startTime: Long,
+    nextFilter: RequestHeader => Future[Result],
+    requestHeader: RequestHeader,
+    actionName: String): Future[Result] = {
     nextFilter(requestHeader).map { result =>
       val requestTime = System.currentTimeMillis - startTime
       logger.info("requestComplete")(
-        "action" -> actionName,
-        "path" -> requestHeader.path,
-        "query" -> requestHeader.queryString,
+        "action"   -> actionName,
+        "path"     -> requestHeader.path,
+        "query"    -> requestHeader.queryString,
         "duration" -> s"${requestTime}ms",
-        "status" -> result.header.status,
+        "status"   -> result.header.status,
       )
       statsd.increment(
         s"$actionName.requests",
@@ -111,7 +110,7 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer,
       case Failure(exception) =>
         logger.error("unsupportedRequest")(
           "message" -> exception.getMessage,
-          "path" -> requestHeader.path
+          "path"    -> requestHeader.path
         )
         "unknown.unknown"
     }
@@ -122,9 +121,9 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer,
     requestHeader: RequestHeader
   ): Option[MediaIdent] = {
     for {
-      fileIds <- getUuidListByKey("file_id", requestHeader.queryString)
+      fileIds     <- getUuidListByKey("file_id", requestHeader.queryString)
       evidenceIds <- getUuidListByKey("evidence_id", requestHeader.queryString)
-      partnerId <- getUuidValueByKey("partner_id", requestHeader.queryString)
+      partnerId   <- getUuidValueByKey("partner_id", requestHeader.queryString)
     } yield new MediaIdent(fileIds, evidenceIds, partnerId)
   }
 

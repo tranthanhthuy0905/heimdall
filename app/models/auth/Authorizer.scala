@@ -19,11 +19,13 @@ trait Authorizer {
 }
 
 @Singleton
-class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implicit val executionContext: ExecutionContext)
-  extends Authorizer with LazyLogging {
-  protected val keyManager: KeyManager = KeyManager.apply(config)
+class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(
+  implicit val executionContext: ExecutionContext)
+    extends Authorizer
+    with LazyLogging {
+  protected val keyManager: KeyManager                        = KeyManager.apply(config)
   protected val componentFactory: CachingJOSEComponentFactory = new CachingJOSEComponentFactory(keyManager)
-  protected val parser = new VerifyingJWTParser(componentFactory)
+  protected val parser                                        = new VerifyingJWTParser(componentFactory)
 
   def authorize(requestHeader: RequestHeader): Future[Either[Result, AuthorizationData]] = {
     getCookieValue(requestHeader) match {
@@ -32,7 +34,7 @@ class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implici
           case Left(sessionsError) =>
             logger.warn("failedToAuthorizeRequest")(
               "request" -> requestHeader,
-              "error" -> sessionsError
+              "error"   -> sessionsError
             )
             Left(sessionsError)
           case Right(authData) => Right(authData)
@@ -49,17 +51,18 @@ class AuthorizerImpl @Inject()(sessions: SessionsClient, config: Config)(implici
   private def getAuthorizationData(token: String): Future[Either[Result, AuthorizationData]] = {
     sessions.getAuthorization(SessionTokenType.SessionCookie, token) map { response =>
       response match {
-        case Right(response) => parser.parse(response.authorization.jwt) match {
-          case Right(jwt) =>
-            Right(AuthorizationData(token, response.authorization.jwt, JWTWrapper(jwt)))
-          case Left(error) =>
-            logger.info("failedToParseAuthToken")("token" -> response.authorization.jwt, "error" -> error)
-            Left(Results.Unauthorized)
-        }
+        case Right(response) =>
+          parser.parse(response.authorization.jwt) match {
+            case Right(jwt) =>
+              Right(AuthorizationData(token, response.authorization.jwt, JWTWrapper(jwt)))
+            case Left(error) =>
+              logger.info("failedToParseAuthToken")("token" -> response.authorization.jwt, "error" -> error)
+              Left(Results.Unauthorized)
+          }
         case Left(sessionErrorCode) =>
           sessionErrorCode match {
             case SessionsServiceErrorCode.NotFound => Left(Results.NotFound)
-            case _ => Left(Results.InternalServerError)
+            case _                                 => Left(Results.InternalServerError)
           }
       }
     }

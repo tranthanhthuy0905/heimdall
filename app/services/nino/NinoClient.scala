@@ -13,15 +13,11 @@ import models.common.PermissionType
 import scala.concurrent.{ExecutionContext, Future}
 
 trait NinoClient {
-  def enforce(jwtString: String,
-              entities: List[EntityDescriptor],
-              action: PermissionType.Value): Future[Boolean]
+  def enforce(jwtString: String, entities: List[EntityDescriptor], action: PermissionType.Value): Future[Boolean]
 }
 
 @Singleton
-class NinoClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
-    extends NinoClient
-    with LazyLogging {
+class NinoClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) extends NinoClient with LazyLogging {
 
   private val client: Nino.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)
@@ -36,14 +32,12 @@ class NinoClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
   }
 
   private val auth: Authorization = {
-    val secret = config.getString("edc.service.nino.thrift_auth_secret")
+    val secret   = config.getString("edc.service.nino.thrift_auth_secret")
     val authType = config.getString("edc.service.nino.thrift_auth_type")
     Authorization(Option(authType), Option(secret))
   }
 
-  def enforce(jwtString: String,
-              entities: List[EntityDescriptor],
-              action: PermissionType.Value): Future[Boolean] = {
+  def enforce(jwtString: String, entities: List[EntityDescriptor], action: PermissionType.Value): Future[Boolean] = {
     val request = BatchAccessCheckRequest(jwtString, entities, action.toString)
     client
       .enforceBatch(auth, request, RequestInfo())

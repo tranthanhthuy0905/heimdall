@@ -1,6 +1,12 @@
 package controllers
 
-import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, TokenValidationAction, WatermarkAction}
+import actions.{
+  HeimdallRequestAction,
+  PermValidationActionBuilder,
+  RtmRequestAction,
+  TokenValidationAction,
+  WatermarkAction
+}
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import models.auth.StreamingSessionData
@@ -17,24 +23,24 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class ProbeController @Inject()(
-                                 heimdallRequestAction: HeimdallRequestAction,
-                                 tokenValidationAction: TokenValidationAction,
-                                 permValidation: PermValidationActionBuilder,
-                                 watermarkAction: WatermarkAction,
-                                 rtmRequestAction: RtmRequestAction,
-                                 rtm: RtmClient,
-                                 sessionData: StreamingSessionData,
-                                 audit: AuditClient,
-                                 config: Config,
-                                 components: ControllerComponents
+  heimdallRequestAction: HeimdallRequestAction,
+  tokenValidationAction: TokenValidationAction,
+  permValidation: PermValidationActionBuilder,
+  watermarkAction: WatermarkAction,
+  rtmRequestAction: RtmRequestAction,
+  rtm: RtmClient,
+  sessionData: StreamingSessionData,
+  audit: AuditClient,
+  config: Config,
+  components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
     with AuditConversions {
 
   def probe: Action[AnyContent] =
-    (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen rtmRequestAction)
-      .async { request =>
+    (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen rtmRequestAction).async {
+      request =>
         val authHandler = request.attrs(AuthorizationAttr.Key)
 
         val okCallback = (response: WSResponse) => {
@@ -48,7 +54,7 @@ class ProbeController @Inject()(
                   updatedByTid(authHandler.parsedJwt),
                   fileTid(file.fileId, file.partnerId),
                   RequestUtils.getClientIpAddress(request)
-                )
+              )
             )
 
           val contentType = response.headers
@@ -69,19 +75,19 @@ class ProbeController @Inject()(
                     exception,
                     "failedToSendMediaViewedAuditEvent"
                   )(
-                    "exception" -> exception.getMessage,
-                    "path" -> request.path,
+                    "exception"  -> exception.getMessage,
+                    "path"       -> request.path,
                     "mediaIdent" -> request.media,
-                    "token" -> request.streamingSessionToken
+                    "token"      -> request.streamingSessionToken
                   )
                   Future.successful(InternalServerError)
               }
             case Failure(exception) =>
               logger.error(exception, "exceptionDuringEngagingAuditClient")(
-                "exception" -> exception.getMessage,
-                "path" -> request.path,
+                "exception"  -> exception.getMessage,
+                "path"       -> request.path,
                 "mediaIdent" -> request.media,
-                "token" -> request.streamingSessionToken
+                "token"      -> request.streamingSessionToken
               )
               Future.successful(InternalServerError)
           }
@@ -92,11 +98,12 @@ class ProbeController @Inject()(
             response,
             okCallback,
             Seq[(String, Any)](
-              "path" -> request.path,
-              "media" -> request.media,
-              "status" -> response.status,
+              "path"    -> request.path,
+              "media"   -> request.media,
+              "status"  -> response.status,
               "message" -> response.body
             )
-          )}
-      }
+          )
+        }
+    }
 }

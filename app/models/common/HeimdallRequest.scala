@@ -8,7 +8,8 @@ import scala.util.Failure
 import scala.util.Try
 
 case class HeimdallRequest[A](request: Request[A], watermark: String = "")
-    extends WrappedRequest[A](request) with LazyLogging {
+    extends WrappedRequest[A](request)
+    with LazyLogging {
 
   /** Gets the client IP address using remoteAddress API.
     * See https://www.playframework.com/documentation/2.6.0/api/java/play/mvc/Http.RequestHeader.html#remoteAddress--

@@ -1,6 +1,12 @@
 package controllers
 
-import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, TokenValidationAction, WatermarkAction}
+import actions.{
+  HeimdallRequestAction,
+  PermValidationActionBuilder,
+  RtmRequestAction,
+  TokenValidationAction,
+  WatermarkAction
+}
 import javax.inject.Inject
 import models.hls.HlsManifestFormatter
 import play.api.libs.ws.WSResponse
@@ -31,7 +37,6 @@ class HlsController @Inject()(
         permValidation.build(PermissionType.Stream) andThen
         rtmRequestAction
     ).async { request =>
-
       val okCallback = (response: WSResponse) => {
         val contentType = response.headers
           .get("Content-Type")
@@ -52,11 +57,11 @@ class HlsController @Inject()(
           response,
           okCallback,
           Seq[(String, Any)](
-            "path" -> request.path,
-            "token" -> request.streamingSessionToken,
+            "path"       -> request.path,
+            "token"      -> request.streamingSessionToken,
             "mediaIdent" -> request.media,
-            "status" -> response.status,
-            "message" -> response.body
+            "status"     -> response.status,
+            "message"    -> response.body
           )
         )
       }
@@ -71,7 +76,6 @@ class HlsController @Inject()(
         watermarkAction andThen
         rtmRequestAction
     ).async { request =>
-
       val okCallback = (response: WSResponse) => {
         val contentType = response.headers
           .get("Content-Type")
@@ -85,11 +89,11 @@ class HlsController @Inject()(
           response,
           okCallback,
           Seq[(String, Any)](
-            "path" -> request.path,
-            "token" -> request.streamingSessionToken,
+            "path"       -> request.path,
+            "token"      -> request.streamingSessionToken,
             "mediaIdent" -> request.media,
-            "status" -> response.status,
-            "message" -> response.body
+            "status"     -> response.status,
+            "message"    -> response.body
           )
         )
       }

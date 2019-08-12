@@ -11,8 +11,8 @@ trait UUIDHelper extends LazyLogging {
 
   def getUuidListByKey(key: String, map: Map[String, Seq[String]]): Option[List[UUID]] = {
     val uuidList = for {
-      seq <- map.get(key)
-      value <- seq.headOption
+      seq      <- map.get(key)
+      value    <- seq.headOption
       uuidList <- this.parseStringToUuidList(value)
     } yield uuidList
 
@@ -21,7 +21,7 @@ trait UUIDHelper extends LazyLogging {
         Some(list)
       case None =>
         logger.warn("failedToParseUUIDsForParam")(
-          "map" -> map,
+          "map"        -> map,
           "queryParam" -> key
         )
         None
@@ -30,9 +30,9 @@ trait UUIDHelper extends LazyLogging {
 
   def getUuidValueByKey(key: String, query: Map[String, Seq[String]]): Option[UUID] = {
     for {
-      seq <- query.get(key)
+      seq   <- query.get(key)
       value <- seq.headOption
-      uuid <- Convert.tryToUuid(value)
+      uuid  <- Convert.tryToUuid(value)
     } yield uuid
   }
 

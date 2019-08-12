@@ -14,14 +14,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class StreamingSessionDataSpec extends PlaySpec with MockitoSugar {
 
-  class TestStreamingSessionData(config: Config)
-      extends StreamingSessionDataImpl(config)
+  class TestStreamingSessionData(config: Config) extends StreamingSessionDataImpl(config)
 
-  val secret: String = "testing-play-secret"
+  val secret: String     = "testing-play-secret"
   val configMock: Config = mock[Config]
   when(configMock.getString("play.http.secret.key")) thenReturn secret
   val someToken: String = "some-token"
-  val testSessionData = new TestStreamingSessionData(configMock)
+  val testSessionData   = new TestStreamingSessionData(configMock)
 
   "StreamingSessionData" must {
 

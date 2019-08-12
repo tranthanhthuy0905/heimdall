@@ -50,25 +50,27 @@ trait AuditEvent {
     * toJsonString serializes data into JSON formatted message converted to a string.
     */
   def toJsonString: String = {
-    Json.obj(
-      "TargetTID" -> Json.obj(
-        "Entity" -> targetTid.entity.value,
-        "Domain" -> targetTid.domain,
-        "ID" -> targetTid.id
-      ),
-      "UpdatedByTID" -> Json.obj(
-        "Entity" -> updatedByTid.entity.value,
-        "Domain" -> updatedByTid.domain,
-        "ID" -> updatedByTid.id
-      ),
-      "FileTID" -> Json.obj(
-        "Entity" -> fileTid.entity.value,
-        "Domain" -> fileTid.domain,
-        "ID" -> fileTid.id
-      ),
-      "Ver" -> ver,
-      "ClientIpAddress" -> remoteAddress
-    ).toString
+    Json
+      .obj(
+        "TargetTID" -> Json.obj(
+          "Entity" -> targetTid.entity.value,
+          "Domain" -> targetTid.domain,
+          "ID"     -> targetTid.id
+        ),
+        "UpdatedByTID" -> Json.obj(
+          "Entity" -> updatedByTid.entity.value,
+          "Domain" -> updatedByTid.domain,
+          "ID"     -> updatedByTid.id
+        ),
+        "FileTID" -> Json.obj(
+          "Entity" -> fileTid.entity.value,
+          "Domain" -> fileTid.domain,
+          "ID"     -> fileTid.id
+        ),
+        "Ver"             -> ver,
+        "ClientIpAddress" -> remoteAddress
+      )
+      .toString
   }
 
 }
@@ -113,12 +115,11 @@ trait AuditEvent {
   *
   */
 case class EvidenceRecordBufferedEvent(
-                                        targetTid: Tid,
-                                        updatedByTid: Tid,
-                                        fileTid: Tid,
-                                        remoteAddress: String
-                                      )
-  extends AuditEvent {
+  targetTid: Tid,
+  updatedByTid: Tid,
+  fileTid: Tid,
+  remoteAddress: String
+) extends AuditEvent {
   val eventTypeUuid = "513dd980-dafd-e1c5-0ab3-f9099657179e"
 }
 
@@ -168,21 +169,19 @@ case class EvidenceRecordBufferedEvent(
   *
   */
 case class EvidenceFileStreamedEvent(
-                                      targetTid: Tid,
-                                      updatedByTid: Tid,
-                                      fileTid: Tid,
-                                      remoteAddress: String
-                                    )
-  extends AuditEvent {
+  targetTid: Tid,
+  updatedByTid: Tid,
+  fileTid: Tid,
+  remoteAddress: String
+) extends AuditEvent {
   val eventTypeUuid = "289e31fd-acbe-db5a-d6a6-b512ba23f76d"
 }
 
 case class EvidenceViewed(
-                         targetTid: Tid,
-                         updatedByTid: Tid,
-                         fileTid: Tid,
-                         remoteAddress: String
-                         )
-extends AuditEvent {
+  targetTid: Tid,
+  updatedByTid: Tid,
+  fileTid: Tid,
+  remoteAddress: String
+) extends AuditEvent {
   final val eventTypeUuid = "321c3a6e-d748-3b1e-8222-c4a50e8e7d69"
 }

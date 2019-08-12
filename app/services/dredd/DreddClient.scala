@@ -16,17 +16,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait DreddClient {
   def getUrl[A](file: FileIdent, request: HeimdallRequest[A]): Future[URL]
-  def getUrl[A](agencyId: UUID,
-                evidenceId: UUID,
-                fileId: UUID,
-                request: HeimdallRequest[A],
-                expiresSecs: Int = 60): Future[URL]
+
+  def getUrl[A](
+    agencyId: UUID,
+    evidenceId: UUID,
+    fileId: UUID,
+    request: HeimdallRequest[A],
+    expiresSecs: Int = 60): Future[URL]
 }
 
 @Singleton
-class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
-    extends DreddClient
-    with LazyLogging {
+class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) extends DreddClient with LazyLogging {
 
   private val client: DreddService.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)
@@ -42,21 +42,21 @@ class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
   }
 
   private val auth: Authorization = {
-    val secret = config.getString("edc.service.dredd.thrift_auth_secret")
+    val secret   = config.getString("edc.service.dredd.thrift_auth_secret")
     val authType = config.getString("edc.service.dredd.thrift_auth_type")
     Authorization(authType, secret)
   }
 
-  override def getUrl[A](file: FileIdent,
-                         request: HeimdallRequest[A]): Future[URL] = {
+  override def getUrl[A](file: FileIdent, request: HeimdallRequest[A]): Future[URL] = {
     getUrl(file.partnerId, file.evidenceId, file.fileId, request)
   }
 
-  override def getUrl[A](partnerId: UUID,
-                         evidenceId: UUID,
-                         fileId: UUID,
-                         request: HeimdallRequest[A],
-                         expiresSecs: Int): Future[URL] = {
+  override def getUrl[A](
+    partnerId: UUID,
+    evidenceId: UUID,
+    fileId: UUID,
+    request: HeimdallRequest[A],
+    expiresSecs: Int): Future[URL] = {
 
     def extractUrlFromDreddResponse(r: PresignedUrlResponse): Future[URL] = {
       val u = for {
@@ -66,9 +66,9 @@ class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
       } yield Future(url)
       u.getOrElse {
         logger.error("noUrlInResponse")(
-          "message" -> "No URL contained in PresignedUrlResponse",
+          "message"    -> "No URL contained in PresignedUrlResponse",
           "evidenceId" -> evidenceId,
-          "partnerId" -> partnerId
+          "partnerId"  -> partnerId
         )
         Future.failed(
           new Exception(

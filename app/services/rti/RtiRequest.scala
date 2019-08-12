@@ -10,8 +10,5 @@ import play.api.mvc.WrappedRequest
   *
   * @return Generated URI as a string.
   */
-case class RtiRequest[A](file: FileIdent,
-                         presignedUrl: URL,
-                         watermark: String,
-                         request: HeimdallRequest[A])
-  extends WrappedRequest[A](request)
+case class RtiRequest[A](file: FileIdent, presignedUrl: URL, watermark: String, request: HeimdallRequest[A])
+    extends WrappedRequest[A](request)

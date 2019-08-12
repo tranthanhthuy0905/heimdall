@@ -12,6 +12,7 @@ case class TokenValidationAction @Inject()(sessionData: StreamingSessionData)(
   implicit val executionContext: ExecutionContext
 ) extends ActionFilter[HeimdallRequest]
     with LazyLogging {
+
   def filter[A](request: HeimdallRequest[A]) = Future.successful {
     val result =
       sessionData.validateToken(
@@ -26,9 +27,9 @@ case class TokenValidationAction @Inject()(sessionData: StreamingSessionData)(
       case _ => {
         logger.error("invalidOrMissingStreamingSessionToken")(
           "streamingSessionToken" -> request.streamingSessionToken,
-          "path" -> request.path,
-          "query" -> request.queryString,
-          "cookie" -> request.cookie
+          "path"                  -> request.path,
+          "query"                 -> request.queryString,
+          "cookie"                -> request.cookie
         )
         Some(Results.Forbidden)
       }

@@ -13,7 +13,10 @@ trait RtiClient {
 }
 
 @Singleton
-class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: ExecutionContext) extends RtiClient with LazyLogging {
+class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: ExecutionContext)
+    extends RtiClient
+    with LazyLogging {
+
   def getImage(presignedURL: String, watermark: String): Future[WSResponse] = {
     ws.url(config.getString("edc.service.rti.host") + "/v1/images/image")
       .addQueryStringParameters("sizeID" -> "")

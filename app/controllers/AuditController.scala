@@ -49,19 +49,19 @@ class AuditController @Inject()(
                     exception,
                     "failedToSendMediaStreamedAuditEvent"
                   )(
-                    "exception" -> exception.getMessage,
-                    "path" -> request.path,
+                    "exception"  -> exception.getMessage,
+                    "path"       -> request.path,
                     "mediaIdent" -> request.media,
-                    "token" -> request.streamingSessionToken
+                    "token"      -> request.streamingSessionToken
                   )
                   Future.successful(InternalServerError)
               }
             case Failure(exception) =>
               logger.error(exception, "exceptionDuringEngagingAuditClient")(
-                "exception" -> exception.getMessage,
-                "path" -> request.path,
+                "exception"  -> exception.getMessage,
+                "path"       -> request.path,
                 "mediaIdent" -> request.media,
-                "token" -> request.streamingSessionToken
+                "token"      -> request.streamingSessionToken
               )
               Future.successful(InternalServerError)
           }

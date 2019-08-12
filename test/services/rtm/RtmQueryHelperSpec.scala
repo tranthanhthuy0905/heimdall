@@ -4,7 +4,7 @@ import org.scalatestplus.play.PlaySpec
 import java.util.UUID.randomUUID
 
 class RtmQueryValidatorSpec extends PlaySpec {
-  val uuid = randomUUID
+  val uuid      = randomUUID
   val extraUuid = randomUUID
 
   "Query Validator" must {
@@ -12,10 +12,10 @@ class RtmQueryValidatorSpec extends PlaySpec {
     "return validated query and ignore extra UUID-s" in {
 
       val query = Map(
-        "file_id" -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
+        "file_id"     -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
         "evidence_id" -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
-        "partner_id" -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
-        "autoFixPTS" -> Seq("true")
+        "partner_id"  -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
+        "autoFixPTS"  -> Seq("true")
       )
 
       val result = RtmQueryHelper("/media/hls/master", query)
@@ -30,9 +30,9 @@ class RtmQueryValidatorSpec extends PlaySpec {
     "filter out extra parameter" in {
 
       val query = Map(
-        "file_id" -> Seq(uuid.toString),
-        "evidence_id" -> Seq(uuid.toString),
-        "partner_id" -> Seq(uuid.toString),
+        "file_id"          -> Seq(uuid.toString),
+        "evidence_id"      -> Seq(uuid.toString),
+        "partner_id"       -> Seq(uuid.toString),
         "unexpected_param" -> Seq(randomUUID.toString, randomUUID.toString)
       )
 
@@ -43,8 +43,8 @@ class RtmQueryValidatorSpec extends PlaySpec {
     "return query and filter out unexpected_param despite missing file_id" in {
 
       val query = Map(
-        "evidence_id" -> Seq(uuid.toString),
-        "partner_id" -> Seq(uuid.toString),
+        "evidence_id"      -> Seq(uuid.toString),
+        "partner_id"       -> Seq(uuid.toString),
         "unexpected_param" -> Seq(randomUUID.toString, randomUUID.toString)
       )
 

@@ -12,9 +12,7 @@ import scala.concurrent.ExecutionContext
 
 trait StreamingSessionData {
   def createToken(axonSessionToken: String, fileIds: SortedSet[UUID]): String
-  def validateToken(streamingSessionToken: String,
-                    axonSessionToken: String,
-                    fileIds: SortedSet[UUID]): Boolean
+  def validateToken(streamingSessionToken: String, axonSessionToken: String, fileIds: SortedSet[UUID]): Boolean
 }
 
 @Singleton
@@ -29,8 +27,7 @@ class StreamingSessionDataImpl @Inject()(config: Config)(
     * createToken returns a Base64 encoded token, however it replaces the "+", "/", "=" characters
     * with ".", "_", "-" respectively to make the token URL-safe.
     */
-  def createToken(axonSessionToken: String,
-                  fileIds: SortedSet[UUID]): String = {
+  def createToken(axonSessionToken: String, fileIds: SortedSet[UUID]): String = {
     val allFileIds: String = fileIds
       .fold("") { (z, i) =>
         z.toString + i.toString
@@ -47,9 +44,7 @@ class StreamingSessionDataImpl @Inject()(config: Config)(
       .replaceAll("=", "-")
   }
 
-  def validateToken(streamingSessionToken: String,
-                    axonSessionToken: String,
-                    fileIds: SortedSet[UUID]): Boolean = {
+  def validateToken(streamingSessionToken: String, axonSessionToken: String, fileIds: SortedSet[UUID]): Boolean = {
     if (fileIds.isEmpty || axonSessionToken.isEmpty || streamingSessionToken.isEmpty) {
       return false
     }

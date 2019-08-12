@@ -40,11 +40,10 @@ case class RtmRequestAction @Inject()(
     }
   }
 
-  def handleWatermark(query: Map[String, String],
-                      watermark: Option[String]): Map[String, String] = {
+  def handleWatermark(query: Map[String, String], watermark: Option[String]): Map[String, String] = {
     watermark match {
       case Some(labelValue) => query + ("label" -> labelValue)
-      case None => query
+      case None             => query
     }
   }
 }

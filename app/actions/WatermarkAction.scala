@@ -13,6 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class WatermarkAction @Inject()(komrade: KomradeClient)(
   implicit val executionContext: ExecutionContext
 ) extends ActionRefiner[HeimdallRequest, HeimdallRequest] {
+
   def refine[A](
     input: HeimdallRequest[A]
   ): Future[Either[Results.Status, HeimdallRequest[A]]] =
@@ -38,7 +39,7 @@ case class WatermarkAction @Inject()(komrade: KomradeClient)(
   ): Future[Either[Results.Status, HeimdallRequest[A]]] = {
     val watermark = for {
       partner <- komrade.getPartner(input.audienceId)
-      user <- komrade.getUser(input.audienceId, input.subjectId)
+      user    <- komrade.getUser(input.audienceId, input.subjectId)
     } yield Watermark(partner, user)
     watermark.map {
       _ match {
@@ -73,9 +74,7 @@ case class WatermarkAction @Inject()(komrade: KomradeClient)(
     *  @return Boolean value indicating if validated parameter presents in the query and equal to or
     *          greater than the threshold.
     */
-  private def isAboveThreshold[A](request: HeimdallRequest[A],
-                                  paramName: String,
-                                  threshold: Int): Boolean = {
+  private def isAboveThreshold[A](request: HeimdallRequest[A], paramName: String, threshold: Int): Boolean = {
     request.queryString
       .getOrElse(paramName, Seq())
       .headOption
@@ -99,14 +98,14 @@ object Watermark extends LazyLogging {
             Some(s"Viewed by $username ($domain) on ${DateTime.getUtcDate}")
           case None =>
             logger.error("failedToRetrievePartnerDomain")(
-              "user" -> user,
+              "user"    -> user,
               "partner" -> partner
             )
             None
         }
       case None =>
         logger.error("failedToRetrieveUsername")(
-          "user" -> user,
+          "user"    -> user,
           "partner" -> partner
         )
         None

@@ -17,17 +17,19 @@ trait KomradeClient {
 }
 
 @Singleton
-class KomradeClientImpl @Inject() (config: Config) (implicit ex: ExecutionContext) extends KomradeClient with LazyLogging {
+class KomradeClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
+    extends KomradeClient
+    with LazyLogging {
 
   private val client: KomradeService.MethodPerEndpoint = {
-    val env = FinagleClient.getEnvironment(config)
-    val dest = FinagleClient.newThriftUrl("com.evidence.service.komrade", env, "thrift_ssl")
+    val env    = FinagleClient.getEnvironment(config)
+    val dest   = FinagleClient.newThriftUrl("com.evidence.service.komrade", env, "thrift_ssl")
     val client = FinagleClient.newThriftClient().build[KomradeService.MethodPerEndpoint](dest)
     client
   }
 
   private val auth: Authorization = {
-    val secret = config.getString("edc.service.komrade.thrift_auth_secret")
+    val secret   = config.getString("edc.service.komrade.thrift_auth_secret")
     val authType = config.getString("edc.service.komrade.thrift_auth_type")
     Authorization(Option(authType), Option(secret))
   }
