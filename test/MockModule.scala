@@ -8,7 +8,7 @@ import services.nino.NinoClient
 import services.rti.RtiClient
 import services.rtm.RtmClient
 import services.sessions.SessionsClient
-import services.zookeeper.ZookeeperServerSet
+import services.zookeeper.HeimdallLoadBalancer
 
 class MockModule extends Module with MockitoSugar {
   override def configure() = {
@@ -23,6 +23,6 @@ class MockModule extends Module with MockitoSugar {
     bind(classOf[StreamingSessionData]).toInstance(mock[StreamingSessionData])
 
     bind(classOf[CuratorFramework]).toInstance(mock[CuratorFramework])
-    bind(classOf[ZookeeperServerSet]).toInstance(mock[ZookeeperServerSet])
+    bind(classOf[HeimdallLoadBalancer]).toInstance(mock[HeimdallLoadBalancer])
   }
 }

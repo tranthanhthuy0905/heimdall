@@ -6,13 +6,13 @@ import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
 import services.rtm.{RtmQueryHelper, RtmRequest}
-import services.zookeeper.ZookeeperServerSet
+import services.zookeeper.HeimdallLoadBalancer
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class RtmRequestAction @Inject()(
   dredd: DreddClient,
-  zookeeper: ZookeeperServerSet
+  loadBalancer: HeimdallLoadBalancer
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, RtmRequest]
     with LazyLogging {
@@ -24,7 +24,7 @@ case class RtmRequestAction @Inject()(
           presignedUrls <- Future.traverse(input.media.toList)(
             dredd.getUrl(_, input)
           )
-          endpoint <- zookeeper.getInstanceAsFuture(input.media.fileIds.head)
+          endpoint <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString)
         } yield
           Right(
             new RtmRequest(

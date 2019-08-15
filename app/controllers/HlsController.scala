@@ -14,7 +14,6 @@ import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponent
 import services.rtm.{RtmClient, RtmResponseHandler}
 import com.typesafe.config.Config
 import models.common.PermissionType
-import play.api.http.HttpEntity
 
 import scala.concurrent.ExecutionContext
 

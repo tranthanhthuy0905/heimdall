@@ -9,7 +9,7 @@ import services.nino.{NinoClient, NinoClientImpl}
 import services.rti.{RtiClient, RtiClientImpl}
 import services.rtm.{RtmClient, RtmClientImpl}
 import services.sessions.{SessionsClient, SessionsClientImpl}
-import services.zookeeper.{ZookeeperClientProvider, ZookeeperServerSet, ZookeeperServerSetProvider}
+import services.zookeeper.{HeimdallLoadBalancer, HeimdallLoadBalancerProvider, ZookeeperClientProvider}
 
 class Module extends AbstractModule {
   override def configure() = {
@@ -26,6 +26,6 @@ class Module extends AbstractModule {
     bind(classOf[StreamingSessionData]).to(classOf[StreamingSessionDataImpl])
     // Providers
     bind(classOf[CuratorFramework]).toProvider(classOf[ZookeeperClientProvider]).in(classOf[Singleton])
-    bind(classOf[ZookeeperServerSet]).toProvider(classOf[ZookeeperServerSetProvider]).in(classOf[Singleton])
+    bind(classOf[HeimdallLoadBalancer]).toProvider(classOf[HeimdallLoadBalancerProvider]).in(classOf[Singleton])
   }
 }

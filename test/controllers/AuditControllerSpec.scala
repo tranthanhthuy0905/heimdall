@@ -102,7 +102,7 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
       }
     }
 
-    "return InternalServerError RuntimeException" in new MockContext {
+    "return InternalServerError on RuntimeException" in new MockContext {
       when(
         mockAuditClient
           .recordEndSuccess(List[AuditEvent](ArgumentMatchers.any()))

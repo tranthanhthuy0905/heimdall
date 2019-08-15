@@ -33,50 +33,55 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     * nginx must deny access to Heimdall's endpoints listed as Internals.
     * See the `deny` access directive of nginx.
     */
-  final val InternalRoutes = List("/media/alive")
+  final val internalRoutes = List("/media/alive")
 
   def apply(
     nextFilter: RequestHeader => Future[Result]
   )(requestHeader: RequestHeader): Future[Result] = {
     val startTime  = System.currentTimeMillis
-    val actionName = this.getActionName(requestHeader)
+    val actionName: String = this.getActionName(requestHeader)
+    executionTime(s"$actionName.time", authAndExecuteRequest(startTime, nextFilter, requestHeader, actionName))
+  }
 
-    executionTime(s"$actionName.time") {
-      logger.info("requestBegin")(
-        "action" -> actionName,
-        "path"   -> requestHeader.path,
-        "query"  -> requestHeader.queryString
-      )
-      if (InternalRoutes.contains(requestHeader.path)) {
-        executeRequest(startTime, nextFilter, requestHeader, actionName)
-      } else {
-        authorizer.authorize(requestHeader).flatMap {
-          case Right(authData) =>
-            val maybeMediaIdent = this.getMediaIdent(requestHeader)
-            maybeMediaIdent match {
-              case Some(mediaIdent) =>
-                executeRequest(
-                  startTime,
-                  nextFilter,
-                  requestHeader
-                    .addAttr(AuthorizationAttr.Key, authData)
-                    .addAttr(MediaIdentAttr.Key, mediaIdent),
-                  actionName
-                )
-              case None =>
-                val details =
-                  "one or more parameters were not provided in incoming request"
-                logger.info("badRequest")(
-                  "action"      -> actionName,
-                  "path"        -> requestHeader.path,
-                  "queryString" -> requestHeader.queryString,
-                  "details"     -> details
-                )
-                Future.successful(Results.BadRequest)
-            }
-          case Left(e) =>
-            Future.successful(e)
-        }
+  private def authAndExecuteRequest(
+    startTime: Long,
+    nextFilter: RequestHeader => Future[Result],
+    requestHeader: RequestHeader,
+    actionName: String): Future[Result] = {
+    logger.info("requestBegin")(
+      "action" -> actionName,
+      "path"   -> requestHeader.path,
+      "query"  -> requestHeader.queryString
+    )
+    if (internalRoutes.contains(requestHeader.path)) {
+      executeRequest(startTime, nextFilter, requestHeader, actionName)
+    } else {
+      authorizer.authorize(requestHeader).flatMap {
+        case Right(authData) =>
+          val maybeMediaIdent = this.getMediaIdent(requestHeader)
+          maybeMediaIdent match {
+            case Some(mediaIdent) =>
+              executeRequest(
+                startTime,
+                nextFilter,
+                requestHeader
+                  .addAttr(AuthorizationAttr.Key, authData)
+                  .addAttr(MediaIdentAttr.Key, mediaIdent),
+                actionName
+              )
+            case None =>
+              val details =
+                "one or more parameters were not provided in incoming request"
+              logger.info("badRequest")(
+                "action"      -> actionName,
+                "path"        -> requestHeader.path,
+                "queryString" -> requestHeader.queryString,
+                "details"     -> details
+              )
+              Future.successful(Results.BadRequest)
+          }
+        case Left(e) =>
+          Future.successful(e)
       }
     }
   }
