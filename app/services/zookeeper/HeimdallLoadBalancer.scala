@@ -60,7 +60,7 @@ class HeimdallLoadBalancer(
   }
 
   def getInstance(key: String): Option[ServiceEndpoint] = {
-    endpointResolver.get().get(key)
+    endpointResolver.get().get(key.replace("-", "").toLowerCase)
   }
 
 }

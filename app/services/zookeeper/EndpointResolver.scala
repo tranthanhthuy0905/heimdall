@@ -53,6 +53,8 @@ class EndpointResolver(
     extends LazyLogging
     with StrictStatsD {
 
+  private[this] final val (minReplicaCount, maxReplicaCount) = (1.0, 101.0)
+
   private[this] val rand          = new scala.util.Random(DateTime.now(DateTimeZone.UTC).getMillis)
   private[this] val replicaCounts = initReplicaCounts(endpoints, perftrakData, priorityMap, defaultPriority)
   private[this] val hashRing      = new ConsistentHash[ServiceEndpoint](endpointStringer, replicaCounts)
@@ -66,7 +68,6 @@ class EndpointResolver(
   }
 
   def get(key: String): Option[ServiceEndpoint] = {
-
     val wasCached = topContributorsCacheOpt.getOrElse(Map[String, ServiceEndpoint]().empty).contains(key)
     statsd.increment("get_endpoint", s"was_cached:$wasCached")
 
@@ -147,20 +148,25 @@ class EndpointResolver(
     * Normalizes priority value to 1-101 range.
     */
   private[this] def normalize(priority: Double, minPriority: Double, maxPriority: Double): Int = {
-    val range        = if ((maxPriority - minPriority) == 0.0) 1.0 else { maxPriority - minPriority }
-    val value        = 1.0 + 100.0 * (priority - minPriority) / range
-    val boundedValue = min(max(value, 1.0), 101.0)
-    val result       = round(boundedValue).toInt
-    logger.debug("normalizedPriority")(
-      "priority"                  -> priority,
-      "minPriority"               -> minPriority,
-      "maxPriority"               -> maxPriority,
-      "priorityRange"             -> range,
-      "normalizedRawPriority"     -> value,
-      "normalizedBoundedPriority" -> boundedValue,
-      "result"                    -> result
-    )
-    result
+    val range = maxPriority - minPriority
+    if (range < 0.001) {
+      /** If max almost equals to min, there is no range. Return max number of replicas. */
+      maxReplicaCount.toInt
+    } else {
+      val value        = minReplicaCount + (maxReplicaCount - minReplicaCount) * (priority - minPriority) / range
+      val boundedValue = min(max(value, minReplicaCount), maxReplicaCount)
+      val result       = round(boundedValue).toInt
+      logger.debug("normalizedPriority")(
+        "priority"                  -> priority,
+        "minPriority"               -> minPriority,
+        "maxPriority"               -> maxPriority,
+        "priorityRange"             -> range,
+        "normalizedRawPriority"     -> value,
+        "normalizedBoundedPriority" -> boundedValue,
+        "result"                    -> result
+      )
+      result
+    }
   }
 
   /**
@@ -172,7 +178,7 @@ class EndpointResolver(
         "priorityMap"             -> priorityMap,
         "replicaCounts"           -> replicaCounts,
         "topContributorsCacheOpt" -> topContributorsCacheOpt,
-        "perftrakData" -> perftrakData
+        "perftrakData"            -> perftrakData
       )
     }
   }

@@ -13,7 +13,11 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
 
   import ZookeeperPackageTestHelper._
 
-  private class HeimdallLoadBalancerMockContext(rtmChildrenCount: Int, perftrakChildrenCount: Int) {
+  private class HeimdallLoadBalancerMockContext(
+    rtmChildrenCount: Int,
+    perftrakChildrenCount: Int,
+    minAgg: Int = 1,
+    maxAgg: Int = 10) {
     val (rtmCacheMock, rtmListenerContainer)           = newCacheMock
     val (perftrakCacheMock, perftrakListenerContainer) = newCacheMock
 
@@ -28,7 +32,7 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
     val listOfRtmData: util.List[ChildData] = newListOfRtmChildData(rtmChildrenCount)
 
     val listOfPerftrakData: util.List[ChildData] =
-      newListOfPerftrakChildData(perftrakChildrenCount, 1, 10, 128, lastKey)
+      newListOfPerftrakChildData(perftrakChildrenCount, minAgg, maxAgg, 128, lastKey)
 
     when(rtmCacheMock.getCurrentData) thenReturn listOfRtmData
     when(perftrakCacheMock.getCurrentData) thenReturn listOfPerftrakData
@@ -70,6 +74,19 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
       val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(60), 8900))
       result mustBe expected
     }
+
+    "return 002 endpoint from the cache" in new HeimdallLoadBalancerMockContext(2, 2, 0, 0) {
+      val loadBalancer: HeimdallLoadBalancer =
+        new HeimdallLoadBalancer(
+          rtmCacheMock,
+          perftrakCacheMock,
+          HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
+      loadBalancer.start()
+      val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(someKey)
+      val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(2), 8900))
+      result mustBe expected
+    }
+
   }
 
 }
