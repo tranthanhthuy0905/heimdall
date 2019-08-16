@@ -11,7 +11,7 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
-import services.audit.{AuditClient, AuditConversions, EvidenceViewed}
+import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.rti.RtiClient
 
 class ImageController @Inject()(
@@ -39,7 +39,7 @@ class ImageController @Inject()(
       for {
         response <- rti.getImage(request.presignedUrl.toString, request.watermark)
         _ <- audit.recordEndSuccess(
-          EvidenceViewed(
+          EvidenceReviewEvent(
             evidenceTid(request.file.evidenceId, request.file.partnerId),
             updatedByTid(authHandler.parsedJwt),
             fileTid(request.file.fileId, request.file.partnerId),

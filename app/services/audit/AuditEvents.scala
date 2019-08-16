@@ -177,11 +177,11 @@ case class EvidenceFileStreamedEvent(
   val eventTypeUuid = "289e31fd-acbe-db5a-d6a6-b512ba23f76d"
 }
 
-case class EvidenceViewed(
+case class EvidenceReviewEvent(
   targetTid: Tid,
   updatedByTid: Tid,
   fileTid: Tid,
   remoteAddress: String
 ) extends AuditEvent {
-  final val eventTypeUuid = "321c3a6e-d748-3b1e-8222-c4a50e8e7d69"
+  final val eventTypeUuid = "6dc1dd8d-21c9-c1f5-c97e-b7a4ce481031"
 }
