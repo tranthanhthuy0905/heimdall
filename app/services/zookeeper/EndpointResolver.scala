@@ -17,7 +17,6 @@ import scala.util.{Success, Try}
   * Priority (p) is calculated as current component aggregate (a)
   * value divided by node capacity (c) multiplied by (-1):
   * p = -1 * a / c.
-  * See method perftrakDataToPriorityMap.
   *
   * Aggregate value shows how busy current node is.
   * I.e. greater the value, busier the node.
