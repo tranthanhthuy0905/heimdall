@@ -16,7 +16,7 @@ import play.api.libs.json.{JsPath, Json, Reads}
   * }
   */
 case class RtmNodeInfo(serviceEndpoint: ServiceEndpoint, status: String) {
-  def isAlive: Boolean = status == "ALIVE"
+  def isAlive: Boolean = status.toLowerCase == "alive"
 }
 
 object RtmNodeInfo {

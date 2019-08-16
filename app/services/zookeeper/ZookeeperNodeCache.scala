@@ -71,7 +71,7 @@ class RtmZookeeperNodeCache(nodeCache: PathChildrenCacheFacade, listenerCallback
   def transform(childData: ChildData): Option[ServiceEndpoint] = {
     val path = childData.getPath.split("/")
     if (path.last.startsWith("member_")) {
-      val childDataString = new String(childData.getData, "UTF-8").toLowerCase
+      val childDataString = new String(childData.getData, "UTF-8")
       Try(Json.parse(childDataString).as[RtmNodeInfo]) match {
         case Success(rtmNodeData) =>
           if (rtmNodeData.isAlive) {
@@ -102,7 +102,7 @@ class PerftrakZookeeperNodeCache(nodeCache: PathChildrenCacheFacade, listenerCal
     extends ZookeeperNodeCache[PerftrakDatum](nodeCache, listenerCallback) {
 
   def transform(childData: ChildData): Option[PerftrakDatum] = {
-    val childDataString    = new String(childData.getData, "UTF-8").toLowerCase
+    val childDataString    = new String(childData.getData, "UTF-8")
     val jsonData: JsValue  = Json.parse(childDataString)
     val planeComputational = getPlaneComputational(jsonData)
     val planeCaching       = getPlaneCaching(jsonData)

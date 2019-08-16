@@ -141,7 +141,7 @@ class EndpointResolver(
   }
 
   private[this] def getMinMax(map: Map[ServiceEndpoint, Double]): (Double, Double) = {
-    map.foldLeft((0.0, 0.0)) { case ((min, max), e) => (math.min(min, e._2), math.max(max, e._2)) }
+    map.foldLeft((Double.MaxValue, Double.MinValue)) { case ((min, max), e) => (math.min(min, e._2), math.max(max, e._2)) }
   }
 
   /**
@@ -149,7 +149,7 @@ class EndpointResolver(
     */
   private[this] def normalize(priority: Double, minPriority: Double, maxPriority: Double): Int = {
     val range = maxPriority - minPriority
-    if (range < 0.001) {
+    if (range.abs < 0.001) {
       /** If max almost equals to min, there is no range. Return max number of replicas. */
       maxReplicaCount.toInt
     } else {
