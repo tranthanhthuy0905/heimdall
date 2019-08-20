@@ -9,7 +9,6 @@ import play.api.http.{HttpChunk, HttpEntity}
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-
 import scala.concurrent.{ExecutionContext, Future}
 import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.rti.RtiClient
@@ -37,7 +36,32 @@ class ImageController @Inject()(
       val authHandler = request.attrs(AuthorizationAttr.Key)
 
       for {
-        response <- rti.getImage(request.presignedUrl.toString, request.watermark)
+        response <- rti.transcode(request.presignedUrl, request.watermark)
+        _ <- audit.recordEndSuccess(
+          EvidenceReviewEvent(
+            evidenceTid(request.file.evidenceId, request.file.partnerId),
+            updatedByTid(authHandler.parsedJwt),
+            fileTid(request.file.fileId, request.file.partnerId),
+            request.request.clientIpAddress
+          ))
+        httpEntity <- Future.successful(toHttpEntity(response))
+      } yield
+        httpEntity.fold(BadRequest(_), entity => {
+          Ok.sendEntity(entity)
+        })
+    }
+
+  def zoom: Action[AnyContent] =
+    (
+      heimdallRequestAction
+        andThen permValidation.build(PermissionType.View)
+        andThen watermarkAction
+        andThen rtiRequestAction
+    ).async { implicit request =>
+      val authHandler = request.attrs(AuthorizationAttr.Key)
+
+      for {
+        response <- rti.zoom(request.presignedUrl, request.watermark)
         _ <- audit.recordEndSuccess(
           EvidenceReviewEvent(
             evidenceTid(request.file.evidenceId, request.file.partnerId),

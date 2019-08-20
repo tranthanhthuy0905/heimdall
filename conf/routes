@@ -18,3 +18,4 @@ GET /media/hls/variant                  controllers.HlsController.playlist
 GET /media/hls/segment                  controllers.HlsController.segment
 
 GET /media/image/transcode              controllers.ImageController.view
+GET /media/image/zoom                   controllers.ImageController.zoom
