@@ -176,7 +176,6 @@ class EndpointResolver(
       logger.info("endpointResolverDetails")(
         "priorityMap"             -> priorityMap,
         "replicaCounts"           -> replicaCounts,
-        "topContributorsCacheOpt" -> topContributorsCacheOpt,
         "perftrakData"            -> perftrakData
       )
     }
