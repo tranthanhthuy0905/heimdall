@@ -174,9 +174,8 @@ class EndpointResolver(
   private[this] def randomlyLogDetails(): Unit = {
     if (rand.nextInt(100) == 13) {
       logger.info("endpointResolverDetails")(
-        "priorityMap"             -> priorityMap,
-        "replicaCounts"           -> replicaCounts,
-        "perftrakData"            -> perftrakData
+        "priorityMap"   -> priorityMap,
+        "replicaCounts" -> replicaCounts
       )
     }
   }
