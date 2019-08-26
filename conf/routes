@@ -19,3 +19,5 @@ GET /media/hls/segment                  controllers.HlsController.segment
 
 GET /media/image/transcode              controllers.ImageController.view
 GET /media/image/zoom                   controllers.ImageController.zoom
+
+GET /media/document/view                controllers.DocumentController.view

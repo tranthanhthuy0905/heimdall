@@ -2,6 +2,7 @@ import models.auth.{Authorizer, StreamingSessionData}
 import org.apache.curator.framework.CuratorFramework
 import org.scalatest.mockito.MockitoSugar
 import services.audit.AuditClient
+import services.document.{DocumentClient, DocumentClientImpl}
 import services.dredd.DreddClient
 import services.komrade.KomradeClient
 import services.nino.NinoClient
@@ -21,6 +22,7 @@ class MockModule extends Module with MockitoSugar {
     bind(classOf[RtmClient]).toInstance(mock[RtmClient])
     bind(classOf[SessionsClient]).toInstance(mock[SessionsClient])
     bind(classOf[StreamingSessionData]).toInstance(mock[StreamingSessionData])
+    bind(classOf[DocumentClient]).toInstance(mock[DocumentClientImpl])
 
     bind(classOf[CuratorFramework]).toInstance(mock[CuratorFramework])
     bind(classOf[HeimdallLoadBalancer]).toInstance(mock[HeimdallLoadBalancer])
