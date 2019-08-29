@@ -76,6 +76,22 @@ class ImageController @Inject()(
         })
     }
 
+  def metadata: Action[AnyContent] =
+    (
+      heimdallRequestAction
+        andThen permValidation.build(PermissionType.View)
+        andThen rtiRequestAction
+      ).async { implicit request =>
+
+      for {
+        response <- rti.metadata(request.presignedUrl)
+        httpEntity <- Future.successful(toHttpEntity(response))
+      } yield
+        httpEntity.fold(BadRequest(_), entity => {
+          Ok.sendEntity(entity)
+        })
+    }
+
   private def toHttpEntity(response: WSResponse): Either[JsObject, HttpEntity] = {
     Some(response.status)
       .filter(_ equals play.api.http.Status.OK)

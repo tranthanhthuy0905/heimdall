@@ -14,6 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait RtiClient {
   def transcode(presignedURL: URL, watermark: String): Future[WSResponse]
   def zoom(presignedURL: URL, watermark: String): Future[WSResponse]
+  def metadata(presignedURL: URL): Future[WSResponse]
 }
 
 @Singleton
@@ -31,17 +32,25 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
   def zoom(presignedURL: URL, watermark: String): Future[WSResponse] =
     buildTranscodeRequest(presignedURL, watermark)(LargeImage, HighQuality).execute()
 
-  private def buildTranscodeRequest(presignedURL: URL, watermark: String) =
-    buildRequest("GET", "/v1/images/image", presignedURL, watermark)(_, _)
+  def metadata(presignedURL: URL): Future[WSResponse] =
+    buildMetadataRequest(presignedURL).execute()
 
-  private def buildRequest(method: String, endpoint: String, presignedURL: URL, watermark: String)(
+  private def buildRTIEndpoint(endpoint: String) = ws.url(config.getString("edc.service.rti.host") + endpoint)
+
+  private def buildTranscodeRequest(presignedURL: URL, watermark: String)(
     size: SizeImage,
     quality: QualityImage) = {
-    ws.url(config.getString("edc.service.rti.host") + endpoint)
+    buildRTIEndpoint("/v1/images/image")
       .addQueryStringParameters("sizeID" -> size.value)
       .addQueryStringParameters("presignedURL" -> presignedURL.toString)
       .addQueryStringParameters("watermark" -> watermark)
       .addQueryStringParameters("quality" -> quality.value)
-      .withMethod(method)
+      .withMethod("GET")
+  }
+
+  private def buildMetadataRequest(presignedURL: URL) = {
+    buildRTIEndpoint("/v1/images/metadata")
+      .addQueryStringParameters("presignedURL" -> presignedURL.toString)
+      .withMethod("GET")
   }
 }
