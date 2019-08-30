@@ -1,12 +1,10 @@
 package services.zookeeper
 
-import com.evidence.service.common.ConsistentHash
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.zookeeper.ServiceEndpoint
 import org.joda.time.{DateTime, DateTimeZone}
 
-import scala.math.{max, min, round}
 import scala.util.{Success, Try}
 
 /**
@@ -40,7 +38,6 @@ import scala.util.{Success, Try}
   *
   * 100 as number of replicas was chosen because it worked decently in past.
   * See EcomSaas's and service-common's implementations.
-  * There is no evidence that it's optimal.
   *
   */
 class EndpointResolver(
@@ -48,22 +45,23 @@ class EndpointResolver(
   perftrakData: List[PerftrakDatum],
   priorityMap: Map[ServiceEndpoint, Double],
   defaultPriority: Double,
+  maxPriority: Double,
   enableCache: Boolean)
     extends LazyLogging
     with StrictStatsD {
 
-  private[this] final val (minReplicaCount, maxReplicaCount) = (1.0, 101.0)
+  private[this] final val (minReplicaCount, maxReplicaCount) = (1.0, 1001.0)
 
   private[this] val rand          = new scala.util.Random(DateTime.now(DateTimeZone.UTC).getMillis)
-  private[this] val replicaCounts = initReplicaCounts(endpoints, perftrakData, priorityMap, defaultPriority)
-  private[this] val hashRing      = new ConsistentHash[ServiceEndpoint](endpointStringer, replicaCounts)
+  private[this] val replicaCounts = initReplicaCounts(endpoints, perftrakData, priorityMap, defaultPriority, maxPriority)
+  private[this] val hashRing      = new ConsistentHashRing[ServiceEndpoint](endpointStringer, replicaCounts)
   private[this] val topContributorsCacheOpt =
     initTopContributorsCache(enableCache, perftrakData, priorityMap, defaultPriority)
 
   randomlyLogDetails()
 
   def this(enableCache: Boolean) {
-    this(List[ServiceEndpoint](), List[PerftrakDatum](), Map[ServiceEndpoint, Double](), 0.0, false)
+    this(List[ServiceEndpoint](), List[PerftrakDatum](), Map[ServiceEndpoint, Double](), 0.0, 0.0, false)
   }
 
   def get(key: String): Option[ServiceEndpoint] = {
@@ -84,6 +82,8 @@ class EndpointResolver(
       }
     }
   }
+
+  def getReplicaCounts: Map[ServiceEndpoint, Int] = replicaCounts
 
   private[this] def initTopContributorsCache(
     enableCache: Boolean,
@@ -118,54 +118,43 @@ class EndpointResolver(
     endpoints: List[ServiceEndpoint],
     perftrakData: List[PerftrakDatum],
     priorityMap: Map[ServiceEndpoint, Double],
-    defaultPriority: Double): Map[ServiceEndpoint, Int] = {
-    val (minPriority, maxPriority) = getMinMax(priorityMap)
+    defaultPriority: Double,
+    maxPriority: Double): Map[ServiceEndpoint, Int] = {
+    val rangePriority = maxPriority - defaultPriority
     endpoints.foldLeft(Map[ServiceEndpoint, Int]()) { (m, endpoint) =>
-      m + (endpoint -> calcNumberOfReplicas(endpoint, priorityMap, defaultPriority, minPriority, maxPriority))
+      m + (endpoint -> getReplicaCount(endpoint, priorityMap, defaultPriority, rangePriority))
     }
   }
 
-  private[this] def calcNumberOfReplicas(
+  private[this] def getReplicaCount(
     endpoint: ServiceEndpoint,
     priorityMap: Map[ServiceEndpoint, Double],
-    default: Double,
-    minPriority: Double,
-    maxPriority: Double): Int = {
+    defaultPriority: Double,
+    rangePriority: Double): Int = {
     Try(priorityMap(endpoint)) match {
       case Success(value) =>
-        normalize(value, minPriority, maxPriority)
+        calcReplicaCount(value, defaultPriority, rangePriority)
       case _ =>
-        normalize(default, minPriority, maxPriority)
+        calcReplicaCount(defaultPriority, defaultPriority, rangePriority)
     }
   }
 
-  private[this] def getMinMax(map: Map[ServiceEndpoint, Double]): (Double, Double) = {
-    map.foldLeft((Double.MaxValue, Double.MinValue)) { case ((min, max), e) => (math.min(min, e._2), math.max(max, e._2)) }
-  }
-
-  /**
-    * Normalizes priority value to 1-101 range.
-    */
-  private[this] def normalize(priority: Double, minPriority: Double, maxPriority: Double): Int = {
-    val range = maxPriority - minPriority
-    if (range.abs < 0.001) {
-      /** If max almost equals to min, there is no range. Return max number of replicas. */
-      maxReplicaCount.toInt
+  private[this] def calcReplicaCount(priority: Double, defaultPriority: Double, rangePriority: Double): Int = {
+    val factor = if (rangePriority > 0) {
+      Math.min(1.0, Math.max(0.0, (priority - defaultPriority) / rangePriority))
     } else {
-      val value        = minReplicaCount + (maxReplicaCount - minReplicaCount) * (priority - minPriority) / range
-      val boundedValue = min(max(value, minReplicaCount), maxReplicaCount)
-      val result       = round(boundedValue).toInt
-      logger.debug("normalizedPriority")(
-        "priority"                  -> priority,
-        "minPriority"               -> minPriority,
-        "maxPriority"               -> maxPriority,
-        "priorityRange"             -> range,
-        "normalizedRawPriority"     -> value,
-        "normalizedBoundedPriority" -> boundedValue,
-        "result"                    -> result
-      )
-      result
+      1.0
     }
+    val result = (minReplicaCount + (maxReplicaCount - minReplicaCount) * factor).round.toInt
+    if (rand.nextInt(50000) == 13) {
+      logger.info("replicaCount")(
+        "priority" -> priority,
+        "defaultPriority" -> defaultPriority,
+        "rangePriority" -> rangePriority,
+        "factor" -> factor
+      )
+    }
+    result
   }
 
   /**
@@ -189,26 +178,39 @@ object EndpointResolver extends LazyLogging {
     endpoints: List[ServiceEndpoint],
     perftrakData: List[PerftrakDatum],
     enableCache: Boolean): EndpointResolver = {
-    val priorityMap = perftrakDataToPriorityMap(perftrakData)
 
-    /**
-      * Choose a default value that is 70% (arbitrary amount) of the average.
-      * This ensures that nodes where we aren't able to calculate a value are still eligible for traffic,
-      * but are lower priority than the average of nodes where we could calculate the value.
-      */
-    val defaultPriority: Double = getAveragePriority(priorityMap) * 0.7
-    new EndpointResolver(endpoints, perftrakData, priorityMap, defaultPriority, enableCache)
+    val priorityMap = perftrakDataToPriorityMap(perftrakData)
+    val (minPriority, maxPriority, sumPriority) = getMinMaxAndSum(priorityMap)
+    val avgPriority = (sumPriority / priorityMap.size)
+
+    if (!((avgPriority - minPriority) > -0.000001 && (avgPriority - maxPriority) < 0.000001)) {
+
+      /** This should never happen */
+      logger.warn("incorrectAggregatePriorities")(
+        "minPriority" -> minPriority,
+        "maxPriority" -> maxPriority,
+        "avgPriority" -> avgPriority)
+      new EndpointResolver(endpoints, perftrakData, priorityMap, 0.0, 0.0, enableCache)
+    } else {
+      /** The idea behind this calculation of thresholdPriority (instead of just taking minPriority)
+        * is to make allocated number of replicas more stable.
+        * From: https://git.taservs.net/ecom/ecomsaas/blob/3b916d8c56812f5524cce34e8453dfb7c3de5387/wc/com.evidence/com.evidence/transcode/Odt2BackendResolver.cs#L424
+        */
+      var thresholdPriority = avgPriority * Math.pow(0.7, Math.signum(avgPriority))
+      new EndpointResolver(endpoints, perftrakData, priorityMap, thresholdPriority, maxPriority, enableCache)
+    }
+  }
+
+  private[this] def getMinMaxAndSum(map: Map[ServiceEndpoint, Double]): (Double, Double, Double) = {
+    map.foldLeft((Double.MaxValue, Double.MinValue, 0.0)) {
+      case ((min, max, sum), e) => (math.min(min, e._2), math.max(max, e._2), sum + e._2.toFloat)
+    }
   }
 
   def perftrakDataToPriorityMap(perftrakData: List[PerftrakDatum]): Map[ServiceEndpoint, Double] = {
     perftrakData.filter(!_.isPlaneComputationalEmpty).foldLeft(Map[ServiceEndpoint, Double]()) { (m, datum) =>
       m + (datum.endpoint -> (-1) * (datum.planeComputational.get.aggregate / datum.planeComputational.get.capacity))
     }
-  }
-
-  def getAveragePriority(map: Map[ServiceEndpoint, Double]): Double = {
-    val sumOfPriorities: Double = map.foldLeft(0.0)(_ + _._2)
-    sumOfPriorities / map.size.toDouble
   }
 
 }

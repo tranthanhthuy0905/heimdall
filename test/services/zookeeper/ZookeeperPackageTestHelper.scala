@@ -6,8 +6,10 @@ import java.util.UUID
 import org.apache.curator.framework.recipes.cache.ChildData
 import org.apache.zookeeper.data.Stat
 import org.joda.time.{DateTime, DateTimeZone}
+import play.api.libs.json.{JsValue, Json}
 
 import scala.collection.JavaConverters._
+import scala.io.Source
 
 private[zookeeper] object ZookeeperPackageTestHelper {
   val rand            = new scala.util.Random(DateTime.now(DateTimeZone.UTC).getMillis)
@@ -15,6 +17,10 @@ private[zookeeper] object ZookeeperPackageTestHelper {
 
   def randomKey: String = {
     UUID.randomUUID().toString.replace("-", "")
+  }
+
+  def randomKeys(keyCount: Int) = {
+    for (_ <- 1 to keyCount) yield UUID.randomUUID().toString.replaceAll("-", "")
   }
 
   def intInRange(start: Int, end: Int): Int = {
@@ -117,6 +123,48 @@ private[zookeeper] object ZookeeperPackageTestHelper {
        |    "component-aggregate":0
        |  }
        |}""".stripMargin
+  }
+
+  def trim(str: String): String = {
+    val trimPattern = """\"(.+)\"""".r
+    val trimPattern(trimmed) = str
+    trimmed
+  }
+
+  def getKeysFromSplunkExport(filename: String): List[String] = {
+    val source: String      = Source.fromFile(filename).getLines.mkString
+    val splunkJson: JsValue = Json.parse(source)
+    val keysJson = splunkJson \\ "file_id"
+    val keys = keysJson.toList.map(k => trim(k.toString().replace("-","")))
+    keys
+  }
+
+  def getChildDataFromSplunkExport(filename: String): (util.List[ChildData], util.List[ChildData]) = {
+    val source: String      = Source.fromFile(filename).getLines.mkString
+    val splunkJson: JsValue = Json.parse(source)
+    val hosts = splunkJson \\ "host"
+    val snapshots = splunkJson \\ "_raw"
+    val valueTuples =  hosts zip snapshots
+    val perftrakChildren = valueTuples map { t =>
+      newChildData(
+        newPerftrakChildDataPath(newHostNameFromJsValue(t._1)), newPerftrakDataFromJsValue(t._2))
+    }
+    val rtmNodes = hosts map {h =>
+      newChildData(newRtmChildDataPath, newRtmNodeString(newHostNameFromJsValue(h)))
+    }
+    (rtmNodes.asJava, perftrakChildren.asJava)
+  }
+
+  def newHostNameFromJsValue(host: JsValue): String = {
+    s"${trim(host.toString())}.taservs.net"
+  }
+
+  def newPerftrakDataFromJsValue(snapshotRaw: JsValue): String = {
+    val snapshotPattern = """.+snapshot=(.+) Current perftrak.*""".r
+    val snapshotPattern(snapshot) = snapshotRaw.toString()
+    val cleanSnapshot: String = snapshot.toString().replaceAll("\\\\\"", "\"")
+    val result = trim(cleanSnapshot.toString())
+    result
   }
 
   def newListOfPerftrakChildData(

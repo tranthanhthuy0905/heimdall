@@ -63,6 +63,10 @@ class HeimdallLoadBalancer(
     endpointResolver.get().get(key.replace("-", "").toLowerCase)
   }
 
+  /**
+    * Exposing replica counts for unit testing.
+    */
+  def getReplicaCounts = endpointResolver.get.getReplicaCounts
 }
 
 object HeimdallLoadBalancer extends LazyLogging {
