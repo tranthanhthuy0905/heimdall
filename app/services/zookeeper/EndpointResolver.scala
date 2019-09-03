@@ -33,12 +33,15 @@ import scala.util.{Success, Try}
   *
   * With the current way of calculating aggregate values by RTM, priority values usually end up in
   * the range of [-1, 0]. In some extreme load cases priorities < -1 are possible.
-  * So, number of replicas is calculated as a priority value normalized to [1, 101] range.
-  * In effect, each node gets from 1 to 101 hash replicas.
+  * So, number of replicas is calculated as a priority value mapped to [1, 1001] range.
+  * In effect, each node gets from 1 to 1001 hash replicas.
   *
-  * 100 as number of replicas was chosen because it worked decently in past.
-  * See EcomSaas's and service-common's implementations.
-  *
+  * Performing simple request distribution tests and measuring reshuffling showed that the hash right gives
+  * best results on 500 to 1000 of replicas per node.
+  * Current range is set to 1 to 1001 to allow loaded RTM nodes to receive close to 0 requests.
+  * This range won't guarantee precise distribution of request proportionally to the replica counts,
+  * but it'll help to disable loaded RTM nodes, while still providing good request distribution among the
+  * lightly loaded nodes.
   */
 class EndpointResolver(
   endpoints: List[ServiceEndpoint],
@@ -181,7 +184,7 @@ object EndpointResolver extends LazyLogging {
 
     val priorityMap = perftrakDataToPriorityMap(perftrakData)
     val (minPriority, maxPriority, sumPriority) = getMinMaxAndSum(priorityMap)
-    val avgPriority = (sumPriority / priorityMap.size)
+    val avgPriority = sumPriority / priorityMap.size
 
     if (!((avgPriority - minPriority) > -0.000001 && (avgPriority - maxPriority) < 0.000001)) {
 
@@ -196,7 +199,7 @@ object EndpointResolver extends LazyLogging {
         * is to make allocated number of replicas more stable.
         * From: https://git.taservs.net/ecom/ecomsaas/blob/3b916d8c56812f5524cce34e8453dfb7c3de5387/wc/com.evidence/com.evidence/transcode/Odt2BackendResolver.cs#L424
         */
-      var thresholdPriority = avgPriority * Math.pow(0.7, Math.signum(avgPriority))
+      val thresholdPriority = avgPriority * Math.pow(0.7, Math.signum(avgPriority))
       new EndpointResolver(endpoints, perftrakData, priorityMap, thresholdPriority, maxPriority, enableCache)
     }
   }
