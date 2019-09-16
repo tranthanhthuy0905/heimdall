@@ -6,11 +6,13 @@ import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
 import play.api.http.{HttpChunk, HttpEntity}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+
 import scala.concurrent.{ExecutionContext, Future}
 import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
+import services.rti.metadata.MetadataJsonConversions
 import services.rti.RtiClient
 
 class ImageController @Inject()(
@@ -24,7 +26,8 @@ class ImageController @Inject()(
   components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
-    with AuditConversions {
+    with AuditConversions
+    with MetadataJsonConversions {
 
   def view: Action[AnyContent] =
     (
@@ -81,14 +84,13 @@ class ImageController @Inject()(
       heimdallRequestAction
         andThen permValidation.build(PermissionType.View)
         andThen rtiRequestAction
-      ).async { implicit request =>
-
+    ).async { implicit request =>
       for {
-        response <- rti.metadata(request.presignedUrl)
-        httpEntity <- Future.successful(toHttpEntity(response))
+        response   <- rti.metadata(request.presignedUrl)
+        httpEntity <- Future.successful(toMetadataEntity(response))
       } yield
-        httpEntity.fold(BadRequest(_), entity => {
-          Ok.sendEntity(entity)
+        httpEntity.fold(BadRequest(_), metadata => {
+          Ok(metadata)
         })
     }
 
@@ -101,8 +103,29 @@ class ImageController @Inject()(
 
         response.headers
           .get("Content-Length")
-          .map(length => HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), contentType))
+          .map(length =>
+            HttpEntity
+              .Streamed(response.bodyAsSource, Some(length.mkString.toLong), contentType))
           .getOrElse(HttpEntity.Chunked(Source.apply(List(HttpChunk.Chunk(response.bodyAsBytes))), contentType))
       })
+  }
+
+  private def toMetadataEntity(response: WSResponse): Either[JsObject, JsValue] = {
+    Some(response.status)
+      .filter(_ equals play.api.http.Status.OK)
+      .toRight(Json.obj("message" -> response.body))
+      .map(_ => {
+        val metadata = metadataFromJson(response.json)
+        withoutNull(Json.toJson(metadata))
+      })
+  }
+
+  private def withoutNull(json: JsValue): JsValue = json match {
+    case JsObject(fields) =>
+      JsObject(fields.flatMap {
+        case (_, JsNull)           => None // could match on specific field name here
+        case other @ (name, value) => Some(other) // consider recursing on the value for nested objects
+      })
+    case other => other
   }
 }
