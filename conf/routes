@@ -13,6 +13,8 @@ GET /media/start                        controllers.ProbeController.probe
 
 GET /media/streamed                     controllers.AuditController.recordMediaStreamedEvent
 GET /media/thumbnail                    controllers.ThumbnailController.thumbnail
+GET /media/downloadthumbnail            controllers.ThumbnailDownloadController.downloadThumbnail
+
 GET /media/hls/master                   controllers.HlsController.playlist
 GET /media/hls/variant                  controllers.HlsController.playlist
 GET /media/hls/segment                  controllers.HlsController.segment

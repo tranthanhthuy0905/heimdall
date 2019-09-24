@@ -13,12 +13,13 @@ import scala.collection.immutable.Map
 case class RtmQueryParams(path: String, params: Map[String, String])
 
 trait HeimdallRoutes {
-  final val probe      = "/media/start"
-  final val hlsMaster  = "/media/hls/master"
-  final val hlsVariant = "/media/hls/variant"
-  final val hlsSegment = "/media/hls/segment"
-  final val thumbnail  = "/media/thumbnail"
-  final val mp3        = "/media/mp3"
+  final val probe             = "/media/start"
+  final val hlsMaster         = "/media/hls/master"
+  final val hlsVariant        = "/media/hls/variant"
+  final val hlsSegment        = "/media/hls/segment"
+  final val thumbnail         = "/media/thumbnail"
+  final val downloadThumbnail = "/media/downloadthumbnail"
+  final val mp3               = "/media/mp3"
 }
 
 object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
@@ -84,6 +85,14 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
       "/thumbnail",
       List.concat(commonParams, thumbnailParams)
     ),
+    /**
+      * RTM processes both thumbnail and downloadthumbnail the same way.
+      * The difference between thumbnail and downloadthumbnail is that the second one emits an audit event.
+      */
+    downloadThumbnail -> MediaRoute(
+      "/thumbnail",
+      List.concat(commonParams, thumbnailParams)
+    ),
   )
 
   def apply(route: String, query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
@@ -98,6 +107,8 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
         filterAllowedParams(query, heimdallToRtmRoutes(probe))
       case str if str startsWith thumbnail =>
         filterAllowedParams(query, heimdallToRtmRoutes(thumbnail))
+      case str if str startsWith downloadThumbnail =>
+        filterAllowedParams(query, heimdallToRtmRoutes(downloadThumbnail))
       case _ =>
         logger.error("unexpectedRtmQueryRoute")(
           "route" -> route,

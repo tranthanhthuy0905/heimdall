@@ -1,12 +1,6 @@
 package controllers
 
-import actions.{
-  HeimdallRequestAction,
-  PermValidationActionBuilder,
-  RtmRequestAction,
-  TokenValidationAction,
-  WatermarkAction
-}
+import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, WatermarkAction}
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.Inject
@@ -19,7 +13,6 @@ import scala.concurrent.ExecutionContext
 
 class ThumbnailController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
-  tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
   watermarkAction: WatermarkAction,
   rtmRequestAction: RtmRequestAction,
