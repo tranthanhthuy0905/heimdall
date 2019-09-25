@@ -10,12 +10,50 @@ sealed trait CompressionValue extends MetadataValue {
   def value: Int
 }
 
+sealed trait ContrastValue extends MetadataValue {
+  def value: Int
+}
+
+sealed trait LightSourceValue extends MetadataValue {
+  def value: Int
+}
+
+sealed trait ExposureProgramValue extends MetadataValue {
+  def value: Int
+}
+
+sealed trait ExposureModeValue extends MetadataValue {
+  def value: Int
+}
+
+sealed trait SaturationValue extends MetadataValue {
+  def value: Int
+}
+
+sealed trait SharpnessValue extends MetadataValue {
+  def value: Int
+}
+
+sealed trait WhiteBalanceValue extends MetadataValue {
+  def value: Int
+}
+
+sealed trait FileSourceValue extends MetadataValue {
+  def value: Int
+}
+
+sealed trait SceneCaptureTypeValue extends MetadataValue {
+  def value: Int
+}
+sealed trait SceneTypeValue extends MetadataValue {
+  def value: Int
+}
 case class DateTime(dateTime: String) extends MetadataValue {
   val displayValue = "Modified Date"
 }
 
 object DateTime extends MetadataJsonFields {
-  implicit val dateTimeReads: Reads[DateTime] = (__ \ dateTimeField).read[String].map(DateTime.apply)
+  implicit val dateTimeReads: Reads[DateTime] = (__ \ dateTimeFieldInput).read[String].map(DateTime.apply)
 
   implicit val dateTimeWrites: Writes[DateTime] = writesBuilder((data: DateTime) => (data.displayValue, data.dateTime))
 }
@@ -26,7 +64,7 @@ case class ImageDescription(desc: String) extends MetadataValue {
 
 object ImageDescription extends MetadataJsonFields {
   implicit val imageDescriptionReads: Reads[ImageDescription] =
-    (__ \ imageDescriptionField).read[String].map(ImageDescription.apply)
+    (__ \ imageDescriptionFieldInput).read[String].map(ImageDescription.apply)
 
   implicit val imageDescriptionWrites: Writes[ImageDescription] = writesBuilder(
     (data: ImageDescription) => (data.displayValue, data.desc))
@@ -37,7 +75,7 @@ case class Software(software: String) extends MetadataValue {
 }
 
 object Software extends MetadataJsonFields {
-  implicit val softwareReads: Reads[Software] = (__ \ softwareField).read[String].map(Software.apply)
+  implicit val softwareReads: Reads[Software] = (__ \ softwareFieldInput).read[String].map(Software.apply)
 
   implicit val softwareWrites: Writes[Software] = writesBuilder((data: Software) => (data.displayValue, data.software))
 }
@@ -47,7 +85,7 @@ case class Orientation(orientation: String) extends MetadataValue {
 }
 
 object Orientation extends MetadataJsonFields with ReadableValue {
-  implicit val orientationReads: Reads[Orientation] = (__ \ orientationField).read[String].map(Orientation.apply)
+  implicit val orientationReads: Reads[Orientation] = (__ \ orientationFieldInput).read[String].map(Orientation.apply)
 
   implicit val orientationWrites: Writes[Orientation] = writesBuilder(
     (data: Orientation) => (data.displayValue, fromString(data.orientation))
@@ -125,7 +163,7 @@ case class PixelXDimension(x: String) extends MetadataValue {
 
 object PixelXDimension extends MetadataJsonFields {
   implicit val pixelXDimensionReads: Reads[PixelXDimension] =
-    (__ \ pixelXDimensionField).read[String].map(PixelXDimension.apply)
+    (__ \ pixelXDimensionFieldInput).read[String].map(PixelXDimension.apply)
 
   implicit val pixelXDimensionWrites: Writes[PixelXDimension] = writesBuilder(
     (data: PixelXDimension) => (data.displayValue, data.x))
@@ -137,7 +175,7 @@ case class PixelYDimension(y: String) extends MetadataValue {
 
 object PixelYDimension extends MetadataJsonFields {
   implicit val pixelYDimensionReads: Reads[PixelYDimension] =
-    (__ \ pixelYDimensionField).read[String].map(PixelYDimension.apply)
+    (__ \ pixelYDimensionFieldInput).read[String].map(PixelYDimension.apply)
 
   implicit val pixelYDimensionWrites: Writes[PixelYDimension] = writesBuilder(
     (data: PixelYDimension) => (data.displayValue, data.y))
@@ -148,7 +186,7 @@ case class XResolution(x: String) extends MetadataValue {
 }
 
 object XResolution extends MetadataJsonFields {
-  implicit val xResolutionReads: Reads[XResolution] = (__ \ xResolutionField).read[String].map(XResolution.apply)
+  implicit val xResolutionReads: Reads[XResolution] = (__ \ xResolutionFieldInput).read[String].map(XResolution.apply)
 
   implicit val xResolutionWrites: Writes[XResolution] = writesBuilder(
     (data: XResolution) => (data.displayValue, data.x))
@@ -159,7 +197,7 @@ case class YResolution(y: String) extends MetadataValue {
 }
 
 object YResolution extends MetadataJsonFields {
-  implicit val yResolutionReads: Reads[YResolution] = (__ \ yResolutionField).read[String].map(YResolution.apply)
+  implicit val yResolutionReads: Reads[YResolution] = (__ \ yResolutionFieldInput).read[String].map(YResolution.apply)
 
   implicit val yResolutionWrites: Writes[YResolution] = writesBuilder(
     (data: YResolution) => (data.displayValue, data.y))
@@ -170,7 +208,7 @@ case class Compression(compression: String) extends MetadataValue {
 }
 
 object Compression extends MetadataJsonFields with ReadableValue {
-  implicit val compressionReads: Reads[Compression] = (__ \ compressionField).read[String].map(Compression.apply)
+  implicit val compressionReads: Reads[Compression] = (__ \ compressionFieldInput).read[String].map(Compression.apply)
 
   implicit val compressionWrites: Writes[Compression] = writesBuilder(
     (data: Compression) => (data.displayValue, fromString(data.compression))
@@ -485,7 +523,7 @@ case class ResolutionUnit(unit: String) extends MetadataValue {
 
 object ResolutionUnit extends MetadataJsonFields with ReadableValue {
   implicit val resolutionUnitReads: Reads[ResolutionUnit] =
-    (__ \ resolutionUnitField).read[String].map(ResolutionUnit.apply)
+    (__ \ resolutionUnitFieldInput).read[String].map(ResolutionUnit.apply)
 
   implicit val resolutionUnitWrites: Writes[ResolutionUnit] = writesBuilder(
     (data: ResolutionUnit) => (data.displayValue, fromString(data.unit))
@@ -522,7 +560,7 @@ case class ColorSpace(colorSpace: String) extends MetadataValue {
 
 object ColorSpace extends MetadataJsonFields with ReadableValue {
   implicit val colorSpaceReads: Reads[ColorSpace] =
-    (__ \ colorSpaceField).read[String].map(ColorSpace.apply)
+    (__ \ colorSpaceFieldInput).read[String].map(ColorSpace.apply)
 
   implicit val colorSpaceWrites: Writes[ColorSpace] = writesBuilder(
     (data: ColorSpace) => (data.displayValue, fromString(data.colorSpace))
@@ -559,7 +597,7 @@ case class CompressedBitsPerPixel(c: String) extends MetadataValue {
 
 object CompressedBitsPerPixel extends MetadataJsonFields {
   implicit val compressedBitsPerPixelReads: Reads[CompressedBitsPerPixel] =
-    (__ \ compressedBitsPerPixelField).read[String].map(CompressedBitsPerPixel.apply)
+    (__ \ compressedBitsPerPixelFieldInput).read[String].map(CompressedBitsPerPixel.apply)
 
   implicit val compressedBitsPerPixelWrites: Writes[CompressedBitsPerPixel] = writesBuilder(
     (data: CompressedBitsPerPixel) => (data.displayValue, data.c))
@@ -571,7 +609,7 @@ case class Make(make: String) extends MetadataValue {
 
 object Make extends MetadataJsonFields {
   implicit val makeReads: Reads[Make] =
-    (__ \ makeField).read[String].map(Make.apply)
+    (__ \ makeFieldInput).read[String].map(Make.apply)
 
   implicit val makeWrites: Writes[Make] = writesBuilder(
     (data: Make) => (data.displayValue, data.make)
@@ -583,7 +621,7 @@ case class Model(model: String) extends MetadataValue {
 }
 
 object Model extends MetadataJsonFields {
-  implicit val modelReads: Reads[Model] = (__ \ modelField).read[String].map(Model.apply)
+  implicit val modelReads: Reads[Model] = (__ \ modelFieldInput).read[String].map(Model.apply)
 
   implicit val modelWrites: Writes[Model] = writesBuilder((data: Model) => (data.displayValue, data.model))
 }
@@ -594,7 +632,7 @@ case class BodySerialNumber(serial: String) extends MetadataValue {
 
 object BodySerialNumber extends MetadataJsonFields {
   implicit val bodySerialNumberReads: Reads[BodySerialNumber] =
-    (__ \ bodySerialNumberField).read[String].map(BodySerialNumber.apply)
+    (__ \ bodySerialNumberFieldInput).read[String].map(BodySerialNumber.apply)
 
   implicit val bodySerialNumberWrites: Writes[BodySerialNumber] = writesBuilder(
     (data: BodySerialNumber) => (data.displayValue, data.serial))
@@ -605,7 +643,7 @@ case class FNumber(fNumber: String) extends MetadataValue {
 }
 
 object FNumber extends MetadataJsonFields {
-  implicit val fNumberReads: Reads[FNumber] = (__ \ fNumberField).read[String].map(FNumber.apply)
+  implicit val fNumberReads: Reads[FNumber] = (__ \ fNumberFieldInput).read[String].map(FNumber.apply)
 
   implicit val fNumberWrites: Writes[FNumber] = writesBuilder((data: FNumber) => (data.displayValue, data.fNumber))
 }
@@ -615,7 +653,8 @@ case class ExposureTime(exposureTime: String) extends MetadataValue {
 }
 
 object ExposureTime extends MetadataJsonFields {
-  implicit val ExposureTimeReads: Reads[ExposureTime] = (__ \ exposureTimeField).read[String].map(ExposureTime.apply)
+  implicit val ExposureTimeReads: Reads[ExposureTime] =
+    (__ \ exposureTimeFieldInput).read[String].map(ExposureTime.apply)
   implicit val ExposureTimeWrites: Writes[ExposureTime] = writesBuilder(
     (data: ExposureTime) => (data.displayValue, data.exposureTime))
 }
@@ -626,7 +665,7 @@ case class ShutterSpeedValue(ssv: String) extends MetadataValue {
 
 object ShutterSpeedValue extends MetadataJsonFields {
   implicit val ShutterSpeedValueReads: Reads[ShutterSpeedValue] =
-    (__ \ shutterSpeedValueField).read[String].map(ShutterSpeedValue.apply)
+    (__ \ shutterSpeedValueFieldInput).read[String].map(ShutterSpeedValue.apply)
   implicit val ShutterSpeedValueWrites: Writes[ShutterSpeedValue] = writesBuilder(
     (data: ShutterSpeedValue) => (data.displayValue, data.ssv))
 }
@@ -637,7 +676,7 @@ case class ISOSpeedRatings(iso: String) extends MetadataValue {
 
 object ISOSpeedRatings extends MetadataJsonFields {
   implicit val iSOSpeedRatingsReads: Reads[ISOSpeedRatings] =
-    (__ \ isoSpeedRatingsField).read[String].map(ISOSpeedRatings.apply)
+    (__ \ isoSpeedRatingsFieldInput).read[String].map(ISOSpeedRatings.apply)
 
   implicit val iSOSpeedRatingsWrites: Writes[ISOSpeedRatings] = writesBuilder(
     (data: ISOSpeedRatings) => (data.displayValue, data.iso))
@@ -649,7 +688,7 @@ case class ExposureBiasValue(value: String) extends MetadataValue {
 
 object ExposureBiasValue extends MetadataJsonFields {
   implicit val exposureBiasValueReads: Reads[ExposureBiasValue] =
-    (__ \ exposureBiasValueField).read[String].map(ExposureBiasValue.apply)
+    (__ \ exposureBiasValueFieldInput).read[String].map(ExposureBiasValue.apply)
 
   implicit val exposureBiasValueWrites: Writes[ExposureBiasValue] = writesBuilder(
     (data: ExposureBiasValue) => (data.displayValue, data.value))
@@ -660,7 +699,7 @@ case class FocalLength(focalLength: String) extends MetadataValue {
 }
 
 object FocalLength extends MetadataJsonFields {
-  implicit val focalLengthReads: Reads[FocalLength] = (__ \ focalLengthField).read[String].map(FocalLength.apply)
+  implicit val focalLengthReads: Reads[FocalLength] = (__ \ focalLengthFieldInput).read[String].map(FocalLength.apply)
 
   implicit val focalWrites: Writes[FocalLength] = writesBuilder(
     (data: FocalLength) => (data.displayValue, data.focalLength))
@@ -672,7 +711,7 @@ case class FocalLengthIn35mmFilm(focalLength35mm: String) extends MetadataValue 
 
 object FocalLengthIn35mmFilm extends MetadataJsonFields {
   implicit val focalLengthIn35mmFilmReads: Reads[FocalLengthIn35mmFilm] =
-    (__ \ focalLengthIn35mmFilmField).read[String].map(FocalLengthIn35mmFilm.apply)
+    (__ \ focalLengthIn35mmFilmFieldInput).read[String].map(FocalLengthIn35mmFilm.apply)
 
   implicit val focalLengthIn35mmFilmWrites: Writes[FocalLengthIn35mmFilm] = writesBuilder(
     (data: FocalLengthIn35mmFilm) => (data.displayValue, data.focalLength35mm))
@@ -684,7 +723,7 @@ case class ApertureValue(value: String) extends MetadataValue {
 
 object ApertureValue extends MetadataJsonFields {
   implicit val apertureValueReads: Reads[ApertureValue] =
-    (__ \ apertureValueField).read[String].map(ApertureValue.apply)
+    (__ \ apertureValueFieldInput).read[String].map(ApertureValue.apply)
 
   implicit val apertureValueWrites: Writes[ApertureValue] = writesBuilder(
     (data: ApertureValue) => (data.displayValue, data.value))
@@ -696,7 +735,7 @@ case class MaxApertureValue(value: String) extends MetadataValue {
 
 object MaxApertureValue extends MetadataJsonFields {
   implicit val maxApertureValueReads: Reads[MaxApertureValue] =
-    (__ \ maxApertureValueField).read[String].map(MaxApertureValue.apply)
+    (__ \ maxApertureValueFieldInput).read[String].map(MaxApertureValue.apply)
 
   implicit val maxApertureValueWrites: Writes[MaxApertureValue] = writesBuilder(
     (data: MaxApertureValue) => (data.displayValue, data.value))
@@ -707,7 +746,8 @@ case class MeteringMode(mMode: String) extends MetadataValue {
 }
 
 object MeteringMode extends MetadataJsonFields with ReadableValue {
-  implicit val meteringModeReads: Reads[MeteringMode] = (__ \ meteringModeField).read[String].map(MeteringMode.apply)
+  implicit val meteringModeReads: Reads[MeteringMode] =
+    (__ \ meteringModeFieldInput).read[String].map(MeteringMode.apply)
 
   implicit val meteringModeWrites: Writes[MeteringMode] = writesBuilder(
     (data: MeteringMode) => (data.displayValue, fromString(data.mMode)))
@@ -784,7 +824,7 @@ case class SubjectDistance(sDistance: String) extends MetadataValue {
 
 object SubjectDistance extends MetadataJsonFields {
   implicit val subjectDistanceReads: Reads[SubjectDistance] =
-    (__ \ subjectDistanceField).read[String].map(SubjectDistance.apply)
+    (__ \ subjectDistanceFieldInput).read[String].map(SubjectDistance.apply)
 
   implicit val subjectDistanceWrites: Writes[SubjectDistance] = writesBuilder(
     (data: SubjectDistance) => (data.displayValue, data.sDistance))
@@ -795,7 +835,7 @@ case class Flash(flash: String) extends MetadataValue {
 }
 
 object Flash extends MetadataJsonFields with ReadableValue {
-  implicit val flashReads: Reads[Flash] = (__ \ flashField).read[String].map(Flash.apply)
+  implicit val flashReads: Reads[Flash] = (__ \ flashFieldInput).read[String].map(Flash.apply)
 
   implicit val flashWrites: Writes[Flash] = writesBuilder(
     (data: Flash) => (data.displayValue, fromString(data.flash))
@@ -1006,7 +1046,7 @@ case class DateTimeOriginal(dto: String) extends MetadataValue {
 
 object DateTimeOriginal extends MetadataJsonFields {
   implicit val dateTimeOriginalReads: Reads[DateTimeOriginal] =
-    (__ \ dateTimeOriginalField).read[String].map(DateTimeOriginal.apply)
+    (__ \ dateTimeOriginalFieldInput).read[String].map(DateTimeOriginal.apply)
 
   implicit val dateTimeOriginalWrites: Writes[DateTimeOriginal] = writesBuilder(
     (data: DateTimeOriginal) => (data.displayValue, data.dto))
@@ -1018,8 +1058,578 @@ case class DateTimeDigitized(dtd: String) extends MetadataValue {
 
 object DateTimeDigitized extends MetadataJsonFields {
   implicit val dateTimeDigitizedReads: Reads[DateTimeDigitized] =
-    (__ \ dateTimeDigitizedField).read[String].map(DateTimeDigitized.apply)
+    (__ \ dateTimeDigitizedFieldInput).read[String].map(DateTimeDigitized.apply)
 
   implicit val dateTimeOriginalWrites: Writes[DateTimeDigitized] = writesBuilder(
     (data: DateTimeDigitized) => (data.displayValue, data.dtd))
+}
+
+case class LensMake(lensMake: String) extends MetadataValue {
+  val displayValue = "Lens Make"
+}
+
+object LensMake extends MetadataJsonFields {
+  implicit val lensMakeReads: Reads[LensMake] = (__ \ lensMakeFieldInput).read[String].map(LensMake.apply)
+
+  implicit val lensMakeWrites: Writes[LensMake] = writesBuilder((data: LensMake) => (data.displayValue, data.lensMake))
+}
+
+case class LensModel(lensModel: String) extends MetadataValue {
+  val displayValue = "Lens Model"
+}
+
+object LensModel extends MetadataJsonFields {
+  implicit val lensModelReads: Reads[LensModel] = (__ \ lensModelFieldInput).read[String].map(LensModel.apply)
+
+  implicit val lensModelWrites: Writes[LensModel] = writesBuilder(
+    (data: LensModel) => (data.displayValue, data.lensModel))
+}
+
+case class LensSerialNumber(serialNumber: String) extends MetadataValue {
+  val displayValue = "Lens Serial Number"
+}
+
+object LensSerialNumber extends MetadataJsonFields {
+  implicit val lensSerialNumberReads: Reads[LensSerialNumber] =
+    (__ \ lensSerialNumberFieldInput).read[String].map(LensSerialNumber.apply)
+
+  implicit val lensSerialNumberWrites: Writes[LensSerialNumber] = writesBuilder(
+    (data: LensSerialNumber) => (data.displayValue, data.serialNumber))
+}
+
+case class LensSpecification(spec: String) extends MetadataValue {
+  val displayValue = "Lens Specification"
+}
+
+object LensSpecification extends MetadataJsonFields {
+  implicit val lensSpecificationReads: Reads[LensSpecification] =
+    (__ \ lensSpecificationFieldInput).read[String].map(LensSpecification.apply)
+
+  implicit val lensSpecificationWrites: Writes[LensSpecification] = writesBuilder(
+    (data: LensSpecification) => (data.displayValue, data.spec))
+}
+
+case class ComponentsConfiguration(config: String) extends MetadataValue {
+  val displayValue = "Components Configuration"
+}
+
+object ComponentsConfiguration extends MetadataJsonFields {
+  implicit val componentsConfigurationReads: Reads[ComponentsConfiguration] =
+    (__ \ componentsConfigurationFieldInput).read[String].map(ComponentsConfiguration.apply)
+
+  implicit val componentsConfigurationWrites: Writes[ComponentsConfiguration] = writesBuilder(
+    (data: ComponentsConfiguration) => (data.displayValue, data.config))
+}
+
+case class Contrast(contrast: String) extends MetadataValue {
+  val displayValue = "Contrast"
+}
+
+object Contrast extends MetadataJsonFields with ReadableValue {
+  implicit val contrastReads: Reads[Contrast] = (__ \ contrastFieldInput).read[String].map(Contrast.apply)
+
+  implicit val contrastWrites: Writes[Contrast] = writesBuilder(
+    (data: Contrast) => (data.displayValue, fromString(data.contrast)))
+
+  case object Normal extends ContrastValue {
+    val value        = 0
+    val displayValue = "Normal"
+  }
+
+  case object Low extends ContrastValue {
+    val value        = 1
+    val displayValue = "Low"
+  }
+
+  case object High extends ContrastValue {
+    val value        = 2
+    val displayValue = "High"
+  }
+
+  private final val contrastList                                    = List(Normal, Low, High)
+  protected def getMetadataValue(value: Int): Option[ContrastValue] = contrastList.find(_.value.equals(value))
+}
+
+case class BrightnessValue(brightnessValue: String) extends MetadataValue {
+  val displayValue = "Brightness"
+}
+
+object BrightnessValue extends MetadataJsonFields {
+  implicit val brightnessValueReads: Reads[BrightnessValue] =
+    (__ \ brightnessValueFieldInput).read[String].map(BrightnessValue.apply)
+
+  implicit val brightnessValueWrites: Writes[BrightnessValue] = writesBuilder(
+    (data: BrightnessValue) => (data.displayValue, data.brightnessValue))
+}
+
+case class LightSource(lightSource: String) extends MetadataValue {
+  val displayValue = "Light Source"
+}
+
+object LightSource extends MetadataJsonFields with ReadableValue {
+  implicit val lightSourceReads: Reads[LightSource] = (__ \ lightSourceFieldInput).read[String].map(LightSource.apply)
+
+  implicit val lightSourceWrites: Writes[LightSource] = writesBuilder(
+    (data: LightSource) => (data.displayValue, fromString(data.lightSource)))
+
+  case object Unknown extends LightSourceValue {
+    val value        = 0
+    val displayValue = "Unknown"
+  }
+
+  case object Daylight extends LightSourceValue {
+    val value        = 1
+    val displayValue = "Daylight"
+  }
+
+  case object Fluorescent extends LightSourceValue {
+    val value        = 2
+    val displayValue = "Fluorescent"
+  }
+
+  case object TungstenIncandescent extends LightSourceValue {
+    val value        = 3
+    val displayValue = "Tungsten (Incandescent)"
+  }
+
+  case object Flash extends LightSourceValue {
+    val value        = 4
+    val displayValue = "Flash"
+  }
+
+  case object FineWeather extends LightSourceValue {
+    val value        = 9
+    val displayValue = "Fine Weather"
+  }
+
+  case object Cloudy extends LightSourceValue {
+    val value        = 10
+    val displayValue = "Cloudy"
+  }
+
+  case object Shade extends LightSourceValue {
+    val value        = 11
+    val displayValue = "Shade"
+  }
+
+  case object DaylightFluorescent extends LightSourceValue {
+    val value        = 12
+    val displayValue = "Daylight Fluorescent"
+  }
+
+  case object DayWhiteFluorescent extends LightSourceValue {
+    val value        = 13
+    val displayValue = "Day White Fluorescent"
+  }
+
+  case object CoolWhiteFluorescent extends LightSourceValue {
+    val value        = 14
+    val displayValue = "Cool White Fluorescent"
+  }
+
+  case object WhiteFluorescent extends LightSourceValue {
+    val value        = 15
+    val displayValue = "White Fluorescent"
+  }
+
+  case object WarmWhiteFluorescent extends LightSourceValue {
+    val value        = 16
+    val displayValue = "Warm White Fluorescent"
+  }
+
+  case object StandardLightA extends LightSourceValue {
+    val value        = 17
+    val displayValue = "Standard Light A"
+  }
+
+  case object StandardLightB extends LightSourceValue {
+    val value        = 18
+    val displayValue = "Standard Light B"
+  }
+
+  case object StandardLightC extends LightSourceValue {
+    val value        = 19
+    val displayValue = "Standard Light C"
+  }
+
+  case object D55 extends LightSourceValue {
+    val value        = 20
+    val displayValue = "D55"
+  }
+
+  case object D65 extends LightSourceValue {
+    val value        = 21
+    val displayValue = "D65"
+  }
+
+  case object D75 extends LightSourceValue {
+    val value        = 22
+    val displayValue = "D75"
+  }
+
+  case object D50 extends LightSourceValue {
+    val value        = 23
+    val displayValue = "D50"
+  }
+
+  case object ISOStudioTungsten extends LightSourceValue {
+    val value        = 24
+    val displayValue = "ISO Studio Tungsten"
+  }
+
+  case object Other extends LightSourceValue {
+    val value        = 255
+    val displayValue = "Other"
+  }
+
+  private final val lightSourceList =
+    List[LightSourceValue](
+      Unknown,
+      Daylight,
+      Fluorescent,
+      TungstenIncandescent,
+      Flash,
+      FineWeather,
+      Cloudy,
+      Shade,
+      DaylightFluorescent,
+      DayWhiteFluorescent,
+      CoolWhiteFluorescent,
+      WhiteFluorescent,
+      WarmWhiteFluorescent,
+      StandardLightA,
+      StandardLightB,
+      StandardLightC,
+      D55,
+      D65,
+      D75,
+      D50,
+      ISOStudioTungsten,
+      Other
+    )
+  protected def getMetadataValue(value: Int): Option[LightSourceValue] = lightSourceList.find(_.value.equals(value))
+}
+
+case class ExposureProgram(exposureProgram: String) extends MetadataValue {
+  val displayValue = "Exposure Program"
+}
+
+object ExposureProgram extends MetadataJsonFields with ReadableValue {
+  implicit val exposureProgramReads: Reads[ExposureProgram] =
+    (__ \ exposureProgramFieldInput).read[String].map(ExposureProgram.apply)
+
+  implicit val exposureProgramWrites: Writes[ExposureProgram] = writesBuilder(
+    (data: ExposureProgram) => (data.displayValue, fromString(data.exposureProgram)))
+
+  case object NotDefined extends ExposureProgramValue {
+    val value        = 0
+    val displayValue = "Not Defined"
+  }
+
+  case object Manual extends ExposureProgramValue {
+    val value        = 1
+    val displayValue = "Manual"
+  }
+
+  case object ProgramAE extends ExposureProgramValue {
+    val value        = 2
+    val displayValue = "Program AE"
+  }
+
+  case object AperturePriorityAE extends ExposureProgramValue {
+    val value        = 3
+    val displayValue = "Aperture-priority AE"
+  }
+
+  case object ShutterSpeedPriorityAE extends ExposureProgramValue {
+    val value        = 4
+    val displayValue = "Shutter speed priority AE"
+  }
+
+  case object CreativeSlowSpeed extends ExposureProgramValue {
+    val value        = 5
+    val displayValue = "Creative (Slow speed)"
+  }
+
+  case object ActionHighSpeed extends ExposureProgramValue {
+    val value        = 6
+    val displayValue = "Action (High speed)"
+  }
+
+  case object Portrait extends ExposureProgramValue {
+    val value        = 7
+    val displayValue = "Portrait"
+  }
+
+  case object Landscape extends ExposureProgramValue {
+    val value        = 8
+    val displayValue = "Landscape"
+  }
+
+  // The value of Bulb is not standard EXIF, but is used by the Canon EOS 7D
+  case object Bulb extends ExposureProgramValue {
+    val value        = 9
+    val displayValue = "Bulb"
+  }
+
+  private final val exposureProgramList =
+    List[ExposureProgramValue](
+      NotDefined,
+      Manual,
+      ProgramAE,
+      AperturePriorityAE,
+      ShutterSpeedPriorityAE,
+      CreativeSlowSpeed,
+      ActionHighSpeed,
+      Portrait,
+      Landscape,
+      Bulb
+    )
+
+  protected def getMetadataValue(value: Int): Option[ExposureProgramValue] =
+    exposureProgramList.find(_.value.equals(value))
+}
+
+case class ExposureMode(mode: String) extends MetadataValue {
+  val displayValue = "Exposure Mode"
+}
+
+object ExposureMode extends MetadataJsonFields with ReadableValue {
+  implicit val exposureModeReads: Reads[ExposureMode] =
+    (__ \ exposureModeFieldInput).read[String].map(ExposureMode.apply)
+
+  implicit val exposureModeWrites: Writes[ExposureMode] = writesBuilder(
+    (data: ExposureMode) => (data.displayValue, fromString(data.mode)))
+
+  case object Auto extends ExposureModeValue {
+    val value        = 0
+    val displayValue = "Auto"
+  }
+
+  case object Manual extends ExposureModeValue {
+    val value        = 1
+    val displayValue = "Manual"
+  }
+
+  case object AutoBracket extends ExposureModeValue {
+    val value        = 2
+    val displayValue = "Auto bracket"
+  }
+
+  private final val exposureModeList                                    = List[ExposureModeValue](Auto, Manual)
+  protected def getMetadataValue(value: Int): Option[ExposureModeValue] = exposureModeList.find(_.value.equals(value))
+}
+
+case class Saturation(s: String) extends MetadataValue {
+  val displayValue = "Saturation"
+}
+
+object Saturation extends MetadataJsonFields with ReadableValue {
+  implicit val saturationReads: Reads[Saturation] = (__ \ saturationFieldInput).read[String].map(Saturation.apply)
+
+  implicit val saturationWrites: Writes[Saturation] = writesBuilder(
+    (data: Saturation) => (data.displayValue, fromString(data.s)))
+
+  case object Normal extends SaturationValue {
+    val value        = 0
+    val displayValue = "Normal"
+  }
+
+  case object Low extends SaturationValue {
+    val value        = 1
+    val displayValue = "Low"
+  }
+
+  case object High extends SaturationValue {
+    val value        = 2
+    val displayValue = "High"
+  }
+
+  private final val saturationList = List[SaturationValue](Normal, Low, High)
+  override protected def getMetadataValue(value: Int): Option[SaturationValue] =
+    saturationList.find(_.value.equals(value))
+}
+
+case class Sharpness(sharpness: String) extends MetadataValue {
+  val displayValue = "Sharpness"
+}
+
+object Sharpness extends MetadataJsonFields with ReadableValue {
+  implicit val sharpnessReads: Reads[Sharpness] = (__ \ sharpnessFieldInput).read[String].map(Sharpness.apply)
+
+  implicit val sharpnessWrites: Writes[Sharpness] = writesBuilder(
+    (data: Sharpness) => (data.displayValue, fromString(data.sharpness)))
+
+  case object Normal extends SharpnessValue {
+    val value        = 0
+    val displayValue = "Normal"
+  }
+
+  case object Soft extends SharpnessValue {
+    val value        = 1
+    val displayValue = "Soft"
+  }
+
+  case object Hard extends SharpnessValue {
+    val value        = 2
+    val displayValue = "Hard"
+  }
+
+  private final val sharpnessList = List[SharpnessValue](Normal, Soft, Hard)
+
+  protected def getMetadataValue(value: Int): Option[SharpnessValue] =
+    sharpnessList.find(_.value.equals(value))
+}
+
+case class WhiteBalance(whiteBalance: String) extends MetadataValue {
+  val displayValue = "White Balance Mode"
+}
+
+object WhiteBalance extends MetadataJsonFields with ReadableValue {
+  implicit val whiteBalanceReads: Reads[WhiteBalance] =
+    (__ \ whiteBalanceFieldInput).read[String].map(WhiteBalance.apply)
+
+  implicit val whiteBalanceWrites: Writes[WhiteBalance] = writesBuilder(
+    (data: WhiteBalance) => (data.displayValue, fromString(data.whiteBalance)))
+
+  case object Auto extends WhiteBalanceValue {
+    val value        = 0
+    val displayValue = "Auto"
+  }
+
+  case object Manual extends WhiteBalanceValue {
+    val value        = 1
+    val displayValue = "Manual"
+  }
+
+  private final val whiteBalanceList                                    = List[WhiteBalanceValue](Auto, Manual)
+  protected def getMetadataValue(value: Int): Option[WhiteBalanceValue] = whiteBalanceList.find(_.value.equals(value))
+}
+
+case class DigitalZoomRatio(dzr: String) extends MetadataValue {
+  val displayValue = "Digital Zoom Ratio"
+}
+
+object DigitalZoomRatio extends MetadataJsonFields {
+  implicit val digitalZoomRatioReads: Reads[DigitalZoomRatio] =
+    (__ \ digitalZoomRatioFieldInput).read[String].map(DigitalZoomRatio.apply)
+
+  implicit val digitalZoomRatioWrites: Writes[DigitalZoomRatio] = writesBuilder(
+    (data: DigitalZoomRatio) => (data.displayValue, data.dzr))
+}
+
+case class SceneType(sceneType: String) extends MetadataValue {
+  val displayValue = "Scene Type"
+}
+
+object SceneType extends MetadataJsonFields with ReadableValue {
+  implicit val sceneTypeReads: Reads[SceneType] = (__ \ sceneTypeFieldInput).read[String].map(SceneType.apply)
+
+  implicit val sceneTypeWrites: Writes[SceneType] = writesBuilder(
+    (data: SceneType) => (data.displayValue, fromString(data.sceneType)))
+
+  case object DirectlyPhotographed extends SceneTypeValue {
+    val value        = 1
+    val displayValue = "Directly photographed"
+  }
+
+  protected def getMetadataValue(value: Int): Option[SceneTypeValue] =
+    value match {
+      case DirectlyPhotographed.value => Some(DirectlyPhotographed)
+      case _                          => None
+    }
+}
+
+case class SceneCaptureType(sc: String) extends MetadataValue {
+  val displayValue = "Scene Capture Type"
+}
+
+object SceneCaptureType extends MetadataJsonFields with ReadableValue {
+  implicit val sceneCaptureTypeReads: Reads[SceneCaptureType] =
+    (__ \ sceneTypeFieldInput).read[String].map(SceneCaptureType.apply)
+
+  implicit val sceneCaptureTypeWrites: Writes[SceneCaptureType] = writesBuilder(
+    (data: SceneCaptureType) => (data.displayValue, fromString(data.sc)))
+
+  case object Standard extends SceneCaptureTypeValue {
+    val value        = 0
+    val displayValue = "Standard"
+  }
+
+  case object Landscape extends SceneCaptureTypeValue {
+    val value        = 1
+    val displayValue = "Landscape"
+  }
+
+  case object Portrait extends SceneCaptureTypeValue {
+    val value        = 2
+    val displayValue = "Portrait"
+  }
+
+  case object Night extends SceneCaptureTypeValue {
+    val value        = 3
+    val displayValue = "Night"
+  }
+
+  case object Other extends SceneCaptureTypeValue {
+    val value        = 4
+    val displayValue = "Other"
+  }
+
+  private final val sceneCaptureTypeList = List[SceneCaptureTypeValue](Standard, Landscape, Portrait, Night, Other)
+  protected def getMetadataValue(value: Int): Option[SceneCaptureTypeValue] =
+    sceneCaptureTypeList.find(_.value.equals(value))
+}
+
+case class FileSource(fileSource: String) extends MetadataValue {
+  val displayValue = "File Source"
+}
+
+object FileSource extends MetadataJsonFields with ReadableValue {
+  implicit val fileSourceReads: Reads[FileSource] = (__ \ fileSourceFieldInput).read[String].map(FileSource.apply)
+
+  implicit val fileSourceWrites: Writes[FileSource] = writesBuilder(
+    (data: FileSource) => (data.displayValue, fromString(data.fileSource)))
+
+  case object FilmScanner extends FileSourceValue {
+    val value        = 1
+    val displayValue = "Film Scanner"
+  }
+
+  case object ReflectionPrintScanner extends FileSourceValue {
+    val value        = 2
+    val displayValue = "Reflection Print Scanner"
+  }
+
+  case object DigitalCamera extends FileSourceValue {
+    val value        = 3
+    val displayValue = "Digital Camera"
+  }
+
+  private final val filmScannerList = List[FileSourceValue](FilmScanner, ReflectionPrintScanner)
+  protected def getMetadataValue(value: Int): Option[FileSourceValue] =
+    filmScannerList.find(_.value.equals(value))
+}
+
+case class ExifVersion(exifVersion: String) extends MetadataValue {
+  val displayValue = "Exif Version"
+}
+
+object ExifVersion extends MetadataJsonFields {
+  implicit val exifVersionReads: Reads[ExifVersion] = (__ \ exifVersionFieldInput).read[String].map(ExifVersion.apply)
+
+  implicit val exifVersionWrites: Writes[ExifVersion] = writesBuilder(
+    (data: ExifVersion) => (data.displayValue, data.exifVersion))
+}
+
+case class FlashpixVersion(version: String) extends MetadataValue {
+  val displayValue = "Flashpix Version"
+}
+
+object FlashpixVersion extends MetadataJsonFields {
+  implicit val flashpixVersionReads: Reads[FlashpixVersion] =
+    (__ \ flashpixVersionFieldInput).read[String].map(FlashpixVersion.apply)
+
+  implicit val flashpixVersionWrites: Writes[FlashpixVersion] = writesBuilder(
+    (data: FlashpixVersion) => (data.displayValue, data.version))
 }
