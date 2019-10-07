@@ -39,7 +39,7 @@ class ImageController @Inject()(
       val authHandler = request.attrs(AuthorizationAttr.Key)
 
       for {
-        response <- rti.transcode(request.presignedUrl, request.watermark)
+        response <- rti.transcode(request.presignedUrl, request.watermark, request.file.fileId)
         _ <- audit.recordEndSuccess(
           EvidenceReviewEvent(
             evidenceTid(request.file.evidenceId, request.file.partnerId),
@@ -64,7 +64,7 @@ class ImageController @Inject()(
       val authHandler = request.attrs(AuthorizationAttr.Key)
 
       for {
-        response <- rti.zoom(request.presignedUrl, request.watermark)
+        response <- rti.zoom(request.presignedUrl, request.watermark, request.file.fileId)
         _ <- audit.recordEndSuccess(
           EvidenceReviewEvent(
             evidenceTid(request.file.evidenceId, request.file.partnerId),
