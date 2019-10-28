@@ -1,13 +1,13 @@
 import sbt._
 
 object Common {
-  val serviceCommonVersion = "19.9.1870"
+  val serviceCommonVersion = "19.13.1942"
   val serviceCommonCryptoVersion = "1.4.+"
   val paradiseVersion = "2.1.0"
   val scalaTestVersion = "3.0.5"
   val scalaMockVersion = "4.1.0"
   val json4sTestVersion = "3.5.3"
-  val serviceThriftVersion = "23.43.1773"
+  val serviceThriftVersion = "23.82.2246"
 
   val resolvers = Seq(
     "Nexus" at "https://nexus.taservs.net/content/groups/public",

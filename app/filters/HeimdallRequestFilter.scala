@@ -38,9 +38,12 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
   def apply(
     nextFilter: RequestHeader => Future[Result]
   )(requestHeader: RequestHeader): Future[Result] = {
-    val startTime  = System.currentTimeMillis
+    val startTime          = System.currentTimeMillis
     val actionName: String = this.getActionName(requestHeader)
-    executionTime(s"$actionName.time", authAndExecuteRequest(startTime, nextFilter, requestHeader, actionName))
+    executionTime(
+      s"$actionName.time",
+      authAndExecuteRequest(startTime, nextFilter, requestHeader, actionName),
+      includeServiceLevelLatencyStat = true)
   }
 
   private def authAndExecuteRequest(
