@@ -13,9 +13,9 @@ import models.common.PermissionType
 import models.hls.HlsManifestFormatter
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import scala.concurrent.ExecutionContext
 import services.rtm.{RtmClient, RtmResponseHandler}
 
-import scala.concurrent.ExecutionContext
 
 class AudioController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
