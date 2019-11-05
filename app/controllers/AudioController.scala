@@ -7,12 +7,12 @@ import actions.{
   TokenValidationAction,
   WatermarkAction
 }
+import com.typesafe.config.Config
 import javax.inject.Inject
 import models.hls.HlsManifestFormatter
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.rtm.{RtmClient, RtmResponseHandler}
-import com.typesafe.config.Config
 import models.common.PermissionType
 
 import scala.concurrent.ExecutionContext
