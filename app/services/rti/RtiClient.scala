@@ -24,17 +24,17 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
     with LazyLogging {
 
   def transcode(presignedURL: URL, watermark: String, fileId: UUID): Future[WSResponse] =
-    buildTranscodeRequest(presignedURL, watermark)(LargeImage, HighQuality, fileId).execute()
+    buildTranscodeRequest(presignedURL, watermark)(LargeImage, HighQuality, fileId).stream()
 
   /*
    * For better support zoom action, we need an higher quality image from RTI.
    * Therefore `sizeId` and `quality` params should be LargeImage and HighQuality
    */
   def zoom(presignedURL: URL, watermark: String, fileId: UUID): Future[WSResponse] =
-    buildTranscodeRequest(presignedURL, watermark)(LargeImage, HighQuality, fileId).execute()
+    buildTranscodeRequest(presignedURL, watermark)(LargeImage, HighQuality, fileId).stream()
 
   def metadata(presignedURL: URL): Future[WSResponse] =
-    buildMetadataRequest(presignedURL).execute()
+    buildMetadataRequest(presignedURL).stream()
 
   private def buildRTIEndpoint(endpoint: String) = ws.url(config.getString("edc.service.rti.host") + endpoint)
 
