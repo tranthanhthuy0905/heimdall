@@ -4,6 +4,7 @@ import org.scalatest.mockito.MockitoSugar
 import services.audit.AuditClient
 import services.document.{DocumentClient, DocumentClientImpl}
 import services.dredd.DreddClient
+import services.janus.{JanusClient, JanusClientImpl}
 import services.komrade.KomradeClient
 import services.nino.NinoClient
 import services.rti.RtiClient
@@ -19,6 +20,7 @@ class MockModule extends Module with MockitoSugar {
     bind(classOf[KomradeClient]).toInstance(mock[KomradeClient])
     bind(classOf[NinoClient]).toInstance(mock[NinoClient])
     bind(classOf[RtiClient]).toInstance(mock[RtiClient])
+    bind(classOf[JanusClient]).to(classOf[JanusClientImpl])
     bind(classOf[RtmClient]).toInstance(mock[RtmClient])
     bind(classOf[SessionsClient]).toInstance(mock[SessionsClient])
     bind(classOf[StreamingSessionData]).toInstance(mock[StreamingSessionData])

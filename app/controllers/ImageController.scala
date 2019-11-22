@@ -47,7 +47,9 @@ class ImageController @Inject()(
             fileTid(request.file.fileId, request.file.partnerId),
             request.request.clientIpAddress
           ))
-        httpEntity <- Future.successful(toHttpEntity(response))
+        httpEntity <- {
+          Future.successful(toHttpEntity(response))
+        }
       } yield
         httpEntity.fold(BadRequest(_), entity => {
           Ok.sendEntity(entity)
