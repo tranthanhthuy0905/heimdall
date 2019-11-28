@@ -10,13 +10,14 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait JanusClient {
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
+  def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
 }
 
 @Singleton
 class JanusClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: ExecutionContext) extends JanusClient {
 
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
-    buildJanusEndpoint(s"/v1/files/${fileId.toString}/convert")
+    buildJanusEndpoint(s"/files/${fileId.toString}/convert")
       .addQueryStringParameters("partner_id" -> partnerId.toString)
       .addQueryStringParameters("evidence_id" -> evidenceId.toString)
       .addQueryStringParameters("user_id" -> userId.toString)
@@ -31,7 +32,7 @@ class JanusClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Execu
       .execute()
 
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
-    buildJanusEndpoint(s"/v1/files/${fileId.toString}/status")
+    buildJanusEndpoint(s"/files/${fileId.toString}/status")
       .addQueryStringParameters("partner_id" -> partnerId.toString)
       .addQueryStringParameters("evidence_id" -> evidenceId.toString)
       .addQueryStringParameters("user_id" -> userId.toString)
