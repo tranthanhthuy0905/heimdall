@@ -24,7 +24,7 @@ class JanusClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Execu
       .withMethod("PUT")
       .withBody(
         Json.obj(
-          "partnerId"   -> partnerId.toString,
+          "partner_id"  -> partnerId.toString,
           "evidence_id" -> evidenceId.toString,
           "user_id"     -> userId.toString,
           "file_id"     -> fileId.toString
