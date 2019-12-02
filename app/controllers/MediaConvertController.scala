@@ -55,6 +55,6 @@ class MediaConvertController @Inject()(
     Some(response.status)
       .filter(_ equals play.api.http.Status.OK)
       .toRight(Json.obj("message" -> response.body))
-      .map(_ => Json.toJson(response.body))
+      .map(_ => response.body[JsValue])
   }
 }
