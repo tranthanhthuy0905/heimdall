@@ -6,7 +6,7 @@ import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
 import play.api.http.{HttpChunk, HttpEntity}
-import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
@@ -14,6 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.rti.metadata.MetadataJsonConversions
 import services.rti.RtiClient
+import utils.JsonFormat
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -27,7 +28,8 @@ class ImageController @Inject()(
     extends AbstractController(components)
     with LazyLogging
     with AuditConversions
-    with MetadataJsonConversions {
+    with MetadataJsonConversions
+    with JsonFormat {
 
   def view: Action[AnyContent] =
     (
@@ -118,16 +120,8 @@ class ImageController @Inject()(
       .toRight(Json.obj("message" -> response.body))
       .map(_ => {
         val metadata = metadataFromJson(response.json)
-        withoutNull(Json.toJson(metadata))
+        removeNullValues(Json.toJson(metadata).as[JsObject])
       })
   }
 
-  private def withoutNull(json: JsValue): JsValue = json match {
-    case JsObject(fields) =>
-      JsObject(fields.flatMap {
-        case (_, JsNull)           => None // could match on specific field name here
-        case other @ (name, value) => Some(other) // consider recursing on the value for nested objects
-      })
-    case other => other
-  }
 }
