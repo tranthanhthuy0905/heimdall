@@ -3,13 +3,13 @@ package controllers
 import actions._
 import akka.stream.scaladsl.Source
 import com.evidence.service.common.logging.LazyLogging
+import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
 import play.api.http.{HttpChunk, HttpEntity}
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-
 import scala.concurrent.{ExecutionContext, Future}
 import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.rti.metadata.MetadataJsonConversions
@@ -20,10 +20,13 @@ class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
+  featureValidationAction: FeatureValidationActionBuilder,
   watermarkAction: WatermarkAction,
   rtiRequestAction: RtiRequestAction,
+  rtiThumbnailRequestAction: ThumbnailRequestAction,
   rti: RtiClient,
   audit: AuditClient,
+  config: Config,
   components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
@@ -49,6 +52,24 @@ class ImageController @Inject()(
             fileTid(request.file.fileId, request.file.partnerId),
             request.request.clientIpAddress
           ))
+        httpEntity <- {
+          Future.successful(toHttpEntity(response))
+        }
+      } yield
+        httpEntity.fold(BadRequest(_), entity => {
+          Ok.sendEntity(entity)
+        })
+    }
+
+  def extractThumbnail: Action[AnyContent] =
+    (
+      heimdallRequestAction
+        andThen featureValidationAction.build("edc.thumbnail_extraction.enable")
+        andThen rtiThumbnailRequestAction
+      ).async { implicit request =>
+      val authHandler = request.attrs(AuthorizationAttr.Key)
+      for {
+        response <- rti.thumbnail(request.presignedUrl, request.width, request.height)
         httpEntity <- {
           Future.successful(toHttpEntity(response))
         }
@@ -123,5 +144,4 @@ class ImageController @Inject()(
         removeNullValues(Json.toJson(metadata).as[JsObject])
       })
   }
-
 }

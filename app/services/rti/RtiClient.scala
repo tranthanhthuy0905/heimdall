@@ -16,6 +16,7 @@ trait RtiClient {
   def transcode(presignedURL: URL, watermark: String, fileId: UUID): Future[WSResponse]
   def zoom(presignedURL: URL, watermark: String, fileId: UUID): Future[WSResponse]
   def metadata(presignedURL: URL): Future[WSResponse]
+  def thumbnail(presignedURL: URL, width: Int, height: Int): Future[WSResponse]
 }
 
 @Singleton
@@ -36,6 +37,12 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
   def metadata(presignedURL: URL): Future[WSResponse] =
     buildMetadataRequest(presignedURL).stream()
 
+  /*
+  * generate image thumbnail at specific dimension
+   */
+  def thumbnail(presignedURL: URL, width: Int, height: Int): Future[WSResponse] =
+    buildThumbnailRequest(presignedURL, width, height).stream()
+
   private def buildRTIEndpoint(endpoint: String) = ws.url(config.getString("edc.service.rti.host") + endpoint)
 
   private def buildTranscodeRequest(
@@ -47,6 +54,14 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
       .addQueryStringParameters("watermark" -> watermark)
       .addQueryStringParameters("quality" -> quality.value)
       .addQueryStringParameters("identifier" -> fileId.toString)
+      .withMethod("GET")
+  }
+
+  private def buildThumbnailRequest(presignedURL: URL, width: Int, height: Int) = {
+    buildRTIEndpoint("/v1/images/thumbnail")
+      .addQueryStringParameters("presignedURL" -> presignedURL.toString)
+      .addQueryStringParameters("width" -> width.toString)
+      .addQueryStringParameters("height" -> height.toString)
       .withMethod("GET")
   }
 
