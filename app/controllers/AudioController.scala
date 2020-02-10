@@ -4,8 +4,7 @@ import actions.{
   HeimdallRequestAction,
   PermValidationActionBuilder,
   RtmRequestAction,
-  TokenValidationAction,
-  WatermarkAction
+  TokenValidationAction
 }
 import com.typesafe.config.Config
 import javax.inject.Inject
