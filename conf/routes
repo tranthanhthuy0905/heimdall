@@ -4,25 +4,28 @@
 # Basic is it up endpoint
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GET /media/alive                        controllers.HealthController.isItUp
+GET  /media/alive                           controllers.HealthController.isItUp
 
 # Heimdall API
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-GET /media/start                        controllers.ProbeController.probe
+GET  /media/start                           controllers.ProbeController.probe
 
-GET /media/streamed                     controllers.AuditController.recordMediaStreamedEvent
-GET /media/thumbnail                    controllers.ThumbnailController.thumbnail
-GET /media/downloadthumbnail            controllers.ThumbnailDownloadController.downloadThumbnail
+GET  /media/streamed                        controllers.AuditController.recordMediaStreamedEvent
+GET  /media/thumbnail                       controllers.ThumbnailController.thumbnail
+GET  /media/downloadthumbnail               controllers.ThumbnailDownloadController.downloadThumbnail
 
-GET /media/hls/master                   controllers.HlsController.playlist
-GET /media/hls/variant                  controllers.HlsController.playlist
-GET /media/hls/segment                  controllers.HlsController.segment
+POST /media/video/convert                   controllers.MediaConvertController.convert
+GET /media/video/status                     controllers.MediaConvertController.status
 
-GET /media/image/transcode              controllers.ImageController.view
-GET /media/image/zoom                   controllers.ImageController.zoom
-GET /media/image/metadata               controllers.ImageController.metadata
+GET  /media/hls/master                      controllers.HlsController.playlist
+GET  /media/hls/variant                     controllers.HlsController.playlist
+GET  /media/hls/segment                     controllers.HlsController.segment
 
-GET /media/document/view                controllers.DocumentController.view
+GET  /media/image/transcode                 controllers.ImageController.view
+GET  /media/image/thumbnail                 controllers.ImageController.extractThumbnail
+GET  /media/image/zoom                      controllers.ImageController.zoom
+GET  /media/image/metadata                  controllers.ImageController.metadata
 
-GET /media/audiosample                  controllers.AudioController.sample
+GET  /media/document/view                   controllers.DocumentController.view
+GET /media/audiosample                      controllers.AudioController.sample

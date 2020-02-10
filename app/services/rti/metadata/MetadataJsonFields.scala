@@ -3,6 +3,8 @@ package services.rti.metadata
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
+import scala.util.Try
+
 trait MetadataJsonFields {
   protected final val displayNameFieldOutput  = "displayName"
   protected final val displayValueFieldOutput = "displayValue"
@@ -115,5 +117,10 @@ trait ReadableValue {
   protected def getMetadataValue(value: Int): Option[MetadataValue]
 
   protected def fromString(data: String): String =
-    this.getMetadataValue(data.toInt).map(_.displayValue).getOrElse("")
+    tryToInt(data)
+      .flatMap(getMetadataValue)
+      .map(_.displayValue)
+      .getOrElse("")
+
+  private def tryToInt(s: String): Option[Int] = Try(s.toInt).toOption
 }

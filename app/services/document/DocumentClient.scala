@@ -18,7 +18,7 @@ class DocumentClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Ex
     with LazyLogging {
 
   def view(presignedURL: URL): Future[WSResponse] = {
-    ws.url(presignedURL.toString).get()
+    ws.url(presignedURL.toString).stream()
   }
 
 }

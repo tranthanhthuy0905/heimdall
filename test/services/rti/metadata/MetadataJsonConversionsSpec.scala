@@ -1,9 +1,10 @@
 package services.rti.metadata
 
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
+import utils.JsonFormat
 
-class MetadataJsonConversionsSpec extends PlaySpec with MetadataJsonConversions {
+class MetadataJsonConversionsSpec extends PlaySpec with MetadataJsonConversions with JsonFormat {
 
   "MetadataJsonConversions" should {
     "parse metadata from metadata json" in {
@@ -120,5 +121,27 @@ class MetadataJsonConversionsSpec extends PlaySpec with MetadataJsonConversions 
     val metadata = metadataFromJson(Json.parse(body))
 
     metadata.apertureValue mustBe None
+  }
+
+  "should return empty string if the value of json field can not convert to Int" in {
+    val body =
+      s"""
+         |{
+         |  "FileSource": "==Aq\"
+         |}
+         |""".stripMargin
+
+    val metadata     = metadataFromJson(Json.parse(body))
+    val jsonResult   = removeNullValues(Json.toJson(metadata).as[JsObject])
+    val jsonExpected = Json.parse(s"""
+                                     |{
+                                     |  "fileSource": {
+                                     |    "displayName": "File Source",
+                                     |    "displayValue": ""
+                                     |  }
+                                     |}
+                                     |""".stripMargin)
+
+    jsonResult mustBe jsonExpected
   }
 }

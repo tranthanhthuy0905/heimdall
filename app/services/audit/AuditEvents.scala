@@ -187,6 +187,19 @@ case class EvidenceReviewEvent(
 }
 
 /**
+  *
+  * echo -n com.evidence.data.evidence.events.v2.EvidencePlaybackRequested | md5
+  */
+case class EvidencePlaybackRequested(
+  targetTid: Tid,
+  updatedByTid: Tid,
+  fileTid: Tid,
+  remoteAddress: String
+) extends AuditEvent {
+  final val eventTypeUuid = "9e8f2af1-907a-4c91-5a10-ffd200f315e9"
+}
+
+/**
   * EvidenceFileBookmarkDownloaded definition over AuditEvent abstraction.
   *
   * Defines eventTypeUuid as MD5 hash of the Ecomsaas class used to parse the event:
@@ -198,10 +211,10 @@ case class EvidenceReviewEvent(
   * @see https://git.taservs.net/ecom/reporter/blob/fcd98eaa3baac4eec6619c74e7d395c2ee9be12a/reporter-service/src/main/scala/com/evidence/service/reporter/audit/events/EventUUIDToDescriptorMapper.scala#L123
   */
 case class EvidenceFileBookmarkDownloadedEvent(
-                                      targetTid: Tid,
-                                      updatedByTid: Tid,
-                                      fileTid: Tid,
-                                      remoteAddress: String
-                                    ) extends AuditEvent {
+  targetTid: Tid,
+  updatedByTid: Tid,
+  fileTid: Tid,
+  remoteAddress: String
+) extends AuditEvent {
   val eventTypeUuid = "5d0e13a4-40f5-ca11-69d0-2cad1453a9f6"
 }

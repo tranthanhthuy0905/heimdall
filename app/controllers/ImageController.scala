@@ -3,31 +3,36 @@ package controllers
 import actions._
 import akka.stream.scaladsl.Source
 import com.evidence.service.common.logging.LazyLogging
+import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
 import play.api.http.{HttpChunk, HttpEntity}
-import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-
 import scala.concurrent.{ExecutionContext, Future}
 import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.rti.metadata.MetadataJsonConversions
 import services.rti.RtiClient
+import utils.JsonFormat
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
+  featureValidationAction: FeatureValidationActionBuilder,
   watermarkAction: WatermarkAction,
   rtiRequestAction: RtiRequestAction,
+  rtiThumbnailRequestAction: ThumbnailRequestAction,
   rti: RtiClient,
   audit: AuditClient,
+  config: Config,
   components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
     with AuditConversions
-    with MetadataJsonConversions {
+    with MetadataJsonConversions
+    with JsonFormat {
 
   def view: Action[AnyContent] =
     (
@@ -47,7 +52,27 @@ class ImageController @Inject()(
             fileTid(request.file.fileId, request.file.partnerId),
             request.request.clientIpAddress
           ))
-        httpEntity <- Future.successful(toHttpEntity(response))
+        httpEntity <- {
+          Future.successful(toHttpEntity(response))
+        }
+      } yield
+        httpEntity.fold(BadRequest(_), entity => {
+          Ok.sendEntity(entity)
+        })
+    }
+
+  def extractThumbnail: Action[AnyContent] =
+    (
+      heimdallRequestAction
+        andThen featureValidationAction.build("edc.thumbnail_extraction.enable")
+        andThen rtiThumbnailRequestAction
+      ).async { implicit request =>
+      val authHandler = request.attrs(AuthorizationAttr.Key)
+      for {
+        response <- rti.thumbnail(request.presignedUrl, request.width, request.height)
+        httpEntity <- {
+          Future.successful(toHttpEntity(response))
+        }
       } yield
         httpEntity.fold(BadRequest(_), entity => {
           Ok.sendEntity(entity)
@@ -116,16 +141,7 @@ class ImageController @Inject()(
       .toRight(Json.obj("message" -> response.body))
       .map(_ => {
         val metadata = metadataFromJson(response.json)
-        withoutNull(Json.toJson(metadata))
+        removeNullValues(Json.toJson(metadata).as[JsObject])
       })
-  }
-
-  private def withoutNull(json: JsValue): JsValue = json match {
-    case JsObject(fields) =>
-      JsObject(fields.flatMap {
-        case (_, JsNull)           => None // could match on specific field name here
-        case other @ (name, value) => Some(other) // consider recursing on the value for nested objects
-      })
-    case other => other
   }
 }

@@ -5,6 +5,7 @@ import services.audit.{AuditClient, AuditClientImpl}
 import services.document.{DocumentClient, DocumentClientImpl}
 import services.dredd.{DreddClient, DreddClientImpl}
 import services.global.HeimdallApplicationLifecycle
+import services.janus.{JanusClient, JanusClientImpl}
 import services.komrade.{KomradeClient, KomradeClientImpl}
 import services.nino.{NinoClient, NinoClientImpl}
 import services.rti.{RtiClient, RtiClientImpl}
@@ -23,6 +24,7 @@ class Module extends AbstractModule {
     bind(classOf[NinoClient]).to(classOf[NinoClientImpl])
     bind(classOf[RtmClient]).to(classOf[RtmClientImpl])
     bind(classOf[RtiClient]).to(classOf[RtiClientImpl])
+    bind(classOf[JanusClient]).to(classOf[JanusClientImpl])
     bind(classOf[DocumentClient]).to(classOf[DocumentClientImpl])
     bind(classOf[SessionsClient]).to(classOf[SessionsClientImpl])
     bind(classOf[StreamingSessionData]).to(classOf[StreamingSessionDataImpl])
