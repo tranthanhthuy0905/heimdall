@@ -28,4 +28,4 @@ GET  /media/image/zoom                      controllers.ImageController.zoom
 GET  /media/image/metadata                  controllers.ImageController.metadata
 
 GET  /media/document/view                   controllers.DocumentController.view
-GET /media/audiosample                      controllers.AudioController.sample
+GET /media/audio/sample                     controllers.AudioController.sample
