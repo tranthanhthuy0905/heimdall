@@ -63,9 +63,9 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
   )
 
   final val audioSampleParams = List(
-    "start_time_seconds",
-    "end_time_seconds",
-    "resolution_seconds"
+    "startTimeSeconds",
+    "endTimeSeconds",
+    "resolutionSeconds"
   )
 
   /**
