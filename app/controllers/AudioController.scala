@@ -22,7 +22,6 @@ class AudioController @Inject()(
   permValidation: PermValidationActionBuilder,
   rtmRequestAction: RtmRequestAction,
   rtm: RtmClient,
-  config: Config,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components) {
