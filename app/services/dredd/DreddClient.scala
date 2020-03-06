@@ -17,6 +17,8 @@ import scala.concurrent.{ExecutionContext, Future}
 trait DreddClient {
   def getUrl[A](file: FileIdent, request: HeimdallRequest[A]): Future[URL]
 
+  def getUrl[A](file: FileIdent, request: HeimdallRequest[A], expiresSec: Int): Future[URL]
+
   def getUrl[A](
     agencyId: UUID,
     evidenceId: UUID,
@@ -51,12 +53,16 @@ class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
     getUrl(file.partnerId, file.evidenceId, file.fileId, request)
   }
 
+  override def getUrl[A](file: FileIdent, request: HeimdallRequest[A], expiresSec: Int): Future[URL] = {
+    getUrl(file.partnerId, file.evidenceId, file.fileId, request, expiresSec)
+  }
+  
   override def getUrl[A](
     partnerId: UUID,
     evidenceId: UUID,
     fileId: UUID,
     request: HeimdallRequest[A],
-    expiresSecs: Int): Future[URL] = {
+    expiresSecs: Int = 60): Future[URL] = {
 
     def extractUrlFromDreddResponse(r: PresignedUrlResponse): Future[URL] = {
       val u = for {
