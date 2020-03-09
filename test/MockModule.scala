@@ -1,10 +1,10 @@
 import models.auth.{Authorizer, StreamingSessionData}
 import org.apache.curator.framework.CuratorFramework
 import org.scalatest.mockito.MockitoSugar
+import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.audit.AuditClient
 import services.document.{DocumentClient, DocumentClientImpl}
 import services.dredd.DreddClient
-import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.komrade.KomradeClient
 import services.nino.NinoClient
 import services.rti.RtiClient

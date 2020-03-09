@@ -9,8 +9,8 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
-import services.audit.{AuditClient, AuditConversions, EvidencePlaybackRequested}
 import services.apidae.ApidaeClient
+import services.audit.{AuditClient, AuditConversions, EvidencePlaybackRequested}
 import services.rti.metadata.MetadataJsonConversions
 
 class MediaConvertController @Inject()(

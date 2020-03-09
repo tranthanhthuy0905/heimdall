@@ -1,11 +1,11 @@
 import com.google.inject.{AbstractModule, Singleton}
 import models.auth.{Authorizer, AuthorizerImpl, StreamingSessionData, StreamingSessionDataImpl}
 import org.apache.curator.framework.CuratorFramework
+import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.audit.{AuditClient, AuditClientImpl}
 import services.document.{DocumentClient, DocumentClientImpl}
 import services.dredd.{DreddClient, DreddClientImpl}
 import services.global.HeimdallApplicationLifecycle
-import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.komrade.{KomradeClient, KomradeClientImpl}
 import services.nino.{NinoClient, NinoClientImpl}
 import services.rti.{RtiClient, RtiClientImpl}
