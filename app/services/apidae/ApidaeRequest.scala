@@ -1,4 +1,4 @@
-package services.janus
+package services.apidae
 
 import java.util.UUID
 
@@ -6,9 +6,9 @@ import models.common.{FileIdent, HeimdallRequest}
 import play.api.mvc.WrappedRequest
 
 /**
-  * JanusRequest generates request URI digestible by Janus.
+  * ApidaeRequest generates request URI digestible by Apidae.
   *
   * @return Generated URI as a string.
   */
-case class JanusRequest[A](file: FileIdent, userId: UUID, request: HeimdallRequest[A])
+case class ApidaeRequest[A](file: FileIdent, userId: UUID, request: HeimdallRequest[A])
     extends WrappedRequest[A](request)
