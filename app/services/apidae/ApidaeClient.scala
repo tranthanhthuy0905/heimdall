@@ -1,4 +1,4 @@
-package services.janus
+package services.apidae
 
 import com.typesafe.config.Config
 import java.util.UUID
@@ -8,16 +8,16 @@ import play.api.libs.ws.{WSClient, WSResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait JanusClient {
+trait ApidaeClient {
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
 }
 
 @Singleton
-class JanusClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: ExecutionContext) extends JanusClient {
+class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: ExecutionContext) extends ApidaeClient {
 
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
-    buildJanusEndpoint(s"/files/${fileId.toString}/convert")
+    buildApidaeEndpoint(s"/files/${fileId.toString}/convert")
       .addQueryStringParameters("partner_id" -> partnerId.toString)
       .addQueryStringParameters("evidence_id" -> evidenceId.toString)
       .addQueryStringParameters("user_id" -> userId.toString)
@@ -32,14 +32,14 @@ class JanusClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Execu
       .execute()
 
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
-    buildJanusEndpoint(s"/files/${fileId.toString}/status")
+    buildApidaeEndpoint(s"/files/${fileId.toString}/status")
       .addQueryStringParameters("partner_id" -> partnerId.toString)
       .addQueryStringParameters("evidence_id" -> evidenceId.toString)
       .addQueryStringParameters("user_id" -> userId.toString)
       .withMethod("GET")
       .execute()
 
-  private def buildJanusEndpoint(endpoint: String) =
-    ws.url(config.getString("edc.service.janus.host") + endpoint).withHttpHeaders("Content-type" -> "application/json")
+  private def buildApidaeEndpoint(endpoint: String) =
+    ws.url(config.getString("edc.service.apidae.host") + endpoint).withHttpHeaders("Content-type" -> "application/json")
 
 }

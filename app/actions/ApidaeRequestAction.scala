@@ -6,11 +6,11 @@ import javax.inject.Inject
 import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import scala.concurrent.{ExecutionContext, Future}
-import services.janus.JanusRequest
+import services.apidae.ApidaeRequest
 import utils.UUIDHelper
 
-case class JanusRequestAction @Inject()(implicit val executionContext: ExecutionContext)
-    extends ActionRefiner[HeimdallRequest, JanusRequest]
+case class ApidaeRequestAction @Inject()(implicit val executionContext: ExecutionContext)
+    extends ActionRefiner[HeimdallRequest, ApidaeRequest]
     with LazyLogging
     with UUIDHelper {
 
@@ -20,7 +20,7 @@ case class JanusRequestAction @Inject()(implicit val executionContext: Execution
       file     <- request.media.headOption.toRight(Results.BadRequest)
       userId   <- request.parsedJwt.map(_.subjectId).toRight(Results.BadRequest)
       userUUID <- Convert.tryToUuid(userId).toRight(Results.BadRequest)
-    } yield JanusRequest(file, userUUID, request)
+    } yield ApidaeRequest(file, userUUID, request)
     Future.successful(result)
   }
 }

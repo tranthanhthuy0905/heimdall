@@ -10,17 +10,17 @@ import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponent
 
 import scala.concurrent.{ExecutionContext, Future}
 import services.audit.{AuditClient, AuditConversions, EvidencePlaybackRequested}
-import services.janus.JanusClient
+import services.apidae.ApidaeClient
 import services.rti.metadata.MetadataJsonConversions
 
 class MediaConvertController @Inject()(
-  heimdallRequestAction: HeimdallRequestAction,
-  tokenValidationAction: TokenValidationAction,
-  permValidation: PermValidationActionBuilder,
-  janusRequestAction: JanusRequestAction,
-  janus: JanusClient,
-  audit: AuditClient,
-  components: ControllerComponents)(implicit ex: ExecutionContext)
+                                        heimdallRequestAction: HeimdallRequestAction,
+                                        tokenValidationAction: TokenValidationAction,
+                                        permValidation: PermValidationActionBuilder,
+                                        apidaeRequestAction: ApidaeRequestAction,
+                                        apidae: ApidaeClient,
+                                        audit: AuditClient,
+                                        components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
     with AuditConversions
@@ -30,12 +30,12 @@ class MediaConvertController @Inject()(
     (
       heimdallRequestAction
         andThen permValidation.build(PermissionType.View)
-        andThen janusRequestAction
+        andThen apidaeRequestAction
     ).async { implicit request =>
       val authHandler = request.attrs(AuthorizationAttr.Key)
 
       for {
-        response <- janus
+        response <- apidae
           .transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
         _ <- audit.recordEndSuccess(
           EvidencePlaybackRequested(
@@ -52,10 +52,10 @@ class MediaConvertController @Inject()(
     (
       heimdallRequestAction
         andThen permValidation.build(PermissionType.View)
-        andThen janusRequestAction
+        andThen apidaeRequestAction
     ).async { implicit request =>
       for {
-        response <- janus
+        response <- apidae
           .getTranscodingStatus(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
         httpEntity <- Future.successful(toHttpEntity(response))
       } yield httpEntity.fold(BadRequest(_), Ok(_))
