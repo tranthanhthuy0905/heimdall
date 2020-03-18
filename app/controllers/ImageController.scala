@@ -44,7 +44,7 @@ class ImageController @Inject()(
       val authHandler = request.attrs(AuthorizationAttr.Key)
 
       for {
-        response <- rti.transcode(request.presignedUrl, request.watermark, request.file.fileId)
+        response <- rti.transcode(request.presignedUrl, request.watermark, request.file)
         _ <- audit.recordEndSuccess(
           EvidenceReviewEvent(
             evidenceTid(request.file.evidenceId, request.file.partnerId),
@@ -69,7 +69,7 @@ class ImageController @Inject()(
       ).async { implicit request =>
       val authHandler = request.attrs(AuthorizationAttr.Key)
       for {
-        response <- rti.thumbnail(request.presignedUrl, request.width, request.height)
+        response <- rti.thumbnail(request.presignedUrl, request.width, request.height, request.file)
         httpEntity <- {
           Future.successful(toHttpEntity(response))
         }
@@ -89,7 +89,7 @@ class ImageController @Inject()(
       val authHandler = request.attrs(AuthorizationAttr.Key)
 
       for {
-        response <- rti.zoom(request.presignedUrl, request.watermark, request.file.fileId)
+        response <- rti.zoom(request.presignedUrl, request.watermark, request.file)
         _ <- audit.recordEndSuccess(
           EvidenceReviewEvent(
             evidenceTid(request.file.evidenceId, request.file.partnerId),
@@ -111,7 +111,7 @@ class ImageController @Inject()(
         andThen rtiRequestAction
     ).async { implicit request =>
       for {
-        response   <- rti.metadata(request.presignedUrl)
+        response   <- rti.metadata(request.presignedUrl, request.file)
         httpEntity <- Future.successful(toMetadataEntity(response))
       } yield
         httpEntity.fold(BadRequest(_), metadata => {
