@@ -35,7 +35,21 @@ class MetadataJsonConversionsSpec extends PlaySpec with MetadataJsonConversions 
            |  "LensSpecification": "500/10",
            |  "LightSource": "0",
            |  "Make": "SONY",
-           |  "MaxApertureValue": "512/256"
+           |  "MaxApertureValue": "512/256",
+           |  "GPSLatitudeRef": "S",
+           |  "GPSLatitude": "37.828308",
+           |  "GPSLongitudeRef": "E",
+           |  "GPSLongitude": "144.924683",
+           |  "GPSAltitudeRef": "0x00",
+           |  "GPSAltitude": "11.560000",
+           |  "GPSTimeStamp": "12:34:56.789000",
+           |  "GPSSpeedRef": "K",
+           |  "GPSSpeed": "0/1",
+           |  "GPSImgDirectionRef": "T",
+           |  "GPSImgDirection": "600201/2530",
+           |  "GPSDestBearingRef": "T",
+           |  "GPSDestBearing": "600201/2530",
+           |  "GPSDateStamp": "2020:03:06"
            |}
            |""".stripMargin
 
@@ -88,10 +102,189 @@ class MetadataJsonConversionsSpec extends PlaySpec with MetadataJsonConversions 
         sceneCaptureType = None,
         fileSource = None,
         exifVersion = Some(ExifVersion("0231")),
-        flashpixVersion = None
+        flashpixVersion = None,
+        // GPS
+        gpsLatitudeRef = Some(GpsLatitudeRef("S")),
+        gpsLatitude = Some(GpsLatitude("37.828308")),
+        gpsLongitudeRef = Some(GpsLongitudeRef("E")),
+        gpsLongitude = Some(GpsLongitude("144.924683")),
+        gpsAltitudeRef = Some(GpsAltitudeRef("0x00")),
+        gpsAltitude = Some(GpsAltitude("11.560000")),
+        gpsTimeStamp = Some(GpsTimeStamp("12:34:56.789000")),
+        gpsSpeedRef = Some(GpsSpeedRef("K")),
+        gpsSpeed = Some(GpsSpeed("0/1")),
+        gpsImageDirectionRef = Some(GpsImageDirectionRef("T")),
+        gpsImageDirection = Some(GpsImageDirection("600201/2530")),
+        gpsDestBearingRef = Some(GpsDestBearingRef("T")),
+        gpsDestBearing = Some(GpsDestBearing("600201/2530")),
+        gpsDateStamp = Some(GpsDateStamp("2020:03:06")),
       )
 
       metadata mustBe expect
+
+      val actualJsonMetada = removeNullValues(Json.toJson(metadata).as[JsObject])
+      val expectedJsonMetada =
+        s"""
+           |{
+           |  "dateTime": {
+           |    "displayName": "Modified Date",
+           |    "displayValue": "2018:10:29 10:48:06"
+           |  },
+           |  "imageDescription": {
+           |    "displayName": "Image Description",
+           |    "displayValue": "photo by tqmai"
+           |  },
+           |  "software": {
+           |    "displayName": "Software",
+           |    "displayValue": "Adobe Photoshop Lightroom Classic 7.5 (Macintosh)"
+           |  },
+           |  "orientation": {
+           |    "displayName": "Orientation",
+           |    "displayValue": "Horizontal"
+           |  },
+           |  "colorSpace": {
+           |    "displayName": "Color Representation",
+           |    "displayValue": "sRGB"
+           |  },
+           |  "make": {
+           |    "displayName": "Camera Make",
+           |    "displayValue": "SONY"
+           |  },
+           |  "fNumber": {
+           |    "displayName": "F-Stop",
+           |    "displayValue": "8/1"
+           |  },
+           |  "exposureTime": {
+           |    "displayName": "Exposure Time",
+           |    "displayValue": "1/320"
+           |  },
+           |  "isoSpeedRatings": {
+           |    "displayName": "ISO Speed",
+           |    "displayValue": "100"
+           |  },
+           |  "exposureBiasValue": {
+           |    "displayName": "Exposure Bias",
+           |    "displayValue": "0/10"
+           |  },
+           |  "focalLength": {
+           |    "displayName": "Focal Length",
+           |    "displayValue": "500/10"
+           |  },
+           |  "focalLengthIn35mmFilm": {
+           |    "displayName": "35mm Focal Length",
+           |    "displayValue": "50"
+           |  },
+           |  "apertureValue": {
+           |    "displayName": "Aperture Value",
+           |    "displayValue": "6/1"
+           |  },
+           |  "maxApertureValue": {
+           |    "displayName": "Max Aperture Value",
+           |    "displayValue": "512/256"
+           |  },
+           |  "flash": {
+           |    "displayName": "Flash Mode",
+           |    "displayValue": "Off, Did not fire"
+           |  },
+           |  "dateTimeDigitized": {
+           |    "displayName": "Date/Time Original",
+           |    "displayValue": "2018:10:19 16:56:15"
+           |  },
+           |  "lensModel": {
+           |    "displayName": "Lens Model",
+           |    "displayValue": "E 50mm F2"
+           |  },
+           |  "lensSpecification": {
+           |    "displayName": "Lens Specification",
+           |    "displayValue": "500/10"
+           |  },
+           |  "contrast": {
+           |    "displayName": "Contrast",
+           |    "displayValue": "Normal"
+           |  },
+           |  "brightnessValue": {
+           |    "displayName": "Brightness",
+           |    "displayValue": "24344/2560"
+           |  },
+           |  "lightSource": {
+           |    "displayName": "Light Source",
+           |    "displayValue": "Unknown"
+           |  },
+           |  "exposureProgram": {
+           |    "displayName": "Exposure Program",
+           |    "displayValue": "Aperture-priority AE"
+           |  },
+           |  "exposureMode": {
+           |    "displayName": "Exposure Mode",
+           |    "displayValue": "Auto"
+           |  },
+           |  "digitalZoomRatio": {
+           |    "displayName": "Digital Zoom Ratio",
+           |    "displayValue": "16/16"
+           |  },
+           |  "exifVersion": {
+           |    "displayName": "Exif Version",
+           |    "displayValue": "0231"
+           |  },
+           |  "gpsLatitudeRef": {
+           |    "displayName": "Latitude Reference",
+           |    "displayValue": "South"
+           |  },
+           |  "gpsLatitude": {
+           |    "displayName": "Latitude",
+           |    "displayValue": "37.828308"
+           |  },
+           |  "gpsLongitudeRef": {
+           |    "displayName": "Longitude Reference",
+           |    "displayValue": "East"
+           |  },
+           |  "gpsLongitude": {
+           |    "displayName": "Longitude",
+           |    "displayValue": "144.924683"
+           |  },
+           |  "gpsAltitudeRef": {
+           |    "displayName": "Altitude Reference",
+           |    "displayValue": "Above Sea Level"
+           |  },
+           |  "gpsAltitude": {
+           |    "displayName": "Altitude",
+           |    "displayValue": "11.560000"
+           |  },
+           |  "gpsTimeStamp": {
+           |    "displayName": "Time Stamp",
+           |    "displayValue": "12:34:56.789000"
+           |  },
+           |  "gpsSpeedRef": {
+           |    "displayName": "Speed Reference",
+           |    "displayValue": "km/h"
+           |  },
+           |  "gpsSpeed": {
+           |    "displayName": "Speed",
+           |    "displayValue": "0/1"
+           |  },
+           |  "gpsImageDirectionRef": {
+           |    "displayName": "Image Direction Reference",
+           |    "displayValue": "True North"
+           |  },
+           |  "gpsImageDirection": {
+           |    "displayName": "Image Direction",
+           |    "displayValue": "600201/2530"
+           |  },
+           |  "gpsDestBearingRef": {
+           |    "displayName": "Destination Bearing Reference",
+           |    "displayValue": "True North"
+           |  },
+           |  "gpsDestBearing": {
+           |    "displayName": "Destination Bearing",
+           |    "displayValue": "600201/2530"
+           |  },
+           |  "gpsDateStamp": {
+           |    "displayName": "Date Stamp",
+           |    "displayValue": "2020:03:06"
+           |  }
+           |}
+           |""".stripMargin
+      actualJsonMetada mustBe Json.parse(expectedJsonMetada)
     }
   }
 

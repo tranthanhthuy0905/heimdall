@@ -57,6 +57,21 @@ trait MetadataJsonFields {
   protected final val fileSourceFieldInput              = "FileSource"
   protected final val exifVersionFieldInput             = "ExifVersion"
   protected final val flashpixVersionFieldInput         = "FlashpixVersion"
+  // GPS
+  protected final val gpsLatitudeRefInput                = "GPSLatitudeRef"
+  protected final val gpsLatitudeInput                   = "GPSLatitude"
+  protected final val gpsLongitudeRefInput               = "GPSLongitudeRef"
+  protected final val gpsLongitudeInput                  = "GPSLongitude"
+  protected final val gpsAltitudeRefInput                = "GPSAltitudeRef"
+  protected final val gpsAltitudeInput                   = "GPSAltitude"
+  protected final val gpsTimeStampInput                  = "GPSTimeStamp"
+  protected final val gpsSpeedRefInput                   = "GPSSpeedRef"
+  protected final val gpsSpeedInput                      = "GPSSpeed"
+  protected final val gpsImageDirectionRefInput          = "GPSImgDirectionRef"
+  protected final val gpsImageDirectionInput             = "GPSImgDirection"
+  protected final val gpsDestBearingRefInput             = "GPSDestBearingRef"
+  protected final val gpsDestBearingInput                = "GPSDestBearing"
+  protected final val gpsDateStampInput                  = "GPSDateStamp"
 
   protected final val dateTimeFieldOutput                = "dateTime"
   protected final val imageDescriptionFieldOutput        = "imageDescription"
@@ -106,11 +121,33 @@ trait MetadataJsonFields {
   protected final val fileSourceFieldOutput              = "fileSource"
   protected final val exifVersionFieldOutput             = "exifVersion"
   protected final val flashpixVersionFieldOutput         = "flashpixVersion"
+  // GPS
+  protected final val gpsLatitudeRefOutput                = "gpsLatitudeRef"
+  protected final val gpsLatitudeOutput                   = "gpsLatitude"
+  protected final val gpsLongitudeRefOutput               = "gpsLongitudeRef"
+  protected final val gpsLongitudeOutput                  = "gpsLongitude"
+  protected final val gpsAltitudeRefOutput                = "gpsAltitudeRef"
+  protected final val gpsAltitudeOutput                   = "gpsAltitude"
+  protected final val gpsTimeStampOutput                  = "gpsTimeStamp"
+  protected final val gpsSpeedRefOutput                   = "gpsSpeedRef"
+  protected final val gpsSpeedOutput                      = "gpsSpeed"
+  protected final val gpsImageDirectionRefOutput          = "gpsImageDirectionRef"
+  protected final val gpsImageDirectionOutput             = "gpsImageDirection"
+  protected final val gpsDestBearingRefOutput             = "gpsDestBearingRef"
+  protected final val gpsDestBearingOutput                = "gpsDestBearing"
+  protected final val gpsDateStampOutput                  = "gpsDateStamp"
 
   protected final val writesBuilder = (
     (__ \ displayNameFieldOutput).write[String] and
       (__ \ displayValueFieldOutput).write[String]
   )
+}
+
+trait ReadableStrValue {
+  protected def getMetadataValue(value: String): Option[MetadataValue]
+
+  protected def fromString(data: String): String =
+    this.getMetadataValue(data).map(_.displayValue).getOrElse("")
 }
 
 trait ReadableValue {
