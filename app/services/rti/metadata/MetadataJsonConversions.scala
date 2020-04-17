@@ -53,7 +53,22 @@ trait MetadataJsonConversions {
       json.asOpt[SceneCaptureType],
       json.asOpt[FileSource],
       json.asOpt[ExifVersion],
-      json.asOpt[FlashpixVersion]
+      json.asOpt[FlashpixVersion],
+      // GPS
+      json.asOpt[GpsLatitudeRef],
+      json.asOpt[GpsLatitude],
+      json.asOpt[GpsLongitudeRef],
+      json.asOpt[GpsLongitude],
+      json.asOpt[GpsAltitudeRef],
+      json.asOpt[GpsAltitude],
+      json.asOpt[GpsTimeStamp],
+      json.asOpt[GpsSpeedRef],
+      json.asOpt[GpsSpeed],
+      json.asOpt[GpsImageDirectionRef],
+      json.asOpt[GpsImageDirection],
+      json.asOpt[GpsDestBearingRef],
+      json.asOpt[GpsDestBearing],
+      json.asOpt[GpsDateStamp],
     )
   }
 

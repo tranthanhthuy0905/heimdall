@@ -48,6 +48,31 @@ sealed trait SceneCaptureTypeValue extends MetadataValue {
 sealed trait SceneTypeValue extends MetadataValue {
   def value: Int
 }
+
+sealed trait LatitudeRef extends MetadataValue {
+  def value: String
+}
+
+sealed trait LongitudeRef extends MetadataValue {
+  def value: String
+}
+
+sealed trait AltitudeRef extends MetadataValue {
+  def value: String
+}
+
+sealed trait SpeedRef extends MetadataValue {
+  def value: String
+}
+
+sealed trait ImageDirectionRef extends MetadataValue {
+  def value: String
+}
+
+sealed trait DestBearingRef extends MetadataValue {
+  def value: String
+}
+
 case class DateTime(dateTime: String) extends MetadataValue {
   val displayValue = "Modified Date"
 }
@@ -1633,3 +1658,262 @@ object FlashpixVersion extends MetadataJsonFields {
   implicit val flashpixVersionWrites: Writes[FlashpixVersion] = writesBuilder(
     (data: FlashpixVersion) => (data.displayValue, data.version))
 }
+
+// === GPS ===
+// GpsLatitudeRef
+case class GpsLatitudeRef(latitudeRef: String) extends MetadataValue {
+  val displayValue = "Latitude Reference"
+}
+
+object GpsLatitudeRef extends MetadataJsonFields with ReadableStrValue {
+  implicit val gpsLatitudeRefReads: Reads[GpsLatitudeRef] = (__ \ gpsLatitudeRefInput).read[String].map(GpsLatitudeRef.apply)
+
+  implicit val gpsLatitudeRefWrites: Writes[GpsLatitudeRef] = writesBuilder(
+    (data: GpsLatitudeRef) => (data.displayValue, fromString(data.latitudeRef)))
+
+  case object North extends LatitudeRef {
+    val value        = "N"
+    val displayValue = "North"
+  }
+
+  case object South extends LatitudeRef {
+    val value        = "S"
+    val displayValue = "South"
+  }
+
+  private final val latitudeRefList = List[LatitudeRef](North, South)
+  protected def getMetadataValue(value: String): Option[LatitudeRef] =
+    latitudeRefList.find(_.value.equals(value))
+}
+
+// GpsLatitude
+case class GpsLatitude(latitude: String) extends MetadataValue {
+  val displayValue = "Latitude"
+}
+
+object GpsLatitude extends MetadataJsonFields {
+  implicit val gpsLatitudeReads: Reads[GpsLatitude] = (__ \ gpsLatitudeInput).read[String].map(GpsLatitude.apply)
+
+  implicit val gpsLatitudeWrites: Writes[GpsLatitude] = writesBuilder(
+    (data: GpsLatitude) => (data.displayValue, data.latitude))
+}
+
+// GpsLongitudeRef
+case class GpsLongitudeRef(longitudeRef: String) extends MetadataValue {
+  val displayValue = "Longitude Reference"
+}
+
+object GpsLongitudeRef extends MetadataJsonFields with ReadableStrValue {
+  implicit val gpsLongitudeRefReads: Reads[GpsLongitudeRef] = (__ \ gpsLongitudeRefInput).read[String].map(GpsLongitudeRef.apply)
+
+  implicit val gpsLongitudeRefWrites: Writes[GpsLongitudeRef] = writesBuilder(
+    (data: GpsLongitudeRef) => (data.displayValue, fromString(data.longitudeRef)))
+
+  case object East extends LongitudeRef {
+    val value        = "E"
+    val displayValue = "East"
+  }
+
+  case object West extends LongitudeRef {
+    val value        = "W"
+    val displayValue = "West"
+  }
+
+  private final val longitudeRefList = List[LongitudeRef](East, West)
+  protected def getMetadataValue(value: String): Option[LongitudeRef] =
+    longitudeRefList.find(_.value.equals(value))
+}
+
+// GpsLongitude
+case class GpsLongitude(longitude: String) extends MetadataValue {
+  val displayValue = "Longitude"
+}
+
+object GpsLongitude extends MetadataJsonFields {
+  implicit val gpsLongitudeReads: Reads[GpsLongitude] = (__ \ gpsLongitudeInput).read[String].map(GpsLongitude.apply)
+
+  implicit val gpsLongitudeWrites: Writes[GpsLongitude] = writesBuilder(
+    (data: GpsLongitude) => (data.displayValue, data.longitude))
+}
+
+// GpsAltitudeRef
+case class GpsAltitudeRef(altitudeRef: String) extends MetadataValue {
+  val displayValue = "Altitude Reference"
+}
+
+object GpsAltitudeRef extends MetadataJsonFields with ReadableStrValue {
+  implicit val gpsAltitudeRefReads: Reads[GpsAltitudeRef] = (__ \ gpsAltitudeRefInput).read[String].map(GpsAltitudeRef.apply)
+
+  implicit val gpsAltitudeRefWrites: Writes[GpsAltitudeRef] = writesBuilder(
+    (data: GpsAltitudeRef) => (data.displayValue, fromString(data.altitudeRef)))
+
+  case object AboveSeaLevel extends AltitudeRef {
+    val value        = "0x00"
+    val displayValue = "Above Sea Level"
+  }
+
+  case object BelowSeaLevel extends AltitudeRef {
+    val value        = "0x01"
+    val displayValue = "Below Sea Level"
+  }
+
+  private final val altitudeRefList = List[AltitudeRef](AboveSeaLevel, BelowSeaLevel)
+  protected def getMetadataValue(value: String): Option[AltitudeRef] =
+    altitudeRefList.find(_.value.equals(value))
+}
+
+// GpsAltitude
+case class GpsAltitude(altitude: String) extends MetadataValue {
+  val displayValue = "Altitude"
+}
+
+object GpsAltitude extends MetadataJsonFields {
+  implicit val gpsAltitudeReads: Reads[GpsAltitude] = (__ \ gpsAltitudeInput).read[String].map(GpsAltitude.apply)
+
+  implicit val gpsAltitudeWrites: Writes[GpsAltitude] = writesBuilder(
+    (data: GpsAltitude) => (data.displayValue, data.altitude))
+}
+
+// GpsTimeStamp
+case class GpsTimeStamp(timeStamp: String) extends MetadataValue {
+  val displayValue = "Time Stamp"
+}
+
+object GpsTimeStamp extends MetadataJsonFields {
+  implicit val gpsDateTimeReads: Reads[GpsTimeStamp] = (__ \ gpsTimeStampInput).read[String].map(GpsTimeStamp.apply)
+
+  implicit val gpsDateTimeWrites: Writes[GpsTimeStamp] = writesBuilder(
+    (data: GpsTimeStamp) => (data.displayValue, data.timeStamp))
+}
+
+// GpsSpeedRef
+case class GpsSpeedRef(speedRef: String) extends MetadataValue {
+  val displayValue = "Speed Reference"
+}
+
+object GpsSpeedRef extends MetadataJsonFields with ReadableStrValue {
+  implicit val GpsSpeedRefReads: Reads[GpsSpeedRef] = (__ \ gpsSpeedRefInput).read[String].map(GpsSpeedRef.apply)
+
+  implicit val GpsSpeedRefWrites: Writes[GpsSpeedRef] = writesBuilder(
+    (data: GpsSpeedRef) => (data.displayValue, fromString(data.speedRef)))
+
+  case object kmh extends SpeedRef {
+    val value        = "K"
+    val displayValue = "km/h"
+  }
+
+  case object mph extends SpeedRef {
+    val value        = "M"
+    val displayValue = "mph"
+  }
+
+  case object knots extends SpeedRef {
+    val value        = "N"
+    val displayValue = "knots"
+  }
+
+  private final val speedRefList = List[SpeedRef](kmh, mph, knots)
+  protected def getMetadataValue(value: String): Option[SpeedRef] =
+    speedRefList.find(_.value.equals(value))
+}
+
+// GpsSpeed
+case class GpsSpeed(speed: String) extends MetadataValue {
+  val displayValue = "Speed"
+}
+
+object GpsSpeed extends MetadataJsonFields {
+  implicit val GpsSpeedReads: Reads[GpsSpeed] = (__ \ gpsSpeedInput).read[String].map(GpsSpeed.apply)
+
+  implicit val GpsSpeedWrites: Writes[GpsSpeed] = writesBuilder(
+    (data: GpsSpeed) => (data.displayValue, data.speed))
+}
+
+// GpsImageDirectionRef
+case class GpsImageDirectionRef(imageDirectionRef: String) extends MetadataValue {
+  val displayValue = "Image Direction Reference"
+}
+
+object GpsImageDirectionRef extends MetadataJsonFields with ReadableStrValue {
+  implicit val GpsDestBearingReads: Reads[GpsImageDirectionRef] = (__ \ gpsImageDirectionRefInput).read[String].map(GpsImageDirectionRef.apply)
+
+  implicit val GpsDestBearingWrites: Writes[GpsImageDirectionRef] = writesBuilder(
+    (data: GpsImageDirectionRef) => (data.displayValue, fromString(data.imageDirectionRef)))
+
+  case object MagneticNorth extends ImageDirectionRef {
+    val value        = "M"
+    val displayValue = "Magnetic North"
+  }
+
+  case object TrueNorth extends ImageDirectionRef {
+    val value        = "T"
+    val displayValue = "True North"
+  }
+
+  private final val imageDirectionRefList = List[ImageDirectionRef](MagneticNorth, TrueNorth)
+  protected def getMetadataValue(value: String): Option[ImageDirectionRef] =
+    imageDirectionRefList.find(_.value.equals(value))
+}
+
+// GpsImageDirection
+case class GpsImageDirection(imageDirection: String) extends MetadataValue {
+  val displayValue = "Image Direction"
+}
+
+object GpsImageDirection extends MetadataJsonFields {
+  implicit val GpsImageDirectionReads: Reads[GpsImageDirection] = (__ \ gpsImageDirectionInput).read[String].map(GpsImageDirection.apply)
+
+  implicit val GpsImageDirectionWrites: Writes[GpsImageDirection] = writesBuilder(
+    (data: GpsImageDirection) => (data.displayValue, data.imageDirection))
+}
+
+// GpsDestBearingRef
+case class GpsDestBearingRef(destBearingRef: String) extends MetadataValue {
+  val displayValue = "Destination Bearing Reference"
+}
+
+object GpsDestBearingRef extends MetadataJsonFields with ReadableStrValue {
+  implicit val GpsDestBearingReads: Reads[GpsDestBearingRef] = (__ \ gpsDestBearingRefInput).read[String].map(GpsDestBearingRef.apply)
+
+  implicit val GpsDestBearingWrites: Writes[GpsDestBearingRef] = writesBuilder(
+    (data: GpsDestBearingRef) => (data.displayValue, fromString(data.destBearingRef)))
+
+  case object MagneticNorth extends DestBearingRef {
+    val value        = "M"
+    val displayValue = "Magnetic North"
+  }
+
+  case object TrueNorth extends DestBearingRef {
+    val value        = "T"
+    val displayValue = "True North"
+  }
+
+  private final val destBearingRefList = List[DestBearingRef](MagneticNorth, TrueNorth)
+  protected def getMetadataValue(value: String): Option[DestBearingRef] =
+    destBearingRefList.find(_.value.equals(value))
+}
+
+// GpsDestBearing
+case class GpsDestBearing(destBearing: String) extends MetadataValue {
+  val displayValue = "Destination Bearing"
+}
+
+object GpsDestBearing extends MetadataJsonFields {
+  implicit val GpsDestBearingReads: Reads[GpsDestBearing] = (__ \ gpsDestBearingInput).read[String].map(GpsDestBearing.apply)
+
+  implicit val GpsDestBearingWrites: Writes[GpsDestBearing] = writesBuilder(
+    (data: GpsDestBearing) => (data.displayValue, data.destBearing))
+}
+
+// GpsDateStamp
+case class GpsDateStamp(dateStamp: String) extends MetadataValue {
+  val displayValue = "Date Stamp"
+}
+
+object GpsDateStamp extends MetadataJsonFields {
+  implicit val gpsDateTimeReads: Reads[GpsDateStamp] = (__ \ gpsDateStampInput).read[String].map(GpsDateStamp.apply)
+
+  implicit val gpsDateTimeWrites: Writes[GpsDateStamp] = writesBuilder(
+    (data: GpsDateStamp) => (data.displayValue, data.dateStamp))
+}
+

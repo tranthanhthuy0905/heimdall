@@ -53,7 +53,22 @@ case class Metadata(
   sceneCaptureType: Option[SceneCaptureType],
   fileSource: Option[FileSource],
   exifVersion: Option[ExifVersion],
-  flashpixVersion: Option[FlashpixVersion]
+  flashpixVersion: Option[FlashpixVersion],
+  // GPS
+  gpsLatitudeRef: Option[GpsLatitudeRef],
+  gpsLatitude: Option[GpsLatitude],
+  gpsLongitudeRef: Option[GpsLongitudeRef],
+  gpsLongitude: Option[GpsLongitude],
+  gpsAltitudeRef: Option[GpsAltitudeRef],
+  gpsAltitude: Option[GpsAltitude],
+  gpsTimeStamp: Option[GpsTimeStamp],
+  gpsSpeedRef: Option[GpsSpeedRef],
+  gpsSpeed: Option[GpsSpeed],
+  gpsImageDirectionRef: Option[GpsImageDirectionRef],
+  gpsImageDirection: Option[GpsImageDirection],
+  gpsDestBearingRef: Option[GpsDestBearingRef],
+  gpsDestBearing: Option[GpsDestBearing],
+  gpsDateStamp: Option[GpsDateStamp],
 )
 
 object Metadata extends MetadataJsonFields {
@@ -110,7 +125,22 @@ object Metadata extends MetadataJsonFields {
         sceneCaptureTypeFieldOutput        -> Json.toJson(m.sceneCaptureType),
         fileSourceFieldOutput              -> Json.toJson(m.fileSource),
         exifVersionFieldOutput             -> Json.toJson(m.exifVersion),
-        flashpixVersionFieldOutput         -> Json.toJson(m.flashpixVersion)
+        flashpixVersionFieldOutput         -> Json.toJson(m.flashpixVersion),
+        // GPS
+        gpsLatitudeRefOutput                -> Json.toJson(m.gpsLatitudeRef),
+        gpsLatitudeOutput                   -> Json.toJson(m.gpsLatitude),
+        gpsLongitudeRefOutput               -> Json.toJson(m.gpsLongitudeRef),
+        gpsLongitudeOutput                  -> Json.toJson(m.gpsLongitude),
+        gpsAltitudeRefOutput                -> Json.toJson(m.gpsAltitudeRef),
+        gpsAltitudeOutput                   -> Json.toJson(m.gpsAltitude),
+        gpsTimeStampOutput                  -> Json.toJson(m.gpsTimeStamp),
+        gpsSpeedRefOutput                   -> Json.toJson(m.gpsSpeedRef),
+        gpsSpeedOutput                      -> Json.toJson(m.gpsSpeed),
+        gpsImageDirectionRefOutput          -> Json.toJson(m.gpsImageDirectionRef),
+        gpsImageDirectionOutput             -> Json.toJson(m.gpsImageDirection),
+        gpsDestBearingRefOutput             -> Json.toJson(m.gpsDestBearingRef),
+        gpsDestBearingOutput                -> Json.toJson(m.gpsDestBearing),
+        gpsDateStampOutput                  -> Json.toJson(m.gpsDateStamp),
       )
     }
   }
