@@ -58,7 +58,7 @@ class MediaConvertController @Inject()(
     response map {
       response =>
         val headers = response.headers map {
-          case (key, values) => (key, values.headOption.get)
+          case (key, values) => (key, values.headOption.getOrElse(""))
         }
 
         val body = HttpEntity.Strict(ByteString(response.body), Some(ContentTypes.JSON))
