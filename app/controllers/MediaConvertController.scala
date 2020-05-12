@@ -1,12 +1,13 @@
 package controllers
 
 import actions._
+import akka.util.ByteString
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.http.{ContentTypes, HttpEntity}
 import play.api.libs.ws.WSResponse
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, ResponseHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 import services.apidae.ApidaeClient
@@ -34,18 +35,14 @@ class MediaConvertController @Inject()(
     ).async { implicit request =>
       val authHandler = request.attrs(AuthorizationAttr.Key)
 
-      for {
-        response <- apidae
-          .transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
-        _ <- audit.recordEndSuccess(
+      audit.recordEndSuccess(
           EvidencePlaybackRequested(
             evidenceTid(request.file.evidenceId, request.file.partnerId),
             updatedByTid(authHandler.parsedJwt),
             fileTid(request.file.fileId, request.file.partnerId),
-            request.request.clientIpAddress
-          ))
-        httpEntity <- Future.successful(toHttpEntity(response))
-      } yield httpEntity.fold(InternalServerError(_), Ok(_))
+            request.request.clientIpAddress))
+
+      apidae.transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
     }
 
   def status: Action[AnyContent] =
@@ -54,17 +51,18 @@ class MediaConvertController @Inject()(
         andThen permValidation.build(PermissionType.View)
         andThen apidaeRequestAction
     ).async { implicit request =>
-      for {
-        response <- apidae
-          .getTranscodingStatus(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
-        httpEntity <- Future.successful(toHttpEntity(response))
-      } yield httpEntity.fold(BadRequest(_), Ok(_))
+        apidae.getTranscodingStatus(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
     }
 
-  private def toHttpEntity(response: WSResponse): Either[JsObject, JsValue] = {
-    Some(response.status)
-      .filter(_ equals play.api.http.Status.OK)
-      .toRight(Json.obj("message" -> response.body))
-      .map(_ => response.body[JsValue])
+  implicit def Response2Result(response: Future[WSResponse]): Future[Result] = {
+    response map {
+      response =>
+        val headers = response.headers map {
+          case (key, values) => (key, values.headOption.getOrElse(""))
+        }
+
+        val body = HttpEntity.Strict(ByteString(response.body), Some(ContentTypes.JSON))
+        Result(ResponseHeader(response.status, headers), body)
+    }
   }
 }
