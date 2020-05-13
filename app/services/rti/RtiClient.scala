@@ -79,11 +79,9 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
   private def buildMetadataRequest(presignedURL: URL, file: FileIdent) = {
     buildRTIEndpoint("/v1/images/metadata")
       .addQueryStringParameters("presignedURL" -> presignedURL.toString)
-      .addHttpHeaders(
-        "evidenceId" -> file.evidenceId.toString,
-        "partnerId" -> file.partnerId.toString,
-        "fileId" -> file.fileId.toString,
-      )
+      .addQueryStringParameters("evidenceId" -> file.evidenceId.toString)
+      .addQueryStringParameters("partnerId" -> file.partnerId.toString)
+      .addQueryStringParameters("fileId" -> file.fileId.toString)
       .withMethod("GET")
   }
 }
