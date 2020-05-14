@@ -111,7 +111,7 @@ class ImageController @Inject()(
         andThen rtiRequestAction
     ).async { implicit request =>
       for {
-        response   <- rti.metadata(request.presignedUrl, request.file)
+        response   <- rti.metadata(request.file)
         httpEntity <- Future.successful(toMetadataEntity(response))
       } yield
         httpEntity.fold(BadRequest(_), metadata => {
