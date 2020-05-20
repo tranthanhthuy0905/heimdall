@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait RtiClient {
   def transcode(presignedURL: URL, watermark: String, file: FileIdent): Future[WSResponse]
   def zoom(presignedURL: URL, watermark: String, file: FileIdent): Future[WSResponse]
-  def metadata(file: FileIdent): Future[WSResponse]
+  def metadata(presignedURL: URL, file: FileIdent): Future[WSResponse]
   def thumbnail(presignedURL: URL, width: Int, height: Int, file: FileIdent): Future[WSResponse]
 }
 
@@ -35,11 +35,11 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
   def zoom(presignedURL: URL, watermark: String, file: FileIdent): Future[WSResponse] =
     buildTranscodeRequest(presignedURL, watermark)(LargeImage, HighQuality, file).stream()
 
-  def metadata(file: FileIdent): Future[WSResponse] =
-    buildMetadataRequest(file).stream()
+  def metadata(presignedURL: URL, file: FileIdent): Future[WSResponse] =
+    buildMetadataRequest(presignedURL, file).stream()
 
   /*
-  * generate image thumbnail at specific dimension
+   * generate image thumbnail at specific dimension
    */
   def thumbnail(presignedURL: URL, width: Int, height: Int, file: FileIdent): Future[WSResponse] =
     buildThumbnailRequest(presignedURL, width, height, file).stream()
@@ -57,8 +57,8 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
       .addQueryStringParameters("identifier" -> file.fileId.toString)
       .addHttpHeaders(
         "evidenceId" -> file.evidenceId.toString,
-        "partnerId" -> file.partnerId.toString,
-        "fileId" -> file.fileId.toString,
+        "partnerId"  -> file.partnerId.toString,
+        "fileId"     -> file.fileId.toString,
       )
       .withMethod("GET")
   }
@@ -70,14 +70,15 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
       .addQueryStringParameters("height" -> height.toString)
       .addHttpHeaders(
         "evidenceId" -> file.evidenceId.toString,
-        "partnerId" -> file.partnerId.toString,
-        "fileId" -> file.fileId.toString,
+        "partnerId"  -> file.partnerId.toString,
+        "fileId"     -> file.fileId.toString,
       )
       .withMethod("GET")
   }
 
-  private def buildMetadataRequest(file: FileIdent) = {
+  private def buildMetadataRequest(presignedURL: URL, file: FileIdent) = {
     buildRTIEndpoint("/v1/images/metadata")
+      .addQueryStringParameters("presignedURL" -> presignedURL.toString)
       .addQueryStringParameters("evidenceId" -> file.evidenceId.toString)
       .addQueryStringParameters("partnerId" -> file.partnerId.toString)
       .addQueryStringParameters("fileId" -> file.fileId.toString)

@@ -66,7 +66,7 @@ class ImageController @Inject()(
       heimdallRequestAction
         andThen featureValidationAction.build("edc.thumbnail_extraction.enable")
         andThen rtiThumbnailRequestAction
-      ).async { implicit request =>
+    ).async { implicit request =>
       val authHandler = request.attrs(AuthorizationAttr.Key)
       for {
         response <- rti.thumbnail(request.presignedUrl, request.width, request.height, request.file)
@@ -111,7 +111,7 @@ class ImageController @Inject()(
         andThen rtiRequestAction
     ).async { implicit request =>
       for {
-        response   <- rti.metadata(request.file)
+        response   <- rti.metadata(request.presignedUrl, request.file)
         httpEntity <- Future.successful(toMetadataEntity(response))
       } yield
         httpEntity.fold(BadRequest(_), metadata => {
