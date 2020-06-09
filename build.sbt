@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play-ws" % "2.6.17"
+  "com.typesafe.play" %% "play-ws" % "2.8.2"
 )
 
 libraryDependencies ++= Seq(
