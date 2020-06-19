@@ -14,11 +14,11 @@ Run Book is located in https://git.taservs.net/ecom/heimdall/wiki/Heimdall-Run-B
 
 ### Heimdall dependencies
 
-![heimdall-dependencies](https://git.taservs.net/ecom/heimdall/blob/master/doc/heimdall-dependencies.svg)
+![heimdall-dependencies](https://git.taservs.net/ecom/heimdall/blob/master/docs/diagrams/heimdall-dependencies.svg)
 
 #### Updating diagrams
 
-Sources and generated diagrams can be found in [`./doc/`](https://git.taservs.net/ecom/heimdall/tree/master/doc) of the repository.<br/>
+Sources and generated diagrams can be found in [`./docs/diagrams`](https://git.taservs.net/ecom/heimdall/tree/master/docs/diagrams) of the repository.<br/>
 
 There are two diagrams:
 * Heimdall Dependencies diagram reflecting Heimdall's direct relationships (`heimdall-dependencies.dot`).
@@ -32,6 +32,9 @@ dot -Tsvg heimdall-dependencies.dot > heimdall-dependencies.svg
 
 HLS work flow diagram uses syntax and powered by https://www.websequencediagrams.com/. 
 In order to update `heimdall-hls-work-flow`, use WebWequenceDiagrams' editor and SVG generator.
+
+### API Documentation
+Heimdall has [`./docs/heimdall.yaml`](https://git.taservs.net/ecom/heimdall/tree/master/docs/diagrams/heimdall.yaml) is a template for using the SwaggerUI to dynamically generate beautiful API documentations. The API specification of Heimdall can seen hosted [here](https://git.taservs.net/pages/ecom/heimdall).  
 
 ## Run and Debug Heimdall Locally
 
