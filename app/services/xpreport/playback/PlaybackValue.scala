@@ -46,13 +46,13 @@ case class EventsInfo(
 case class Data(aggregationEvents: AggregationEvents)
 object Data extends PlaybackJsonFields {
   implicit val data: Reads[Data] =
-    (JsPath \ dataField).read[AggregationEvents].map(Data.apply _)
+    (JsPath \ dataField).read[AggregationEvents].map(Data.apply)
 }
 
 case class AggregationEvents(data: Map[String, Duration])
 object AggregationEvents extends PlaybackJsonFields {
   implicit val data: Reads[AggregationEvents] =
-    (JsPath \ aggregationEventsField).read[Map[String, Duration]].map(AggregationEvents.apply _)
+    (JsPath \ aggregationEventsField).read[Map[String, Duration]].map(AggregationEvents.apply)
 }
 
 case class Duration(
@@ -87,13 +87,13 @@ case class StalledInfo(
 case class StalledData(buffering: Buffering)
 object StalledData extends PlaybackJsonFields {
   implicit val data: Reads[StalledData] =
-    (JsPath \ dataField).read[Buffering].map(StalledData.apply _)
+    (JsPath \ dataField).read[Buffering].map(StalledData.apply)
 }
 
 case class Buffering(currentResolution: CurrentResolution)
 object Buffering extends PlaybackJsonFields {
   implicit val buffering: Reads[Buffering] =
-    (JsPath \ bufferingField).read[CurrentResolution].map(Buffering.apply _)
+    (JsPath \ bufferingField).read[CurrentResolution].map(Buffering.apply)
 }
 
 
