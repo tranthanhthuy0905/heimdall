@@ -14,6 +14,7 @@ import com.nimbusds.jwt.JWT
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
 import com.axon.pdp.protos.v1.pdp_service.{PdpServiceGrpc, Tid => PTid}
+import com.evidence.service.common.monitoring.statsd.StrictStatsD
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,8 +26,8 @@ trait PdpClient {
 class PdpClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
     extends PdpClient
     with PdpClientHelper
-    with LazyLogging {
-
+    with LazyLogging
+    with StrictStatsD {
   protected val keyManager: KeyManager                        = KeyManager.apply(config)
   protected val componentFactory: CachingJOSEComponentFactory = new CachingJOSEComponentFactory(keyManager)
   protected val parser                                        = new VerifyingJWTParser(componentFactory)
@@ -53,9 +54,13 @@ class PdpClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
           )
         )
       )
-    client
-      .enforceBatch(batchRequest)
-      .map(r => r.result.forall(_.granted == true))
+    executionTime(
+      aspect = "PdpClient.enforceBatch",
+      future =
+        client
+          .enforceBatch(batchRequest)
+          .map(r => r.result.forall(_.granted == true))
+    )
   }
 
   private def jwtToUser(jwtStr: String): Tid =
