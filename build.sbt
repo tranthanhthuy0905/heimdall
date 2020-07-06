@@ -45,6 +45,12 @@ libraryDependencies ++= Seq(
   "com.evidence" % "edc-thrift-java" % Common.serviceThriftVersion
 )
 
+//GRPC Services
+libraryDependencies ++= Common.protoDependencies
+libraryDependencies ++= Seq(
+  "com.evidence" %% "pdp-proto" % Common.pdpProtoVersion,
+)
+
 // Test
 libraryDependencies ++= Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test,

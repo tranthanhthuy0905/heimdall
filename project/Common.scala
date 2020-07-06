@@ -8,12 +8,15 @@ object Common {
   val scalaMockVersion = "4.1.0"
   val json4sTestVersion = "3.5.3"
   val serviceThriftVersion = "23.82.2246"
+  val pdpProtoVersion = "0.2.195"
 
   val resolvers = Seq(
     "Nexus" at "https://nexus.taservs.net/content/groups/public",
     "Twitter" at "https://maven.twttr.com",
     "OpenSaml" at "https://build.shibboleth.net/nexus/content/repositories/releases"
   )
+
+  lazy val protoDependencies = Seq("io.grpc" % "grpc-netty-shaded" % "1.24.0")
 
   val exclusions = Seq(
     ExclusionRule("org.slf4j", "slf4j-jdk14"),
