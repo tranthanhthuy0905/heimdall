@@ -77,6 +77,10 @@ object Duration extends PlaybackJsonFields {
 //       currentResolution: string,
 //       duration: Number
 //    }
+//    inputDelay: {
+//       reason: String
+//       duration: Number
+//    }
 //  }
 //}
 case class StalledInfo(
@@ -85,10 +89,12 @@ case class StalledInfo(
                         data: Option[StalledData],
                       )
 
-case class StalledData(buffering: Buffering)
+case class StalledData(buffering: Buffering, inputDelay: InputDelay)
 object StalledData extends PlaybackJsonFields {
-  implicit val data: Reads[StalledData] =
-    (JsPath \ dataField).read[Buffering].map(StalledData.apply)
+  implicit val data: Reads[StalledData] = (
+    (JsPath \ dataField).read[Buffering] and
+      (JsPath \ dataField).read[InputDelay]
+    )(StalledData.apply _)
 }
 
 case class Buffering(currentResolution: Option[CurrentResolution], stalledDuration: Option[StalledDuration])
@@ -110,4 +116,18 @@ case class StalledDuration(value: Option[Double])
 object StalledDuration extends PlaybackJsonFields {
   implicit val stalledDuration: Reads[StalledDuration] =
     (JsPath \ stalledDurationField).readNullable[Double].map(StalledDuration.apply)
+}
+
+case class InputDelayReason(value: Option[String])
+object InputDelayReason extends PlaybackJsonFields {
+  implicit val inputDelayReason: Reads[InputDelayReason] =
+    (JsPath \ inputDelayReasonField).readNullable[String].map(InputDelayReason.apply)
+}
+
+case class InputDelay(inputDelayReason: Option[InputDelayReason], stalledDuration: Option[StalledDuration])
+object InputDelay extends PlaybackJsonFields {
+  implicit val inputDelay: Reads[InputDelay] = (
+    (JsPath \ inputDelayField).readNullable[InputDelayReason] and
+      (JsPath \ inputDelayField).readNullable[StalledDuration]
+    )(InputDelay.apply _)
 }
