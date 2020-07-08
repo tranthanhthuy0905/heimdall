@@ -1,7 +1,7 @@
 package services.xpreport.playback
 
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{Json}
+import play.api.libs.json.Json
 import utils.JsonFormat
 
 class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions with PlaybackJsonFields with JsonFormat {
@@ -453,10 +453,9 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         data = Some(
           StalledData(
             Buffering(
-              CurrentResolution(
-                Some(res1080.toInt)
-              )
-            )
+              Some(CurrentResolution(Some(res1080.toInt))),
+              Some(StalledDuration(None)),
+            ),
           )
         )
       )
@@ -481,10 +480,40 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         data = Some(
           StalledData(
             Buffering(
-              CurrentResolution(
-                Some(res1080.toInt)
-              )
+              Some(CurrentResolution(Some(res1080.toInt))),
+              Some(StalledDuration(None)),
             )
+          )
+        )
+      )
+      stalledInfo mustBe expectStalledInfo
+    }
+
+    "parse stalled info correctly when there're duration" in {
+      val stalledDuration = 123.321
+      val stalledInfoJson =
+        s"""
+           |{
+           |    "$eventTimeField" : "$time",
+           |    "$tokenField" : "$streamToken",
+           |    "$dataField" : {
+           |        "$bufferingField": {
+           |            "$currentResolutionField" : $res1080,
+           |            "$stalledDurationField" : $stalledDuration
+           |        }
+           |    }
+           |}
+           |""".stripMargin
+      val stalledInfo = stalledInfoFromJson(Json.parse(stalledInfoJson))
+      val expectStalledInfo = StalledInfo(
+        time = Some(Time(Some(time))),
+        token = Some(Token(Some(streamToken))),
+        data = Some(
+          StalledData(
+            Buffering(
+              Some(CurrentResolution(Some(res1080.toInt))),
+              Some(StalledDuration(Some(stalledDuration))),
+            ),
           )
         )
       )

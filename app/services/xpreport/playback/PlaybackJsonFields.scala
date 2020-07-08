@@ -15,5 +15,6 @@ trait PlaybackJsonFields {
   // Stalled events
   protected final val bufferingField          = "buffering"
   protected final val currentResolutionField  = "currentResolution"
+  protected final val stalledDurationField    = "duration"
 }
 

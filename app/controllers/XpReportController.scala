@@ -81,7 +81,7 @@ class XpReportController @Inject()(
     }
     val currentResolution = stalledInfo
       .data
-      .map(_.buffering.currentResolution)
+      .flatMap(_.buffering.currentResolution)
       .flatMap(_.value).getOrElse(-1)
 
     logger.info("ExperienceReport")(

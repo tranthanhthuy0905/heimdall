@@ -75,6 +75,7 @@ object Duration extends PlaybackJsonFields {
 //  data: {
 //    buffering: {
 //       currentResolution: string,
+//       duration: Number
 //    }
 //  }
 //}
@@ -90,10 +91,12 @@ object StalledData extends PlaybackJsonFields {
     (JsPath \ dataField).read[Buffering].map(StalledData.apply)
 }
 
-case class Buffering(currentResolution: CurrentResolution)
+case class Buffering(currentResolution: Option[CurrentResolution], stalledDuration: Option[StalledDuration])
 object Buffering extends PlaybackJsonFields {
-  implicit val buffering: Reads[Buffering] =
-    (JsPath \ bufferingField).read[CurrentResolution].map(Buffering.apply)
+  implicit val buffering: Reads[Buffering] = (
+    (JsPath \ bufferingField).readNullable[CurrentResolution] and
+      (JsPath \ bufferingField).readNullable[StalledDuration]
+    )(Buffering.apply _)
 }
 
 
@@ -101,4 +104,10 @@ case class CurrentResolution(value: Option[Int])
 object CurrentResolution extends PlaybackJsonFields {
   implicit val currentResolution: Reads[CurrentResolution] =
     (JsPath \ currentResolutionField).readNullable[Int].map(CurrentResolution.apply)
+}
+
+case class StalledDuration(value: Option[Double])
+object StalledDuration extends PlaybackJsonFields {
+  implicit val stalledDuration: Reads[StalledDuration] =
+    (JsPath \ stalledDurationField).readNullable[Double].map(StalledDuration.apply)
 }
