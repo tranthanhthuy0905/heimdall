@@ -12,12 +12,11 @@ import scala.collection.JavaConverters._
 trait PdpClientHelper extends Retry {
   def buildPdpClient(host: String, port: Int, secret: String): PdpServiceGrpc.PdpServiceStub = {
     val retryConfig: util.Map[String, util.List[util.Map[String, Object]]] =
-      withRetryConfig("com.axon.sage.protos.v1.PdpService", Seq("enforce", "enforceBatch"))
+      withRetryConfig("com.axon.pdp.protos.v1.PdpService", Seq("enforce", "enforceBatch"))
 
     val channel = ManagedChannelBuilder
       .forAddress(host, port)
-      .usePlaintext()
-      //.useTransportSecurity()
+      .useTransportSecurity()
       .enableRetry()
       .disableServiceConfigLookUp()
       .defaultServiceConfig(retryConfig)
