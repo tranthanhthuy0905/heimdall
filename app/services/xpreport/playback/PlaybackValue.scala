@@ -97,8 +97,8 @@ object Buffering extends PlaybackJsonFields {
 }
 
 
-case class CurrentResolution(value: Option[String])
+case class CurrentResolution(value: Option[Int])
 object CurrentResolution extends PlaybackJsonFields {
   implicit val currentResolution: Reads[CurrentResolution] =
-    (JsPath \ currentResolutionField).readNullable[String].map(CurrentResolution.apply)
+    (JsPath \ currentResolutionField).readNullable[Int].map(CurrentResolution.apply)
 }
