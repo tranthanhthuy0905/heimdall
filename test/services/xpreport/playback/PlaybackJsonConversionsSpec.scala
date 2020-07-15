@@ -441,7 +441,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
            |    "$tokenField" : "$streamToken",
            |    "$dataField" : {
            |        "$bufferingField": {
-           |            "$currentResolutionField" : "$res1080"
+           |            "$currentResolutionField" : $res1080
            |        }
            |    }
            |}
@@ -454,7 +454,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
           StalledData(
             Buffering(
               CurrentResolution(
-                Some(res1080)
+                Some(res1080.toInt)
               )
             )
           )
@@ -469,7 +469,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
            |{
            |    "$dataField" : {
            |        "$bufferingField": {
-           |            "$currentResolutionField" : "$res1080"
+           |            "$currentResolutionField" : $res1080
            |        }
            |    }
            |}
@@ -482,7 +482,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
           StalledData(
             Buffering(
               CurrentResolution(
-                Some(res1080)
+                Some(res1080.toInt)
               )
             )
           )
