@@ -53,45 +53,26 @@ class XpReportController @Inject()(
     }
 
   private def logLagRatioImpl(fileIdent: FileIdent, eventsInfo: EventsInfo): Unit = {
-    val time = eventsInfo.time match {
-      case Some(Time(Some(time))) => time
-      case _ => "unknown"
-    }
-    val streamToken = eventsInfo.token match {
-      case Some(Token(Some(token))) => token
-      case _ => "unknown"
-    }
     val logVars: Seq[LogVariable] = Seq(
       "event_type" -> "info",
-      "event_time" -> time,
       "evidence_id" -> fileIdent.evidenceId,
       "partner_id" -> fileIdent.partnerId,
       "file_id" -> fileIdent.fileId,
-      "stream_token" -> streamToken,
       "events_info" -> eventsInfo,
-    ) ++ calculateLagRatio(eventsInfo)
+    ) ++ logEventsInfoDetail(eventsInfo)
 
     logger.info("ExperienceReport")(logVars: _*)
   }
 
   private def logStalledImpl(fileIdent: FileIdent, stalledInfo: StalledInfo): Unit = {
-    val time = stalledInfo.time match {
-      case Some(Time(Some(time))) => time
-      case _ => "unknown"
-    }
-    val currentResolution = stalledInfo
-      .data
-      .flatMap(_.buffering.currentResolution)
-      .flatMap(_.value).getOrElse(-1)
-
-    logger.info("ExperienceReport")(
+    val logVars: Seq[LogVariable] = Seq(
       "event_type" -> "stalled",
-      "event_time" -> time,
       "evidence_id" -> fileIdent.evidenceId,
       "partner_id" -> fileIdent.partnerId,
       "file_id" -> fileIdent.fileId,
       "stalled_info" -> stalledInfo,
-      "buffering_resolution" -> currentResolution,
-    )
+    ) ++ logStalledInfoDetail(stalledInfo)
+
+    logger.info("ExperienceReport")(logVars: _*)
   }
 }

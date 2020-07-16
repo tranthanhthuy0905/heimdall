@@ -72,6 +72,7 @@ object Duration extends PlaybackJsonFields {
 //{
 //  time: String
 //  token: String
+//  event: String
 //  data: {
 //    buffering: {
 //       currentResolution: string,
@@ -83,9 +84,15 @@ object Duration extends PlaybackJsonFields {
 //    }
 //  }
 //}
+case class Event(value: Option[String])
+object Event extends PlaybackJsonFields {
+  implicit val token: Reads[Event] = (JsPath \ eventField).readNullable[String].map(Event.apply)
+}
+
 case class StalledInfo(
                         time: Option[Time],
                         token: Option[Token],
+                        event: Option[Event],
                         data: Option[StalledData],
                       )
 

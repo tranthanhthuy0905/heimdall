@@ -18,7 +18,6 @@ trait PlaybackJsonFields {
   protected final val stalledDurationField    = "duration"
   protected final val inputDelayField         = "inputDelay"
   protected final val inputDelayReasonField   = "reason"
-
-
+  protected final val eventField              = "event"
 }
 

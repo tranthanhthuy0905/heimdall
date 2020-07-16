@@ -16,6 +16,7 @@ trait PlaybackJsonConversions {
     StalledInfo(
       json.asOpt[Time],
       json.asOpt[Token],
+      json.asOpt[Event],
       json.asOpt[StalledData],
     )
   }
@@ -33,8 +34,22 @@ trait PlaybackJsonConversions {
   //       "lag_ratio_480" -> lagRatio480
   //       ...
   //     )
-  def calculateLagRatio(eventsInfo: EventsInfo): Seq[(String, Any)] = {
-    lagRatioAll(eventsInfo) ++ lagRatioByResolution(eventsInfo)
+  def logEventsInfoDetail(eventsInfo: EventsInfo): Seq[(String, Any)] = {
+    var ret = Seq[(String, Any)]()
+
+    for {
+      event_time <- eventsInfo.time
+      inputToken <- eventsInfo.token
+    } {
+      val time = parseTime(event_time)
+      val token = parseToken(inputToken)
+      ret = ret ++ Seq(
+        "stream_token" -> token,
+        "event_time" -> time,
+      )
+    }
+
+    ret ++ lagRatioAll(eventsInfo) ++ lagRatioByResolution(eventsInfo)
   }
 
   // Calculate Lag Ratio for all resolution at that time
@@ -92,6 +107,73 @@ trait PlaybackJsonConversions {
       )
     }
 
+    ret
+  }
+
+  private def parseTime(inputTime: Time): String = {
+    inputTime match {
+      case Time(Some(time)) => time
+      case _ => "unknown"
+    }
+  }
+
+  private def parseToken(inputToken: Token): String = {
+    inputToken match {
+      case Token(Some(token)) => token
+      case _ => "unknown"
+    }
+  }
+
+  def logStalledInfoDetail(stalledInfo: StalledInfo): Seq[(String, Any)] = {
+    var ret = Seq[(String, Any)]()
+
+    for {
+      event_time <- stalledInfo.time
+      event_state <- stalledInfo.event
+      stalledData <- stalledInfo.data
+      inputToken <- stalledInfo.token
+      buffering = stalledData.buffering
+      inputDelay = stalledData.inputDelay
+    } {
+      val time = parseTime(event_time)
+      val token = parseToken(inputToken)
+      val event = event_state.value.getOrElse("START")
+
+      val bufferingResolution = buffering.currentResolution.flatMap(_.value).getOrElse(-1)
+      val bufferingDuration = buffering.stalledDuration.flatMap(_.value).getOrElse(-1)
+
+      val inputDelayReason = inputDelay.inputDelayReason.flatMap(_.value).getOrElse("unknown")
+      val inputDelayDuration = inputDelay.stalledDuration.flatMap(_.value).getOrElse(-1)
+      ret = ret ++ Seq(
+        "stream_token" -> token,
+        "event_time" -> time,
+        "event_state" -> event,
+      )
+
+      if (bufferingResolution != -1) {
+        ret = ret ++ Seq(
+          "buffering_resolution" -> bufferingResolution,
+        )
+      }
+
+      if (bufferingDuration != -1) {
+        ret = ret ++ Seq(
+          "buffering_duration" -> bufferingDuration,
+        )
+      }
+
+      if (inputDelayReason != "unknown") {
+        ret = ret ++ Seq(
+          "input_delay_reason" -> inputDelayReason,
+        )
+      }
+
+      if (inputDelayDuration != -1) {
+        ret = ret ++ Seq(
+          "input_delay_duration" -> inputDelayDuration,
+        )
+      }
+    }
     ret
   }
 }
