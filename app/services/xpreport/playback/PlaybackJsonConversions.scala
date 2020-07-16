@@ -38,10 +38,10 @@ trait PlaybackJsonConversions {
     var ret = Seq[(String, Any)]()
 
     for {
-      event_time <- eventsInfo.time
+      eventTime <- eventsInfo.time
       inputToken <- eventsInfo.token
     } {
-      val time = parseTime(event_time)
+      val time = parseTime(eventTime)
       val token = parseToken(inputToken)
       ret = ret ++ Seq(
         "stream_token" -> token,
@@ -128,16 +128,16 @@ trait PlaybackJsonConversions {
     var ret = Seq[(String, Any)]()
 
     for {
-      event_time <- stalledInfo.time
-      event_state <- stalledInfo.event
+      eventTime <- stalledInfo.time
+      eventState <- stalledInfo.event
       stalledData <- stalledInfo.data
       inputToken <- stalledInfo.token
       buffering = stalledData.buffering
       inputDelay = stalledData.inputDelay
     } {
-      val time = parseTime(event_time)
+      val time = parseTime(eventTime)
       val token = parseToken(inputToken)
-      val event = event_state.value.getOrElse("START")
+      val event = eventState.value.getOrElse("START")
 
       val bufferingResolution = buffering.currentResolution.flatMap(_.value).getOrElse(-1)
       val bufferingDuration = buffering.stalledDuration.flatMap(_.value).getOrElse(-1)

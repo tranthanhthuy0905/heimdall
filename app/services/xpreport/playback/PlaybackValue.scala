@@ -112,7 +112,6 @@ object Buffering extends PlaybackJsonFields {
     )(Buffering.apply _)
 }
 
-
 case class CurrentResolution(value: Option[Int])
 object CurrentResolution extends PlaybackJsonFields {
   implicit val currentResolution: Reads[CurrentResolution] =
