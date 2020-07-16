@@ -83,7 +83,7 @@ class XpReportController @Inject()(
       "partner_id" -> fileIdent.partnerId,
       "file_id" -> fileIdent.fileId,
       "stalled_info" -> stalledInfo,
-      "current_resolution" -> currentResolution,
+      "buffering_resolution" -> currentResolution,
     )
   }
 }
