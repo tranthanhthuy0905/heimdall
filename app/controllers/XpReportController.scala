@@ -5,6 +5,7 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.logging.Logger.LogVariable
 import javax.inject.Inject
 import models.common.{FileIdent, PermissionType}
+import play.api.libs.json.{JsBoolean, Json}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Results}
 import services.xpreport.playback.{EventsInfo, PlaybackJsonConversions, StalledInfo, Token, Time}
 
@@ -27,9 +28,13 @@ class XpReportController @Inject()(
         xpReportRequestAction
       ).async { request =>
 
-      val eventsInfo = playbackInfoFromJson(request.body.asJson.get)
-      logLagRatioImpl(request.file, eventsInfo)
-      Future.successful(Results.Ok)
+      request.body.asJson.map { json =>
+        val eventsInfo = playbackInfoFromJson(json)
+        logLagRatioImpl(request.file, eventsInfo)
+        Future.successful(Results.Ok(JsBoolean(true)))
+      }.getOrElse{
+        Future.successful(Results.BadRequest(Json.obj("error" -> "Empty body, Have a nice day")))
+      }
     }
 
   def logStalled: Action[AnyContent] =
@@ -38,10 +43,13 @@ class XpReportController @Inject()(
         permValidation.build(PermissionType.View) andThen
         xpReportRequestAction
     ).async { request =>
-
-      val stalledInfo = stalledInfoFromJson(request.body.asJson.get)
-      logStalledImpl(request.file, stalledInfo)
-      Future.successful(Results.Ok)
+      request.body.asJson.map { json =>
+        val stalledInfo = stalledInfoFromJson(json)
+        logStalledImpl(request.file, stalledInfo)
+        Future.successful(Results.Ok(JsBoolean(true)))
+      }.getOrElse{
+        Future.successful(Results.BadRequest(Json.obj("error" -> "Empty body, Have a nice day")))
+      }
     }
 
   private def logLagRatioImpl(fileIdent: FileIdent, eventsInfo: EventsInfo): Unit = {
