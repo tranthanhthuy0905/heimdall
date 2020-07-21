@@ -4,7 +4,7 @@ import org.apache.curator.framework.CuratorFramework
 import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.audit.{AuditClient, AuditClientImpl}
 import services.document.{DocumentClient, DocumentClientImpl}
-import services.dredd.{DreddClient, DreddClientImpl}
+import services.dredd.{DreddClient, CachedDreddClientImpl}
 import services.global.HeimdallApplicationLifecycle
 import services.komrade.{KomradeClient, KomradeClientImpl}
 import services.nino.{NinoClient, NinoClientImpl}
@@ -20,7 +20,7 @@ class Module extends AbstractModule {
     // Bindings
     bind(classOf[AuditClient]).to(classOf[AuditClientImpl])
     bind(classOf[Authorizer]).to(classOf[AuthorizerImpl])
-    bind(classOf[DreddClient]).to(classOf[DreddClientImpl])
+    bind(classOf[DreddClient]).to(classOf[CachedDreddClientImpl])
     bind(classOf[KomradeClient]).to(classOf[KomradeClientImpl])
     bind(classOf[NinoClient]).to(classOf[NinoClientImpl])
     bind(classOf[PdpClient]).to(classOf[PdpClientImpl])
