@@ -133,7 +133,6 @@ trait PlaybackJsonConversions {
       stalledData <- stalledInfo.data
       inputToken <- stalledInfo.token
       buffering = stalledData.buffering
-      inputDelay = stalledData.inputDelay
     } {
       val time = parseTime(eventTime)
       val token = parseToken(inputToken)
@@ -141,9 +140,8 @@ trait PlaybackJsonConversions {
 
       val bufferingResolution = buffering.currentResolution.flatMap(_.value).getOrElse(-1)
       val bufferingDuration = buffering.stalledDuration.flatMap(_.value).getOrElse(-1)
+      val bufferingReason = buffering.stalledDuration.flatMap(_.value).getOrElse("unknown")
 
-      val inputDelayReason = inputDelay.inputDelayReason.flatMap(_.value).getOrElse("unknown")
-      val inputDelayDuration = inputDelay.stalledDuration.flatMap(_.value).getOrElse(-1)
       ret = ret ++ Seq(
         "stream_token" -> token,
         "event_time" -> time,
@@ -162,15 +160,9 @@ trait PlaybackJsonConversions {
         )
       }
 
-      if (inputDelayReason != "unknown") {
+      if (bufferingReason != "unknown") {
         ret = ret ++ Seq(
-          "input_delay_reason" -> inputDelayReason,
-        )
-      }
-
-      if (inputDelayDuration != -1) {
-        ret = ret ++ Seq(
-          "input_delay_duration" -> inputDelayDuration,
+          "buffering_reason" -> bufferingReason,
         )
       }
     }
