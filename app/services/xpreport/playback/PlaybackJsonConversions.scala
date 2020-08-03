@@ -140,7 +140,7 @@ trait PlaybackJsonConversions {
 
       val bufferingResolution = buffering.currentResolution.flatMap(_.value).getOrElse(-1)
       val bufferingDuration = buffering.stalledDuration.flatMap(_.value).getOrElse(-1)
-      val bufferingReason = buffering.stalledDuration.flatMap(_.value).getOrElse("unknown")
+      val bufferingReason = buffering.stalledReason.flatMap(_.value).getOrElse("unknown")
 
       ret = ret ++ Seq(
         "stream_token" -> token,
