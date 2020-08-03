@@ -474,6 +474,15 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         )
       )
       stalledInfo mustBe expectStalledInfo
+
+      val logDetail = logStalledInfoDetail(stalledInfo)
+      val expectedLogDetail = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> time,
+        "event_state" -> event,
+        "buffering_resolution" -> res1080.toInt,
+      )
+      logDetail mustBe expectedLogDetail
     }
 
     "parse stalled info correctly if missing token" in {
@@ -503,6 +512,15 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         )
       )
       stalledInfo mustBe expectStalledInfo
+
+      val logDetail = logStalledInfoDetail(stalledInfo)
+      val expectedLogDetail = Seq(
+        "stream_token" -> "unknown",
+        "event_time" -> "unknown",
+        "event_state" -> "START",
+        "buffering_resolution" -> res1080.toInt
+      )
+      logDetail mustBe expectedLogDetail
     }
 
     "parse stalled info correctly if missing reason" in {
@@ -538,6 +556,16 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         )
       )
       stalledInfo mustBe expectStalledInfo
+
+      val logDetail = logStalledInfoDetail(stalledInfo)
+      val expectedLogDetail = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> time,
+        "event_state" -> event,
+        "buffering_resolution" -> res1080.toInt,
+        "buffering_duration" -> stalledDuration,
+      )
+      logDetail mustBe expectedLogDetail
     }
 
 
@@ -576,6 +604,17 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         )
       )
       stalledInfo mustBe expectStalledInfo
+
+      val logDetail = logStalledInfoDetail(stalledInfo)
+      val expectedLogDetail = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> time,
+        "event_state" -> event,
+        "buffering_resolution" -> res1080.toInt,
+        "buffering_duration" -> stalledDuration,
+        "buffering_reason" -> stalledReason,
+      )
+      logDetail mustBe expectedLogDetail
     }
   }
 }
