@@ -72,15 +72,24 @@ object Duration extends PlaybackJsonFields {
 //{
 //  time: String
 //  token: String
+//  event: String
 //  data: {
 //    buffering: {
 //       currentResolution: string,
+//       duration: Number
+//       reason: String // Can be buffering/seek/resChange/srcChange
 //    }
 //  }
 //}
+case class Event(value: Option[String])
+object Event extends PlaybackJsonFields {
+  implicit val token: Reads[Event] = (JsPath \ eventField).readNullable[String].map(Event.apply)
+}
+
 case class StalledInfo(
                         time: Option[Time],
                         token: Option[Token],
+                        event: Option[Event],
                         data: Option[StalledData],
                       )
 
@@ -90,15 +99,29 @@ object StalledData extends PlaybackJsonFields {
     (JsPath \ dataField).read[Buffering].map(StalledData.apply)
 }
 
-case class Buffering(currentResolution: CurrentResolution)
+case class Buffering(currentResolution: Option[CurrentResolution], stalledDuration: Option[StalledDuration], stalledReason: Option[StalledReason])
 object Buffering extends PlaybackJsonFields {
-  implicit val buffering: Reads[Buffering] =
-    (JsPath \ bufferingField).read[CurrentResolution].map(Buffering.apply)
+  implicit val buffering: Reads[Buffering] = (
+    (JsPath \ bufferingField).readNullable[CurrentResolution] and
+      (JsPath \ bufferingField).readNullable[StalledDuration] and
+      (JsPath \ bufferingField).readNullable[StalledReason]
+    )(Buffering.apply _)
 }
-
 
 case class CurrentResolution(value: Option[Int])
 object CurrentResolution extends PlaybackJsonFields {
   implicit val currentResolution: Reads[CurrentResolution] =
     (JsPath \ currentResolutionField).readNullable[Int].map(CurrentResolution.apply)
+}
+
+case class StalledDuration(value: Option[Double])
+object StalledDuration extends PlaybackJsonFields {
+  implicit val stalledDuration: Reads[StalledDuration] =
+    (JsPath \ stalledDurationField).readNullable[Double].map(StalledDuration.apply)
+}
+
+case class StalledReason(value: Option[String])
+object StalledReason extends PlaybackJsonFields {
+  implicit val stalledReason: Reads[StalledReason] =
+    (JsPath \ stalledReasonField).readNullable[String].map(StalledReason.apply)
 }

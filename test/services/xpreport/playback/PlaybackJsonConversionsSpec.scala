@@ -1,7 +1,7 @@
 package services.xpreport.playback
 
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{Json}
+import play.api.libs.json.Json
 import utils.JsonFormat
 
 class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions with PlaybackJsonFields with JsonFormat {
@@ -140,9 +140,11 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       )
       playbackInfo mustBe expectPlaybackInfo
 
-      val lagRatio = calculateLagRatio(eventsInfo = playbackInfo)
+      val lagRatio = logEventsInfoDetail(eventsInfo = playbackInfo)
 
       val expectLagRatio = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> time,
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
@@ -225,8 +227,10 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       )
       playbackInfo mustBe expectPlaybackInfo
 
-      val lagRatio = calculateLagRatio(eventsInfo = playbackInfo)
+      val lagRatio = logEventsInfoDetail(eventsInfo = playbackInfo)
       val expectLagRatio = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> "unknown",
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
@@ -258,8 +262,10 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       )
       playbackInfo mustBe expectPlaybackInfo
 
-      val lagRatio = calculateLagRatio(eventsInfo = playbackInfo)
+      val lagRatio = logEventsInfoDetail(eventsInfo = playbackInfo)
       val expectLagRatio = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> "unknown",
         "view_duration_all" -> 0.0,
         "buffering_time_all" -> 0.0,
         "input_delay_all" -> 0.0,
@@ -333,8 +339,10 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       )
       playbackInfo mustBe expectPlaybackInfo
 
-      val lagRatio = calculateLagRatio(eventsInfo = playbackInfo)
+      val lagRatio = logEventsInfoDetail(eventsInfo = playbackInfo)
       val expectLagRatio = Seq(
+        "stream_token" -> "unknown",
+        "event_time" -> "unknown",
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
@@ -416,8 +424,10 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       )
       playbackInfo mustBe expectPlaybackInfo
 
-      val lagRatio = calculateLagRatio(eventsInfo = playbackInfo)
+      val lagRatio = logEventsInfoDetail(eventsInfo = playbackInfo)
       val expectLagRatio = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> "unknown",
         "lag_ratio_all" -> 0.0,
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
@@ -433,12 +443,14 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       lagRatio.toSet mustBe expectLagRatio.toSet
     }
 
-    "parse stalled info correctly" in {
+    "parse stalled info correctly if missing duration and reason" in {
+      val event = "Start"
       val stalledInfoJson =
         s"""
            |{
            |    "$eventTimeField" : "$time",
            |    "$tokenField" : "$streamToken",
+           |    "$eventField" : "$event",
            |    "$dataField" : {
            |        "$bufferingField": {
            |            "$currentResolutionField" : $res1080
@@ -450,17 +462,27 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val expectStalledInfo = StalledInfo(
         time = Some(Time(Some(time))),
         token = Some(Token(Some(streamToken))),
+        event = Some(Event(Some(event))),
         data = Some(
           StalledData(
             Buffering(
-              CurrentResolution(
-                Some(res1080.toInt)
-              )
+              Some(CurrentResolution(Some(res1080.toInt))),
+              Some(StalledDuration(None)),
+              Some(StalledReason(None))
             )
           )
         )
       )
       stalledInfo mustBe expectStalledInfo
+
+      val logDetail = logStalledInfoDetail(stalledInfo)
+      val expectedLogDetail = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> time,
+        "event_state" -> event,
+        "buffering_resolution" -> res1080.toInt,
+      )
+      logDetail mustBe expectedLogDetail
     }
 
     "parse stalled info correctly if missing token" in {
@@ -478,17 +500,121 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val expectStalledInfo = StalledInfo(
         time = Some(Time(None)),
         token = Some(Token(None)),
+        event = Some(Event(None)),
         data = Some(
           StalledData(
             Buffering(
-              CurrentResolution(
-                Some(res1080.toInt)
-              )
+              Some(CurrentResolution(Some(res1080.toInt))),
+              Some(StalledDuration(None)),
+              Some(StalledReason(None))
             )
           )
         )
       )
       stalledInfo mustBe expectStalledInfo
+
+      val logDetail = logStalledInfoDetail(stalledInfo)
+      val expectedLogDetail = Seq(
+        "stream_token" -> "unknown",
+        "event_time" -> "unknown",
+        "event_state" -> "START",
+        "buffering_resolution" -> res1080.toInt
+      )
+      logDetail mustBe expectedLogDetail
+    }
+
+    "parse stalled info correctly if missing reason" in {
+      val event = "End"
+      val stalledDuration = 123.321
+      val stalledInfoJson =
+        s"""
+           |{
+           |    "$eventTimeField" : "$time",
+           |    "$tokenField" : "$streamToken",
+           |    "$eventField" : "$event",
+           |    "$dataField" : {
+           |        "$bufferingField": {
+           |            "$currentResolutionField" : $res1080,
+           |            "$stalledDurationField" : $stalledDuration
+           |        }
+           |    }
+           |}
+           |""".stripMargin
+      val stalledInfo = stalledInfoFromJson(Json.parse(stalledInfoJson))
+      val expectStalledInfo = StalledInfo(
+        time = Some(Time(Some(time))),
+        token = Some(Token(Some(streamToken))),
+        event = Some(Event(Some(event))),
+        data = Some(
+          StalledData(
+            Buffering(
+              Some(CurrentResolution(Some(res1080.toInt))),
+              Some(StalledDuration(Some(stalledDuration))),
+              Some(StalledReason(None))
+            )
+          )
+        )
+      )
+      stalledInfo mustBe expectStalledInfo
+
+      val logDetail = logStalledInfoDetail(stalledInfo)
+      val expectedLogDetail = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> time,
+        "event_state" -> event,
+        "buffering_resolution" -> res1080.toInt,
+        "buffering_duration" -> stalledDuration,
+      )
+      logDetail mustBe expectedLogDetail
+    }
+
+
+    "parse stalled info correctly when have all info" in {
+      val event = "End"
+      val stalledDuration = 123.321
+      val stalledReason = "Seek"
+      val stalledInfoJson =
+        s"""
+           |{
+           |    "$eventTimeField" : "$time",
+           |    "$tokenField" : "$streamToken",
+           |    "$eventField" : "$event",
+           |    "$dataField" : {
+           |        "$bufferingField": {
+           |            "$currentResolutionField" : $res1080,
+           |            "$stalledDurationField" : $stalledDuration,
+           |            "$stalledReasonField" : "$stalledReason"
+           |        }
+           |    }
+           |}
+           |""".stripMargin
+      val stalledInfo = stalledInfoFromJson(Json.parse(stalledInfoJson))
+      val expectStalledInfo = StalledInfo(
+        time = Some(Time(Some(time))),
+        token = Some(Token(Some(streamToken))),
+        event = Some(Event(Some(event))),
+        data = Some(
+          StalledData(
+            Buffering(
+              Some(CurrentResolution(Some(res1080.toInt))),
+              Some(StalledDuration(Some(stalledDuration))),
+              Some(StalledReason(Some(stalledReason)))
+            )
+          )
+        )
+      )
+      stalledInfo mustBe expectStalledInfo
+
+      val logDetail = logStalledInfoDetail(stalledInfo)
+      val expectedLogDetail = Seq(
+        "stream_token" -> streamToken,
+        "event_time" -> time,
+        "event_state" -> event,
+        "buffering_resolution" -> res1080.toInt,
+        "buffering_duration" -> stalledDuration,
+        "buffering_reason" -> stalledReason,
+      )
+      logDetail mustBe expectedLogDetail
     }
   }
 }
