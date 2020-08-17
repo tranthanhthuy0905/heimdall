@@ -14,6 +14,16 @@ object Time extends PlaybackJsonFields {
   implicit val token: Reads[Time] = (JsPath \ eventTimeField).readNullable[String].map(Time.apply)
 }
 
+case class BrowserName(value: Option[String])
+object BrowserName extends PlaybackJsonFields {
+  implicit val browserName: Reads[BrowserName] = (JsPath \ browserNameField).readNullable[String].map(BrowserName.apply)
+}
+
+case class FileExtension(value: Option[String])
+object FileExtension extends PlaybackJsonFields {
+  implicit val fileExtension: Reads[FileExtension] = (JsPath \ fileExtensionField).readNullable[String].map(FileExtension.apply)
+}
+
 // ------ Info data ------
 //{
 //  time: String
@@ -43,10 +53,17 @@ case class EventsInfo(
                        data: Option[Data],
                      )
 
-case class Data(aggregationEvents: AggregationEvents)
+case class Data(
+                 browserName: Option[BrowserName],
+                 fileExtension: Option[FileExtension],
+                 aggregationEvents: AggregationEvents,
+               )
 object Data extends PlaybackJsonFields {
-  implicit val data: Reads[Data] =
-    (JsPath \ dataField).read[AggregationEvents].map(Data.apply)
+  implicit val data: Reads[Data] = (
+    (JsPath \ dataField).readNullable[BrowserName] and
+      (JsPath \ dataField).readNullable[FileExtension] and
+      (JsPath \ dataField).read[AggregationEvents]
+  )(Data.apply _)
 }
 
 case class AggregationEvents(data: Map[String, Duration])
@@ -93,10 +110,17 @@ case class StalledInfo(
                         data: Option[StalledData],
                       )
 
-case class StalledData(buffering: Buffering)
+case class StalledData(
+                        browserName: Option[BrowserName],
+                        fileExtension: Option[FileExtension],
+                        buffering: Buffering
+                      )
 object StalledData extends PlaybackJsonFields {
-  implicit val data: Reads[StalledData] =
-    (JsPath \ dataField).read[Buffering].map(StalledData.apply)
+  implicit val data: Reads[StalledData] = (
+    (JsPath \ dataField).readNullable[BrowserName] and
+      (JsPath \ dataField).readNullable[FileExtension] and
+      (JsPath \ dataField).read[Buffering]
+  )(StalledData.apply _)
 }
 
 case class Buffering(currentResolution: Option[CurrentResolution], stalledDuration: Option[StalledDuration], stalledReason: Option[StalledReason])

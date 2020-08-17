@@ -49,6 +49,18 @@ trait PlaybackJsonConversions {
       )
     }
 
+    // Not log when there's no data in the body
+    for {
+      data <- eventsInfo.data
+      browserName = data.browserName.flatMap(_.value).getOrElse("unknown")
+      fileExtension = data.fileExtension.flatMap(_.value).getOrElse("unknown")
+    } {
+      ret = ret ++ Seq(
+        "browser_name" -> browserName,
+        "file_extension" -> fileExtension,
+      )
+    }
+
     ret ++ lagRatioAll(eventsInfo) ++ lagRatioByResolution(eventsInfo)
   }
 
@@ -137,6 +149,13 @@ trait PlaybackJsonConversions {
       val time = parseTime(eventTime)
       val token = parseToken(inputToken)
       val event = eventState.value.getOrElse("START")
+
+      val browserName = stalledData.browserName.flatMap(_.value).getOrElse("unknown")
+      val fileExtension = stalledData.fileExtension.flatMap(_.value).getOrElse("unknown")
+      ret = ret ++ Seq(
+        "browser_name" -> browserName,
+        "file_extension" -> fileExtension,
+      )
 
       val bufferingResolution = buffering.currentResolution.flatMap(_.value).getOrElse(-1)
       val bufferingDuration = buffering.stalledDuration.flatMap(_.value).getOrElse(-1)
