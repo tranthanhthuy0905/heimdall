@@ -53,12 +53,16 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         res1440 -> 890.0,
         res2160 -> 901.2,
       )
+      val fileExtension = ".flv"
+      val browserName = "Firefox"
       val playbackInfoJson =
         s"""
            |{
            |    "$eventTimeField" : "$time",
            |    "$tokenField" : "$streamToken",
            |    "$dataField" : {
+           |        "$browserNameField": "$browserName",
+           |        "$fileExtensionField": "$fileExtension",
            |        "$aggregationEventsField": {
            |            "$res360" : {
            |                "$totalViewDurationField": ${viewDuration(res360)},
@@ -101,6 +105,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         token = Some(Token(Some(streamToken))),
         data = Some(
           Data(
+            Some(BrowserName(Some(browserName))),
+            Some(FileExtension(Some(fileExtension))),
             AggregationEvents(
               Map(
                 res360 -> Duration(
@@ -145,6 +151,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val expectLagRatio = Seq(
         "stream_token" -> streamToken,
         "event_time" -> time,
+        "browser_name" -> browserName,
+        "file_extension" -> fileExtension,
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
@@ -208,6 +216,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         token = Some(Token(Some(streamToken))),
         data = Some(
           Data(
+            Some(BrowserName(None)),
+            Some(FileExtension(None)),
             AggregationEvents(
               Map(
                 res360 -> Duration(
@@ -231,6 +241,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val expectLagRatio = Seq(
         "stream_token" -> streamToken,
         "event_time" -> "unknown",
+        "browser_name" -> "unknown",
+        "file_extension" -> "unknown",
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
@@ -320,6 +332,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         token = Some(Token(None)),
         data = Some(
           Data(
+            Some(BrowserName(None)),
+            Some(FileExtension(None)),
             AggregationEvents(
               Map(
                 res360 -> Duration(
@@ -343,6 +357,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val expectLagRatio = Seq(
         "stream_token" -> "unknown",
         "event_time" -> "unknown",
+        "browser_name" -> "unknown",
+        "file_extension" -> "unknown",
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
@@ -405,6 +421,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         token = Some(Token(Some(streamToken))),
         data = Some(
           Data(
+            Some(BrowserName(None)),
+            Some(FileExtension(None)),
             AggregationEvents(
               Map(
                 res360 -> Duration(
@@ -428,6 +446,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val expectLagRatio = Seq(
         "stream_token" -> streamToken,
         "event_time" -> "unknown",
+        "browser_name" -> "unknown",
+        "file_extension" -> "unknown",
         "lag_ratio_all" -> 0.0,
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
@@ -465,6 +485,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         event = Some(Event(Some(event))),
         data = Some(
           StalledData(
+            Some(BrowserName(None)),
+            Some(FileExtension(None)),
             Buffering(
               Some(CurrentResolution(Some(res1080.toInt))),
               Some(StalledDuration(None)),
@@ -480,9 +502,11 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "stream_token" -> streamToken,
         "event_time" -> time,
         "event_state" -> event,
+        "browser_name" -> "unknown",
+        "file_extension" -> "unknown",
         "buffering_resolution" -> res1080.toInt,
       )
-      logDetail mustBe expectedLogDetail
+      logDetail.toSet mustBe expectedLogDetail.toSet
     }
 
     "parse stalled info correctly if missing token" in {
@@ -503,6 +527,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         event = Some(Event(None)),
         data = Some(
           StalledData(
+            Some(BrowserName(None)),
+            Some(FileExtension(None)),
             Buffering(
               Some(CurrentResolution(Some(res1080.toInt))),
               Some(StalledDuration(None)),
@@ -518,9 +544,11 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "stream_token" -> "unknown",
         "event_time" -> "unknown",
         "event_state" -> "START",
+        "browser_name" -> "unknown",
+        "file_extension" -> "unknown",
         "buffering_resolution" -> res1080.toInt
       )
-      logDetail mustBe expectedLogDetail
+      logDetail.toSet mustBe expectedLogDetail.toSet
     }
 
     "parse stalled info correctly if missing reason" in {
@@ -547,6 +575,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         event = Some(Event(Some(event))),
         data = Some(
           StalledData(
+            Some(BrowserName(None)),
+            Some(FileExtension(None)),
             Buffering(
               Some(CurrentResolution(Some(res1080.toInt))),
               Some(StalledDuration(Some(stalledDuration))),
@@ -562,10 +592,12 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "stream_token" -> streamToken,
         "event_time" -> time,
         "event_state" -> event,
+        "browser_name" -> "unknown",
+        "file_extension" -> "unknown",
         "buffering_resolution" -> res1080.toInt,
         "buffering_duration" -> stalledDuration,
       )
-      logDetail mustBe expectedLogDetail
+      logDetail.toSet mustBe expectedLogDetail.toSet
     }
 
 
@@ -573,6 +605,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val event = "End"
       val stalledDuration = 123.321
       val stalledReason = "Seek"
+      val fileExtension = ".mp4"
+      val browserName = "Chrome"
       val stalledInfoJson =
         s"""
            |{
@@ -580,6 +614,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
            |    "$tokenField" : "$streamToken",
            |    "$eventField" : "$event",
            |    "$dataField" : {
+           |        "$browserNameField": "$browserName",
+           |        "$fileExtensionField": "$fileExtension",
            |        "$bufferingField": {
            |            "$currentResolutionField" : $res1080,
            |            "$stalledDurationField" : $stalledDuration,
@@ -595,6 +631,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         event = Some(Event(Some(event))),
         data = Some(
           StalledData(
+            Some(BrowserName(Some(browserName))),
+            Some(FileExtension(Some(fileExtension))),
             Buffering(
               Some(CurrentResolution(Some(res1080.toInt))),
               Some(StalledDuration(Some(stalledDuration))),
@@ -610,11 +648,13 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "stream_token" -> streamToken,
         "event_time" -> time,
         "event_state" -> event,
+        "browser_name" -> browserName,
+        "file_extension" -> fileExtension,
         "buffering_resolution" -> res1080.toInt,
         "buffering_duration" -> stalledDuration,
         "buffering_reason" -> stalledReason,
       )
-      logDetail mustBe expectedLogDetail
+      logDetail.toSet mustBe expectedLogDetail.toSet
     }
   }
 }
