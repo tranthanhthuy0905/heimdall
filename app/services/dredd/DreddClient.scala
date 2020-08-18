@@ -11,24 +11,27 @@ import com.evidence.service.dredd.thrift._
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
 import models.common.{FileIdent, HeimdallRequest}
+import play.api.cache.AsyncCacheApi
 
+import scala.concurrent.duration.{Duration, MINUTES}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait DreddClient {
   def getUrl[A](file: FileIdent, request: HeimdallRequest[A]): Future[URL]
 
-  def getUrl[A](file: FileIdent, request: HeimdallRequest[A], expiresSec: Int): Future[URL]
+  def getUrl[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL]
 
   def getUrl[A](
     agencyId: UUID,
     evidenceId: UUID,
     fileId: UUID,
     request: HeimdallRequest[A],
-    expiresSecs: Int = 60): Future[URL]
+    ttl: Duration = Duration(3, MINUTES)): Future[URL]
 }
 
 @Singleton
-class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) extends DreddClient with LazyLogging {
+class CachedDreddClientImpl @Inject()(config: Config, cache: AsyncCacheApi)
+                               (implicit ex: ExecutionContext) extends DreddClient with LazyLogging {
 
   private val client: DreddService.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)
@@ -53,16 +56,19 @@ class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
     getUrl(file.partnerId, file.evidenceId, file.fileId, request)
   }
 
-  override def getUrl[A](file: FileIdent, request: HeimdallRequest[A], expiresSec: Int): Future[URL] = {
-    getUrl(file.partnerId, file.evidenceId, file.fileId, request, expiresSec)
+  override def getUrl[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
+    getUrl(file.partnerId, file.evidenceId, file.fileId, request, ttl)
   }
+
+  // not cache short-live URLs
+  private val minimumCacheExpired = Duration(1, MINUTES)
   
   override def getUrl[A](
     partnerId: UUID,
     evidenceId: UUID,
     fileId: UUID,
     request: HeimdallRequest[A],
-    expiresSecs: Int = 60): Future[URL] = {
+    ttl: Duration = Duration(3, MINUTES)): Future[URL] = {
 
     def extractUrlFromDreddResponse(r: PresignedUrlResponse): Future[URL] = {
       val u = for {
@@ -84,16 +90,25 @@ class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
         )
       }
     }
-    for {
+
+    def getUrl = for {
       presignedUrlResponse <- getPresignedUrl(
         partnerId,
         evidenceId,
         fileId,
         request,
-        expiresSecs
+        ttl
       )
       url <- extractUrlFromDreddResponse(presignedUrlResponse)
     } yield url
+
+    // cache 1/3 lifetime of URL
+    val cacheExpired = ttl / 3
+    if (cacheExpired >= minimumCacheExpired) {
+      cache.getOrElseUpdate[URL]((partnerId, evidenceId, fileId).toString, cacheExpired) {
+        getUrl
+      }
+    } else getUrl
   }
 
   private def getPresignedUrl[A](
@@ -101,7 +116,7 @@ class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
     evidenceId: UUID,
     fileId: UUID,
     input: HeimdallRequest[A],
-    expiresSecs: Int
+    ttl: Duration
   ): Future[PresignedUrlResponse] = {
     val dreddUpdatedBy = Tid(
       TidEntities.valueOf(input.subjectType),
@@ -115,7 +130,7 @@ class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
       partnerId = agencyId.toString,
       evidenceId = evidenceId.toString,
       fileId = fileId.toString,
-      expiresSecs = expiresSecs,
+      expiresSecs = ttl.toSeconds.toInt,
       suppressAudit = Some(true)
     )
     client.getPresignedUrl2(auth, request, requestContext).toScalaFuture
