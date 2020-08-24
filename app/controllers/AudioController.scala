@@ -1,14 +1,14 @@
 package controllers
 
 import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, TokenValidationAction}
-import akka.stream.scaladsl.Source
 import javax.inject.Inject
 import models.common.PermissionType
-import play.api.http.{HttpChunk, HttpEntity}
+import play.api.http.HttpEntity
+import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSResponse
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import play.api.mvc._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import services.rtm.{RtmClient, RtmResponseHandler}
 
 class AudioController @Inject()(
@@ -54,36 +54,30 @@ class AudioController @Inject()(
   def mp3: Action[AnyContent] =
     (
       heimdallRequestAction andThen
-        tokenValidationAction andThen
         permValidation.build(PermissionType.View) andThen
         rtmRequestAction
-    ).async { request =>
-      val okCallback = (response: WSResponse) => {
+    ).async { implicit request =>
+      for {
+        response   <- rtm.stream(request.toString)
+        httpResult <- Future.successful(toResult(response))
+      } yield httpResult.fold(BadRequest(_), r => r)
+    }
+
+  private def toResult(response: WSResponse): Either[JsObject, Result] = {
+    Some(response.status)
+      .filter(_ equals play.api.http.Status.OK)
+      .toRight(Json.obj("message" -> response.body))
+      .map(_ => {
         val contentType = response.headers
           .get("Content-Type")
           .flatMap(_.headOption)
           .getOrElse("audio/mpeg")
 
-        val entity = response.headers
+        response.headers
           .get("Content-Length")
-          .map(length => HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType)))
-          .getOrElse(HttpEntity.Chunked(Source.apply(List(HttpChunk.Chunk(response.bodyAsBytes))), Some(contentType)))
-
-        Ok.sendEntity(entity)
-      }
-
-      rtm.send(request.toString) map { response =>
-        RtmResponseHandler(
-          response,
-          okCallback,
-          Seq[(String, Any)](
-            "path"       -> request.path,
-            "mediaIdent" -> request.media,
-            "status"     -> response.status,
-            "message"    -> response.body
-          )
-        )
-      }
-
-    }
+          .map(length =>
+            Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
+          .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
+      })
+  }
 }

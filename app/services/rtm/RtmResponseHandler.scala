@@ -17,7 +17,7 @@ object RtmResponseHandler extends LazyLogging {
         logger.warn("rtmBadRequest")(logVars: _*)
         toResult(response)
       case Status.TOO_MANY_REQUESTS =>
-        logger.info("tooManyRtmRequests")(logVars: _*)
+        logger.warn("tooManyRtmRequests")(logVars: _*)
         toResult(response)
       case _ =>
         logger.info("nonOkRtmResponse")(logVars: _*)
@@ -33,7 +33,7 @@ object RtmResponseHandler extends LazyLogging {
       case Status.OK =>
         okCallback(response)
       case Status.BAD_REQUEST =>
-        logger.warn("rtmBadRequest")(logVars: _*)
+        logger.info("rtmBadRequest")(logVars: _*)
         Future.successful(toResult(response))
       case Status.TOO_MANY_REQUESTS =>
         logger.info("tooManyRtmRequests")(logVars: _*)

@@ -19,8 +19,8 @@ trait HeimdallRoutes {
   final val hlsSegment        = "/media/hls/segment"
   final val thumbnail         = "/media/thumbnail"
   final val downloadThumbnail = "/media/downloadthumbnail"
-  final val mp3               = "/media/mp3"
-  final val audioSample       = "/media/audiosample"
+  final val mp3               = "/media/audio/mp3"
+  final val audioSample       = "/media/audio/sample"
 }
 
 object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
@@ -104,7 +104,7 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
       "/audiosample",
       List.concat(commonParams, audioSampleParams)
     ),
-    mp3 -> MediaRoute("/mp3", commonParams)
+    mp3 -> MediaRoute("/mp3", List.empty)
   )
 
   def apply(route: String, query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
