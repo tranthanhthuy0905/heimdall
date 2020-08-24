@@ -28,7 +28,9 @@ GET  /media/image/zoom                      controllers.ImageController.zoom
 GET  /media/image/metadata                  controllers.ImageController.metadata
 
 GET  /media/document/view                   controllers.DocumentController.view
-GET /media/audio/sample                     controllers.AudioController.sample
 
-POST /media/xpreport/info                  controllers.XpReportController.logInfo
-POST /media/xpreport/stalled               controllers.XpReportController.logStalled
+GET  /media/audio/sample                    controllers.AudioController.sample
+GET  /media/audio/mp3                       controllers.AudioController.mp3
+
+POST /media/xpreport/info                   controllers.XpReportController.logInfo
+POST /media/xpreport/stalled                controllers.XpReportController.logStalled

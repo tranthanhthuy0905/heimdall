@@ -104,6 +104,7 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
       "/audiosample",
       List.concat(commonParams, audioSampleParams)
     ),
+    mp3 -> MediaRoute("/mp3", commonParams)
   )
 
   def apply(route: String, query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
@@ -122,6 +123,8 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
         filterAllowedParams(query, heimdallToRtmRoutes(downloadThumbnail))
       case str if str startsWith audioSample =>
         filterAllowedParams(query, heimdallToRtmRoutes(audioSample))
+      case str if str startsWith mp3 =>
+        filterAllowedParams(query, heimdallToRtmRoutes(mp3))
       case _ =>
         logger.error("unexpectedRtmQueryRoute")(
           "route" -> route,
