@@ -54,10 +54,12 @@ trait PlaybackJsonConversions {
       data <- eventsInfo.data
       browserName = data.browserName.flatMap(_.value).getOrElse("unknown")
       fileExtension = data.fileExtension.flatMap(_.value).getOrElse("unknown")
+      transcodedVideo = data.transcodedVideo.flatMap(_.value).getOrElse("unknown")
     } {
       ret = ret ++ Seq(
         "browser_name" -> browserName,
         "file_extension" -> fileExtension,
+        "transcoded_video" -> transcodedVideo,
       )
     }
 
@@ -152,9 +154,11 @@ trait PlaybackJsonConversions {
 
       val browserName = stalledData.browserName.flatMap(_.value).getOrElse("unknown")
       val fileExtension = stalledData.fileExtension.flatMap(_.value).getOrElse("unknown")
+      val transcodedVideo = stalledData.transcodedVideo.flatMap(_.value).getOrElse("unknown")
       ret = ret ++ Seq(
         "browser_name" -> browserName,
         "file_extension" -> fileExtension,
+        "transcoded_video" -> transcodedVideo,
       )
 
       val bufferingResolution = buffering.currentResolution.flatMap(_.value).getOrElse(-1)
