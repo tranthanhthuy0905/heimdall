@@ -8,15 +8,15 @@ import scala.concurrent.duration.{Duration, HOURS}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RtmClient {
-  def send(rtmRequestString: String): Future[WSResponse]
+  def send[A](rtmRequest: RtmRequest[A]): Future[WSResponse]
   def stream(rtmRequestString: String): Future[WSResponse]
 }
 
 @Singleton
 class RtmClientImpl @Inject()(ws: WSClient)(implicit ex: ExecutionContext) extends RtmClient {
-
-  def send(rtmRequestString: String): Future[WSResponse] = {
-    ws.url(rtmRequestString).get()
+  def send[A](rtmRequest: RtmRequest[A]): Future[WSResponse] = {
+    val wsRequest = ws.url(rtmRequest.toString).addHttpHeaders(rtmRequest.media.buildHeaders().toSeq: _*)
+    wsRequest.get()
   }
 
   def stream(rtmRequestString: String): Future[WSResponse] = {
@@ -24,6 +24,5 @@ class RtmClientImpl @Inject()(ws: WSClient)(implicit ex: ExecutionContext) exten
       .withMethod("GET")
       .withRequestTimeout(Duration(2, HOURS)) // FIXME: unify with presigned url TTL
       .get()
-
   }
 }

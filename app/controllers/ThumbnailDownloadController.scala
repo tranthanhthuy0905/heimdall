@@ -81,7 +81,7 @@ class ThumbnailDownloadController @Inject()(
         }
       }
 
-      rtm.send(request.toString) flatMap { response =>
+      rtm.send(request) flatMap { response =>
         RtmResponseHandler(
           response,
           okCallback,

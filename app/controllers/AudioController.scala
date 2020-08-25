@@ -36,7 +36,7 @@ class AudioController @Inject()(
         Ok(response.json).as(contentType)
       }
 
-      rtm.send(request.toString) map { response =>
+      rtm.send(request) map { response =>
         RtmResponseHandler(
           response,
           okCallback,

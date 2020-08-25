@@ -2,6 +2,7 @@ package models.common
 
 import java.util.UUID
 
+import akka.http.scaladsl.model.headers.HttpEncodingRange.*
 import com.evidence.api.thrift.v1.{EntityDescriptor, TidEntities}
 
 import scala.collection.SortedSet
@@ -24,7 +25,7 @@ case class EmptyMediaIdent()
 class MediaIdent(val fileIds: List[UUID], val evidenceIds: List[UUID], val partnerId: UUID) {
 
   def toQueryString: String = {
-    if (isValid(fileIds, evidenceIds)) {
+    if (isValid()) {
       s"file_id=${listToString(fileIds)}&evidence_id=${listToString(evidenceIds)}&partner_id=$partnerId"
     } else {
       ""
@@ -32,7 +33,7 @@ class MediaIdent(val fileIds: List[UUID], val evidenceIds: List[UUID], val partn
   }
 
   def toEvidenceEntityDescriptors: List[EntityDescriptor] = {
-    if (isValid(fileIds, evidenceIds)) {
+    if (isValid()) {
       evidenceIds.map(
         evidenceId =>
           EntityDescriptor(
@@ -47,7 +48,7 @@ class MediaIdent(val fileIds: List[UUID], val evidenceIds: List[UUID], val partn
   }
 
   def toFileEntityDescriptors: List[EntityDescriptor] = {
-    if (isValid(fileIds, evidenceIds)) {
+    if (isValid()) {
       fileIds.map(
         fileIds =>
           EntityDescriptor(
@@ -62,7 +63,7 @@ class MediaIdent(val fileIds: List[UUID], val evidenceIds: List[UUID], val partn
   }
 
   def toList: List[FileIdent] = {
-    if (isValid(fileIds, evidenceIds)) {
+    if (isValid()) {
       (fileIds zip evidenceIds).map(x => FileIdent(x._1, x._2, partnerId))
     } else {
       List()
@@ -72,7 +73,7 @@ class MediaIdent(val fileIds: List[UUID], val evidenceIds: List[UUID], val partn
   def headOption: Option[FileIdent] = toList.headOption
 
   def length: Int = {
-    if (isValid(fileIds, evidenceIds)) {
+    if (isValid()) {
       fileIds.length
     } else {
       0
@@ -83,7 +84,18 @@ class MediaIdent(val fileIds: List[UUID], val evidenceIds: List[UUID], val partn
     collection.SortedSet(fileIds: _*)
   }
 
-  private def isValid(fileIds: List[UUID], evidenceIds: List[UUID]): Boolean = {
+  def buildHeaders(): Map[String, String] = {
+    if (isValid()) {
+      Map(
+        "file_id" -> fileIds.map(_.toString).mkString(","),
+        "partner_id" -> partnerId.toString
+      )
+    } else {
+      Map()
+    }
+  }
+
+  private def isValid(): Boolean = {
     fileIds.length == evidenceIds.length && fileIds.length > 0
   }
 

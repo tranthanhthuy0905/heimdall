@@ -51,7 +51,7 @@ class HlsController @Inject()(
         Ok(newManifest).as(contentType)
       }
 
-      rtm.send(request.toString) map { response =>
+      rtm.send(request) map { response =>
         RtmResponseHandler(
           response,
           okCallback,
@@ -83,7 +83,7 @@ class HlsController @Inject()(
         Ok.chunked(response.bodyAsSource).as(contentType)
       }
 
-      rtm.send(request.toString) map { response =>
+      rtm.send(request) map { response =>
         RtmResponseHandler(
           response,
           okCallback,
