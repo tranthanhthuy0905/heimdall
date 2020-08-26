@@ -65,7 +65,7 @@ case class PermValidationAction @Inject()(permission: PermissionType.Value)(
     permission: PermissionType.Value): Future[Boolean] = {
     val action = permission match {
       case PermissionType.Stream => PermissionType.FileStream
-      case PermissionType.View   => PermissionType.EvidenceView
+      case PermissionType.View   => PermissionType.EvidenceViewBasic
     }
     pdp.enforceBatch(jwt: String, entities: List[EntityDescriptor], action.toString)
   }
