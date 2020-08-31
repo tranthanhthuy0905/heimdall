@@ -7,6 +7,7 @@ trait PlaybackJsonFields {
   protected final val dataField               = "data"
   protected final val browserNameField        = "browserName"
   protected final val fileExtensionField      = "fileExtension"
+  protected final val transcodedVideoField    = "transcodedVideo"
 
   // Aggregation events
   protected final val aggregationEventsField  = "aggregation"

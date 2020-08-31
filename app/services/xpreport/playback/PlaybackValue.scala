@@ -24,11 +24,19 @@ object FileExtension extends PlaybackJsonFields {
   implicit val fileExtension: Reads[FileExtension] = (JsPath \ fileExtensionField).readNullable[String].map(FileExtension.apply)
 }
 
+case class TranscodedVideo(value: Option[Boolean])
+object TranscodedVideo extends PlaybackJsonFields {
+  implicit val transcodedVideo: Reads[TranscodedVideo] = (JsPath \ transcodedVideoField).readNullable[Boolean].map(TranscodedVideo.apply)
+}
+
 // ------ Info data ------
 //{
 //  time: String
 //  token: String
 //  data: {
+//    browserName: string
+//    fileExtension: string
+//    transcodedVideo: boolean
 //    aggregation: {
 //      360p:  {
 //          - totalViewDuration: number
@@ -56,12 +64,14 @@ case class EventsInfo(
 case class Data(
                  browserName: Option[BrowserName],
                  fileExtension: Option[FileExtension],
+                 transcodedVideo: Option[TranscodedVideo],
                  aggregationEvents: AggregationEvents,
                )
 object Data extends PlaybackJsonFields {
   implicit val data: Reads[Data] = (
     (JsPath \ dataField).readNullable[BrowserName] and
       (JsPath \ dataField).readNullable[FileExtension] and
+      (JsPath \ dataField).readNullable[TranscodedVideo] and
       (JsPath \ dataField).read[AggregationEvents]
   )(Data.apply _)
 }
@@ -91,6 +101,9 @@ object Duration extends PlaybackJsonFields {
 //  token: String
 //  event: String
 //  data: {
+//    browserName: string
+//    fileExtension: string
+//    transcodedVideo: boolean
 //    buffering: {
 //       currentResolution: string,
 //       duration: Number
@@ -113,12 +126,14 @@ case class StalledInfo(
 case class StalledData(
                         browserName: Option[BrowserName],
                         fileExtension: Option[FileExtension],
+                        transcodedVideo: Option[TranscodedVideo],
                         buffering: Buffering
                       )
 object StalledData extends PlaybackJsonFields {
   implicit val data: Reads[StalledData] = (
     (JsPath \ dataField).readNullable[BrowserName] and
       (JsPath \ dataField).readNullable[FileExtension] and
+      (JsPath \ dataField).readNullable[TranscodedVideo] and
       (JsPath \ dataField).read[Buffering]
   )(StalledData.apply _)
 }
