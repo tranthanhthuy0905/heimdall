@@ -12,6 +12,7 @@ import org.apache.curator.framework.recipes.cache.PathChildrenCache
 import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.Future
+import scala.util.Try
 
 class HeimdallLoadBalancer(nodeAndPerftrackAware: Map[Int, (PathChildrenCacheFacade, PathChildrenCacheFacade)],
                            config: HeimdallLoadBalancerConfig) extends StrictStatsD with LazyLogging {
@@ -60,14 +61,21 @@ class HeimdallLoadBalancer(nodeAndPerftrackAware: Map[Int, (PathChildrenCacheFac
     }
   }
 
-  def getInstance(key: String, version: Int): Option[ServiceEndpoint] =
-    endpointResolver(version).get.get(key.replace("-", "").toLowerCase)
+  def getInstance(key: String, version: Int): Option[ServiceEndpoint] = {
+    Try(endpointResolver(version).get).toOption match {
+      case Some(endpointResolver) => endpointResolver.get(key.replace("-", "").toLowerCase)
+      case _ => None
+    }
+  }
 
   /**
     * Exposing replica counts for unit testing.
     */
   def getReplicaCounts(version: Int): Map[ServiceEndpoint, Int] =
-    endpointResolver(version).get.getReplicaCounts
+    Try(endpointResolver(version).get).toOption match {
+      case Some(endpointResolver) => endpointResolver.getReplicaCounts
+      case _ => Map()
+    }
 
 }
 
