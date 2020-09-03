@@ -6,31 +6,48 @@
 
 GET  /media/alive                           controllers.HealthController.isItUp
 
+
 # Heimdall API
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-GET  /media/start                           controllers.ProbeController.probe
-
 GET  /media/streamed                        controllers.AuditController.recordMediaStreamedEvent
-GET  /media/thumbnail                       controllers.ThumbnailController.thumbnail
-GET  /media/downloadthumbnail               controllers.ThumbnailDownloadController.downloadThumbnail
-
-POST /media/video/convert                   controllers.MediaConvertController.convert
-GET /media/video/status                     controllers.MediaConvertController.status
-
-GET  /media/hls/master                      controllers.HlsController.playlist
-GET  /media/hls/variant                     controllers.HlsController.playlist
-GET  /media/hls/segment                     controllers.HlsController.segment
 
 GET  /media/image/transcode                 controllers.ImageController.view
 GET  /media/image/thumbnail                 controllers.ImageController.extractThumbnail
 GET  /media/image/zoom                      controllers.ImageController.zoom
 GET  /media/image/metadata                  controllers.ImageController.metadata
 
-GET  /media/document/view                   controllers.DocumentController.view
+POST /media/video/convert                   controllers.MediaConvertController.convert
+GET  /media/video/status                     controllers.MediaConvertController.status
 
-GET  /media/audio/sample                    controllers.AudioController.sample
-GET  /media/audio/mp3                       controllers.AudioController.mp3
+GET  /media/document/view                   controllers.DocumentController.view
 
 POST /media/xpreport/info                   controllers.XpReportController.logInfo
 POST /media/xpreport/stalled                controllers.XpReportController.logStalled
+
+# Routing for RTMv1
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GET  /media/start                           controllers.v1.ProbeController.probe
+
+GET  /media/hls/master                      controllers.v1.HlsController.playlist
+GET  /media/hls/variant                     controllers.v1.HlsController.playlist
+GET  /media/hls/segment                     controllers.v1.HlsController.segment
+
+GET  /media/thumbnail                       controllers.v1.ThumbnailController.thumbnail
+GET  /media/downloadthumbnail               controllers.v1.ThumbnailDownloadController.downloadThumbnail
+
+GET  /media/audio/sample                    controllers.v1.AudioController.sample
+GET  /media/audio/mp3                       controllers.v1.AudioController.mp3
+
+# Routing for RTMv2
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GET  /v2/media/start                        controllers.v2.ProbeController.probe
+
+GET  /v2/media/hls/master                   controllers.v2.HlsController.playlist
+GET  /v2/media/hls/variant                  controllers.v2.HlsController.playlist
+GET  /v2/media/hls/segment                  controllers.v2.HlsController.segment
+
+GET  /v2/media/thumbnail                    controllers.v2.ThumbnailController.thumbnail
+GET  /v2/media/downloadthumbnail            controllers.v2.ThumbnailDownloadController.downloadThumbnail
+
+GET  /v2/media/audio/sample                 controllers.v2.AudioController.sample
+GET  /v2/media/audio/mp3                    controllers.v2.AudioController.mp3

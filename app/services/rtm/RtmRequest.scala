@@ -11,12 +11,14 @@ import scala.collection.immutable.Map
 /**
   * RtmRequest generates request URI digestible by RTM.
   *
+  * @param rtmVersion which RTM api version
   * @param path specifies RTM API to call.
   * @param endpoint instance of RTM provided by Zookeeper Server set.
   * @param query RTM request parameters, filtered and validated.
   * @return Generated URI as a string.
   */
 class RtmRequest[A](
+  rtmVersion: Int,
   path: String,
   endpoint: ServiceEndpoint,
   presignedUrls: List[URL],
@@ -37,12 +39,16 @@ class RtmRequest[A](
           "UTF-8"
         )
     }
+
+    // RTMv2 need separate multicam in url path, so at here we will add prefix /multicam
+    val newPath = if (rtmVersion == 2 && presignedUrls.length > 1)  s"/multicam/$path" else path
+
     Uri
       .from(
         scheme = "https",
         host = endpoint.host,
         port = endpoint.port,
-        path = path,
+        path = newPath,
         queryString = Some(encodedQuery)
       )
       .toString

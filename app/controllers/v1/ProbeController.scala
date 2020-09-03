@@ -1,37 +1,27 @@
-package controllers
+package controllers.v1
 
-import actions.{
-  HeimdallRequestAction,
-  PermValidationActionBuilder,
-  RtmRequestAction,
-  TokenValidationAction,
-  WatermarkAction
-}
+import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import models.auth.StreamingSessionData
+import models.common.{AuthorizationAttr, PermissionType}
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSResponse
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Results}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
 import services.rtm.{RtmClient, RtmResponseHandler}
 import utils.RequestUtils
-import com.typesafe.config.Config
-import models.common.{AuthorizationAttr, PermissionType}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class ProbeController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
-  tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
-  watermarkAction: WatermarkAction,
   rtmRequestAction: RtmRequestAction,
   rtm: RtmClient,
   sessionData: StreamingSessionData,
   audit: AuditClient,
-  config: Config,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)

@@ -1,19 +1,12 @@
-package controllers
+package controllers.v1
 
-import actions.{
-  HeimdallRequestAction,
-  PermValidationActionBuilder,
-  RtmRequestAction,
-  TokenValidationAction,
-  WatermarkAction
-}
+import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, TokenValidationAction, WatermarkAction}
 import javax.inject.Inject
+import models.common.PermissionType
 import models.hls.HlsManifestFormatter
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.rtm.{RtmClient, RtmResponseHandler}
-import com.typesafe.config.Config
-import models.common.PermissionType
 
 import scala.concurrent.ExecutionContext
 
@@ -24,7 +17,6 @@ class HlsController @Inject()(
   watermarkAction: WatermarkAction,
   rtmRequestAction: RtmRequestAction,
   rtm: RtmClient,
-  config: Config,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components) {
@@ -45,7 +37,7 @@ class HlsController @Inject()(
           HlsManifestFormatter(
             response.body,
             request.media,
-            config.getString("heimdall.api_prefix"),
+            request.apiPathPrefixForBuildingHlsManifest,
             Some(request.streamingSessionToken)
           )
         Ok(newManifest).as(contentType)

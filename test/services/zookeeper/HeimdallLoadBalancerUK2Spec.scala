@@ -24,14 +24,15 @@ class HeimdallLoadBalancerUK2Spec extends PlaySpec with MockitoSugar {
       */
     final val enableCache = false
 
-    val (rtmCacheMock, rtmListenerContainer)           = newCacheMock
-    val (perftrakCacheMock, perftrakListenerContainer) = newCacheMock
+    val rtmCacheMock          = newCacheMock
+    val perftrakCacheMock     = newCacheMock
+    val nodeAndPerftrackAware = Map(1 -> (rtmCacheMock, perftrakCacheMock))
 
-    private def newCacheMock: (PathChildrenCacheFacade, ListenerContainer[PathChildrenCacheListener]) = {
+    private def newCacheMock: PathChildrenCacheFacade = {
       val cacheMock         = mock[PathChildrenCacheFacade]
       val listenerContainer = new ListenerContainer[PathChildrenCacheListener]
       when(cacheMock.getListenable) thenReturn listenerContainer
-      (cacheMock, listenerContainer)
+      cacheMock
     }
 
     val (rtmData, perftrakData) = getChildDataFromSplunkExport("assets/uk2_perftrak_20190823_122033_122045.json")
@@ -44,15 +45,14 @@ class HeimdallLoadBalancerUK2Spec extends PlaySpec with MockitoSugar {
     "create load balancer with data exported from UK2, and engage all nodes" in new HeimdallLoadBalancerMockUK2 {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
-          rtmCacheMock,
-          perftrakCacheMock,
-          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = 100))
+          nodeAndPerftrackAware,
+          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = 100, enableRTMv2 = false))
 
       loadBalancer.start()
 
       val keys          = randomKeys(1000000)
-      val endpoints     = keys.map(k => loadBalancer.getInstance(k))
-      val replicaCounts = loadBalancer.getReplicaCounts
+      val endpoints     = keys.map(k => loadBalancer.getInstance(k,1))
+      val replicaCounts = loadBalancer.getReplicaCounts(1)
       val replicaSum = replicaCounts.foldLeft(0.0) {
         case (sum, e) => (sum + e._2)
       }
@@ -83,15 +83,14 @@ class HeimdallLoadBalancerUK2Spec extends PlaySpec with MockitoSugar {
     "maintain time required to perform getInstance call under 0.01 ms" in new HeimdallLoadBalancerMockUK2 {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
-          rtmCacheMock,
-          perftrakCacheMock,
-          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = 100))
+          nodeAndPerftrackAware,
+          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = 100, enableRTMv2 = false))
       loadBalancer.start()
 
       val keyCount                           = 10000000
       val keys: immutable.IndexedSeq[String] = randomKeys(keyCount)
       val t0: Long                           = System.nanoTime()
-      keys.map(k => loadBalancer.getInstance(k))
+      keys.map(k => loadBalancer.getInstance(k, 1))
       val t1: Long               = System.nanoTime()
       val totalElapsedMs: Double = (t1 - t0).toDouble / 1000000.0
       val oneCallNs: Double      = (t1 - t0).toDouble / keyCount.toDouble
@@ -107,17 +106,16 @@ class HeimdallLoadBalancerUK2Spec extends PlaySpec with MockitoSugar {
       val reloadMs = 100
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
-          rtmCacheMock,
-          perftrakCacheMock,
-          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = reloadMs))
+          nodeAndPerftrackAware,
+          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = reloadMs, enableRTMv2 = false))
       loadBalancer.start()
 
       val iterationsNumber = 10000000
       val key: String      = randomKey
       val t0: Long         = System.nanoTime()
       for (_ <- 1 to iterationsNumber) {
-        loadBalancer.reload()
-        loadBalancer.getInstance(key.toString)
+        loadBalancer.reload(1)
+        loadBalancer.getInstance(key.toString,1)
       }
       val t1: Long               = System.nanoTime()
       val totalElapsedMs: Double = (t1 - t0).toDouble / 1000000.0
@@ -134,15 +132,14 @@ class HeimdallLoadBalancerUK2Spec extends PlaySpec with MockitoSugar {
       val reloadMs = 100
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
-          rtmCacheMock,
-          perftrakCacheMock,
-          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = reloadMs))
+          nodeAndPerftrackAware,
+          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = reloadMs, enableRTMv2 = false))
       loadBalancer.start()
 
       val iterationsNumber = 10000000
       val t0: Long         = System.nanoTime()
       for (_ <- 1 to iterationsNumber) {
-        loadBalancer.reload()
+        loadBalancer.reload(1)
       }
       val t1: Long               = System.nanoTime()
       val totalElapsedMs: Double = (t1 - t0).toDouble / 1000000.0

@@ -1,4 +1,4 @@
-package controllers
+package controllers.v1
 
 import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, TokenValidationAction}
 import javax.inject.Inject
@@ -7,9 +7,9 @@ import play.api.http.HttpEntity
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
+import services.rtm.{RtmClient, RtmResponseHandler}
 
 import scala.concurrent.{ExecutionContext, Future}
-import services.rtm.{RtmClient, RtmResponseHandler}
 
 class AudioController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,

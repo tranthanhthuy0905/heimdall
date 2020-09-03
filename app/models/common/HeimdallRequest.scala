@@ -104,4 +104,12 @@ case class HeimdallRequest[A](request: Request[A], watermark: String = "")
     }
   }
 
+  def rtmApiVersion: Int = {
+    if (request.path.startsWith("/v2")) 2 else 1
+  }
+
+  def apiPathPrefixForBuildingHlsManifest: String = {
+    if (request.path.startsWith("/v2")) "/api/v2" else "/api/v1"
+  }
+
 }

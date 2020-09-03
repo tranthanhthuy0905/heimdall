@@ -1,8 +1,7 @@
-package controllers
+package controllers.v1
 
 import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
 import com.evidence.service.common.logging.LazyLogging
-import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
 import play.api.libs.ws.WSResponse
@@ -20,7 +19,6 @@ class ThumbnailDownloadController @Inject()(
   rtmRequestAction: RtmRequestAction,
   rtm: RtmClient,
   audit: AuditClient,
-  config: Config,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)

@@ -1,8 +1,7 @@
-package controllers
+package controllers.v1
 
 import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, WatermarkAction}
 import com.evidence.service.common.logging.LazyLogging
-import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.PermissionType
 import play.api.libs.ws.WSResponse
@@ -17,7 +16,6 @@ class ThumbnailController @Inject()(
   watermarkAction: WatermarkAction,
   rtmRequestAction: RtmRequestAction,
   rtm: RtmClient,
-  config: Config,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)

@@ -13,74 +13,87 @@ import org.joda.time.{DateTime, DateTimeZone}
 
 import scala.concurrent.Future
 
-class HeimdallLoadBalancer(
-  rtmPathChildrenCache: PathChildrenCacheFacade,
-  perftrakPathChildrenCache: PathChildrenCacheFacade,
-  config: HeimdallLoadBalancerConfig)
-    extends StrictStatsD
-    with LazyLogging {
+class HeimdallLoadBalancer(nodeAndPerftrackAware: Map[Int, (PathChildrenCacheFacade, PathChildrenCacheFacade)],
+                           config: HeimdallLoadBalancerConfig) extends StrictStatsD with LazyLogging {
 
   private[this] final val reloadIntervalMs = config.reloadIntervalMs
+  private[this] var rtmCache = Map[Int, ZookeeperNodeCache[ServiceEndpoint]]()
+  private[this] var perftrakCache = Map[Int, ZookeeperNodeCache[PerftrakDatum]]()
+  private[this] var endpointResolver = Map[Int, AtomicReference[EndpointResolver]]()
+  private[this] var lastReloadTimestamp = Map[Int, AtomicLong]()
 
-  private[this] val rtmCache: ZookeeperNodeCache[ServiceEndpoint] =
-    new RtmZookeeperNodeCache(rtmPathChildrenCache, () => HeimdallLoadBalancer.this.reload())
-  private[this] val perftrakCache: ZookeeperNodeCache[PerftrakDatum] =
-    new PerftrakZookeeperNodeCache(perftrakPathChildrenCache, () => HeimdallLoadBalancer.this.reload())
-  private[this] val endpointResolver: AtomicReference[EndpointResolver] =
-    new AtomicReference(new EndpointResolver(config.enableCache))
-  private[this] val lastReloadTimestamp: AtomicLong = new AtomicLong(0)
 
   def start(): Unit = {
-    rtmCache.start()
-    perftrakCache.start()
-    reload()
+    for ((k, v) <- nodeAndPerftrackAware) {
+      rtmCache = rtmCache + (k -> new RtmZookeeperNodeCache(v._1, () => HeimdallLoadBalancer.this.reload(k)))
+      perftrakCache = perftrakCache + (k -> new PerftrakZookeeperNodeCache(v._2, () =>  HeimdallLoadBalancer.this.reload(k)))
+      endpointResolver = endpointResolver + (k -> new AtomicReference(new EndpointResolver(config.enableCache)))
+      lastReloadTimestamp = lastReloadTimestamp + (k -> new AtomicLong(0))
+
+      rtmCache(k).start()
+      perftrakCache(k).start()
+      reload(k)
+    }
   }
 
-  def reload(): Unit = {
-    val nowTimestamp: Long  = DateTime.now(DateTimeZone.UTC).getMillis
-    val lastTimestamp: Long = lastReloadTimestamp.get()
-    val timeElapsed: Long   = nowTimestamp - lastTimestamp
-    if (timeElapsed > reloadIntervalMs && lastReloadTimestamp.compareAndSet(lastTimestamp, nowTimestamp)) {
+  def reload(version: Int): Unit = {
+    val nowTimestamp: Long = DateTime.now(DateTimeZone.UTC).getMillis
+    val lastTimestamp: Long = lastReloadTimestamp(version).get()
+    val timeElapsed: Long = nowTimestamp - lastTimestamp
+    if (timeElapsed > reloadIntervalMs && lastReloadTimestamp(version).compareAndSet(lastTimestamp, nowTimestamp)) {
       statsd.increment("load_balancer_data_reload")
-      endpointResolver.set(EndpointResolver(rtmCache.getData, perftrakCache.getData, config.enableCache))
+      endpointResolver(version).set(EndpointResolver(rtmCache(version).getData, perftrakCache(version).getData, config.enableCache))
     }
   }
 
   def stop(): Unit = {
-    rtmCache.stop()
-    perftrakCache.stop()
+    nodeAndPerftrackAware.keySet.foreach(rtmVersion => {
+      rtmCache(rtmVersion).stop()
+      perftrakCache(rtmVersion).stop()
+    })
   }
 
-  def getInstanceAsFuture(key: String): Future[ServiceEndpoint] = {
-    getInstance(key) match {
+  def getInstanceAsFuture(key: String, version: Int): Future[ServiceEndpoint] = {
+    getInstance(key, version) match {
       case Some(server) => Future.successful(server)
-      case _ =>
-        Future.failed(new Exception(s"Failed to get an instance for key=$key"))
+      case _ => Future.failed(new Exception(s"Failed to get an instance for key=$key, apiVersion=$version"))
     }
   }
 
-  def getInstance(key: String): Option[ServiceEndpoint] = {
-    endpointResolver.get().get(key.replace("-", "").toLowerCase)
-  }
+  def getInstance(key: String, version: Int): Option[ServiceEndpoint] =
+    endpointResolver(version).get.get(key.replace("-", "").toLowerCase)
 
   /**
     * Exposing replica counts for unit testing.
     */
-  def getReplicaCounts = endpointResolver.get.getReplicaCounts
+  def getReplicaCounts(version: Int): Map[ServiceEndpoint, Int] =
+    endpointResolver(version).get.getReplicaCounts
+
 }
 
 object HeimdallLoadBalancer extends LazyLogging {
 
   def apply(config: Config, client: CuratorFramework): HeimdallLoadBalancer = {
-    val rtmNodeCache      = new PathChildrenCache(client, "/service/rtm/http", true)
-    val perftrakNodeCache = new PathChildrenCache(client, "/service/rtm/http/perftrak", true)
     val heimdallConfig    = HeimdallLoadBalancerConfig(config)
+    var nodeAndPerftrackAware = Map[Int, (PathChildrenCacheFacade, PathChildrenCacheFacade)]()
+
+    var rtmVersion = 1
+    val rtm = new PathChildrenCache(client, "/service/rtm/http", true)
+    val perftrack = new PathChildrenCache(client, "/service/rtm/http/perftrak", true)
+    nodeAndPerftrackAware += rtmVersion -> (new PathChildrenCacheAdapter(rtm), new PathChildrenCacheAdapter(perftrack))
+
+    // do one more if enableRTMv2
+    if (heimdallConfig.enableRTMv2) {
+      rtmVersion = 2
+      val rtm = new PathChildrenCache(client, s"/service/rtmv2/http", true)
+      val perftrack = new PathChildrenCache(client, s"/service/rtmv2/http/perftrak", true)
+      nodeAndPerftrackAware += rtmVersion -> (new PathChildrenCacheAdapter(rtm), new PathChildrenCacheAdapter(perftrack))
+    }
 
     logger.info("creatingHeimdallLoadBalancer")("heimdallConfig" -> heimdallConfig)
 
     val loadBalancer = new HeimdallLoadBalancer(
-      new PathChildrenCacheAdapter(rtmNodeCache),
-      new PathChildrenCacheAdapter(perftrakNodeCache),
+      nodeAndPerftrackAware,
       heimdallConfig)
     loadBalancer.start()
     loadBalancer

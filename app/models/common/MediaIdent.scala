@@ -2,7 +2,6 @@ package models.common
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.headers.HttpEncodingRange.*
 import com.evidence.api.thrift.v1.{EntityDescriptor, TidEntities}
 
 import scala.collection.SortedSet
@@ -84,16 +83,6 @@ class MediaIdent(val fileIds: List[UUID], val evidenceIds: List[UUID], val partn
     collection.SortedSet(fileIds: _*)
   }
 
-  def buildHeaders(): Map[String, String] = {
-    if (isValid()) {
-      Map(
-        "file_id" -> fileIds.map(_.toString).mkString(","),
-        "partner_id" -> partnerId.toString
-      )
-    } else {
-      Map()
-    }
-  }
 
   private def isValid(): Boolean = {
     fileIds.length == evidenceIds.length && fileIds.length > 0
