@@ -9,23 +9,23 @@ GET  /media/alive                           controllers.HealthController.isItUp
 
 # Heimdall API
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-GET  /media/streamed                        controllers.AuditController.recordMediaStreamedEvent
-
 GET  /media/image/transcode                 controllers.ImageController.view
 GET  /media/image/thumbnail                 controllers.ImageController.extractThumbnail
 GET  /media/image/zoom                      controllers.ImageController.zoom
 GET  /media/image/metadata                  controllers.ImageController.metadata
 
 POST /media/video/convert                   controllers.MediaConvertController.convert
-GET  /media/video/status                     controllers.MediaConvertController.status
+GET  /media/video/status                    controllers.MediaConvertController.status
 
 GET  /media/document/view                   controllers.DocumentController.view
 
 POST /media/xpreport/info                   controllers.XpReportController.logInfo
 POST /media/xpreport/stalled                controllers.XpReportController.logStalled
 
+
 # Routing for RTMv1
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GET  /media/streamed                        controllers.AuditController.recordMediaStreamedEvent
 GET  /media/start                           controllers.v1.ProbeController.probe
 
 GET  /media/hls/master                      controllers.v1.HlsController.playlist
@@ -40,6 +40,7 @@ GET  /media/audio/mp3                       controllers.v1.AudioController.mp3
 
 # Routing for RTMv2
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+GET  /v2/media/streamed                     controllers.AuditController.recordMediaStreamedEvent
 GET  /v2/media/start                        controllers.v2.ProbeController.probe
 
 GET  /v2/media/hls/master                   controllers.v2.HlsController.playlist
