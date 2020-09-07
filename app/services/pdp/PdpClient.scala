@@ -31,7 +31,7 @@ class PdpClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
   protected val keyManager: KeyManager                        = KeyManager.apply(config)
   protected val componentFactory: CachingJOSEComponentFactory = new CachingJOSEComponentFactory(keyManager)
   protected val parser                                        = new VerifyingJWTParser(componentFactory)
-  protected val ssl                                           = if (config.hasPath("edc.services.pdp.ssl")) config.getBoolean("edc.services.pdp.ssl") else true
+  protected val ssl                                           = if (config.hasPath("edc.service.pdp.ssl")) config.getBoolean("edc.services.pdp.ssl") else true
 
   private val client: PdpServiceGrpc.PdpServiceStub = buildPdpClient(
     config.getString("edc.service.pdp.host"),
