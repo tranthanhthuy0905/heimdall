@@ -54,7 +54,7 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
           nodeAndPerftrackAware,
-          HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100, enableRTMv2 = false))
+          HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
       val result: Option[ServiceEndpoint] = loadBalancer.getInstance(someKey, 1)
       result mustBe None
@@ -64,7 +64,7 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
           nodeAndPerftrackAware,
-          HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100, enableRTMv2 = true))
+          HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
       nodeAndPerftrackAware.keySet.foreach(rtmVersion => {
         val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(someKey, rtmVersion)
@@ -77,7 +77,7 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
           nodeAndPerftrackAware,
-          HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100, enableRTMv2 = true))
+          HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
       nodeAndPerftrackAware.keySet.foreach(rtmVersion => {
         val result: Option[ServiceEndpoint] = loadBalancer.getInstance(lastKey(rtmVersion), rtmVersion)
@@ -90,7 +90,7 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
           nodeAndPerftrackAware,
-          HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100, enableRTMv2 = true))
+          HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
       nodeAndPerftrackAware.keySet.foreach(rtmVersion => {
         val result: Option[ServiceEndpoint] = loadBalancer.getInstance(someKey, rtmVersion)

@@ -46,7 +46,7 @@ class HeimdallLoadBalancerUK2Spec extends PlaySpec with MockitoSugar {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
           nodeAndPerftrackAware,
-          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = 100, enableRTMv2 = false))
+          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = 100))
 
       loadBalancer.start()
 
@@ -84,7 +84,7 @@ class HeimdallLoadBalancerUK2Spec extends PlaySpec with MockitoSugar {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
           nodeAndPerftrackAware,
-          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = 100, enableRTMv2 = false))
+          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = 100))
       loadBalancer.start()
 
       val keyCount                           = 10000000
@@ -107,7 +107,7 @@ class HeimdallLoadBalancerUK2Spec extends PlaySpec with MockitoSugar {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
           nodeAndPerftrackAware,
-          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = reloadMs, enableRTMv2 = false))
+          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = reloadMs))
       loadBalancer.start()
 
       val iterationsNumber = 10000000
@@ -133,7 +133,7 @@ class HeimdallLoadBalancerUK2Spec extends PlaySpec with MockitoSugar {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
           nodeAndPerftrackAware,
-          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = reloadMs, enableRTMv2 = false))
+          HeimdallLoadBalancerConfig(enableCache = enableCache, reloadIntervalMs = reloadMs))
       loadBalancer.start()
 
       val iterationsNumber = 10000000

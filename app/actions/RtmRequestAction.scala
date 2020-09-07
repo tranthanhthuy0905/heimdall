@@ -7,7 +7,7 @@ import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
 import services.rtm.{RtmQueryHelper, RtmRequest}
-import services.zookeeper.{HeimdallLoadBalancer, HeimdallLoadBalancerConfig}
+import services.zookeeper.HeimdallLoadBalancer
 
 import scala.concurrent.duration.{Duration, HOURS}
 import scala.concurrent.{ExecutionContext, Future}

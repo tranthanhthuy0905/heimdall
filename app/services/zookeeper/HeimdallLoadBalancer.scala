@@ -85,18 +85,14 @@ object HeimdallLoadBalancer extends LazyLogging {
     val heimdallConfig    = HeimdallLoadBalancerConfig(config)
     var nodeAndPerftrackAware = Map[Int, (PathChildrenCacheFacade, PathChildrenCacheFacade)]()
 
-    var rtmVersion = 1
-    val rtm = new PathChildrenCache(client, "/service/rtm/http", true)
-    val perftrack = new PathChildrenCache(client, "/service/rtm/http/perftrak", true)
-    nodeAndPerftrackAware += rtmVersion -> (new PathChildrenCacheAdapter(rtm), new PathChildrenCacheAdapter(perftrack))
+    // we will enable Heimdall to handle both v1 and v2 of RTM
+    val rtmV1 = new PathChildrenCache(client, "/service/rtm/http", true)
+    val perftrackV1 = new PathChildrenCache(client, "/service/rtm/http/perftrak", true)
+    nodeAndPerftrackAware += 1 -> (new PathChildrenCacheAdapter(rtmV1), new PathChildrenCacheAdapter(perftrackV1))
 
-    // do one more if enableRTMv2
-    if (heimdallConfig.enableRTMv2) {
-      rtmVersion = 2
-      val rtm = new PathChildrenCache(client, s"/service/rtmv2/http", true)
-      val perftrack = new PathChildrenCache(client, s"/service/rtmv2/http/perftrak", true)
-      nodeAndPerftrackAware += rtmVersion -> (new PathChildrenCacheAdapter(rtm), new PathChildrenCacheAdapter(perftrack))
-    }
+    val rtmV2 = new PathChildrenCache(client, s"/service/rtmv2/http", true)
+    val perftrackV2 = new PathChildrenCache(client, s"/service/rtmv2/http/perftrak", true)
+    nodeAndPerftrackAware += 2 -> (new PathChildrenCacheAdapter(rtmV2), new PathChildrenCacheAdapter(perftrackV2))
 
     logger.info("creatingHeimdallLoadBalancer")("heimdallConfig" -> heimdallConfig)
 
