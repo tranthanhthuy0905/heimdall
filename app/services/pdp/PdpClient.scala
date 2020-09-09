@@ -31,15 +31,17 @@ class PdpClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
   protected val keyManager: KeyManager                        = KeyManager.apply(config)
   protected val componentFactory: CachingJOSEComponentFactory = new CachingJOSEComponentFactory(keyManager)
   protected val parser                                        = new VerifyingJWTParser(componentFactory)
+  protected val ssl                                           = if (config.hasPath("edc.service.pdp.ssl")) config.getBoolean("edc.services.pdp.ssl") else true
 
   private val client: PdpServiceGrpc.PdpServiceStub = buildPdpClient(
     config.getString("edc.service.pdp.host"),
     config.getInt("edc.service.pdp.port"),
-    config.getString("edc.service.pdp.secret")
+    config.getString("edc.service.pdp.secret"),
+    ssl
   )
 
   override def enforceBatch(jwt: String, entities: List[EntityDescriptor], action: String): Future[Boolean] = {
-    val user: Tid = jwtToUser(jwt)
+    val user: Tid       = jwtToUser(jwt)
     val ents: Seq[PTid] = entities.map(ed => PTid(ed.entityType.name, ed.id, ed.domain.getOrElse("")))
 
     val batchRequest: EnforceBatchRequest =
@@ -56,10 +58,9 @@ class PdpClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
       )
     executionTime(
       aspect = "PdpClient.enforceBatch",
-      future =
-        client
-          .enforceBatch(batchRequest)
-          .map(r => r.result.forall(_.granted == true))
+      future = client
+        .enforceBatch(batchRequest)
+        .map(r => r.result.forall(_.granted == true))
     )
   }
 
