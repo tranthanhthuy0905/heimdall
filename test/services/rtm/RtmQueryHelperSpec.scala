@@ -15,14 +15,18 @@ class RtmQueryValidatorSpec extends PlaySpec {
         "file_id"     -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
         "evidence_id" -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
         "partner_id"  -> Seq(uuid.toString, extraUuid.toString, extraUuid.toString),
-        "autoFixPTS"  -> Seq("true")
+        "autoFixPTS"  -> Seq("true"),
+        "segmentVer"  -> Seq("0")
       )
 
       val result = RtmQueryHelper("/media/hls/master", query)
       result mustBe Some(
         RtmQueryParams(
           path = "/hls/master",
-          params = Map("autoFixPTS" -> "true")
+          params = Map(
+            "autoFixPTS" -> "true",
+            "segmentVer" -> "0",
+          )
         )
       )
     }

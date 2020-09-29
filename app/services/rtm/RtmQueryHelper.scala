@@ -52,6 +52,7 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
     "disableBFrames",
     "autorotate",
     "autoFixPTS",
+    "segmentVer",
     "streamingSessionToken",
     "streamToken"
   )
