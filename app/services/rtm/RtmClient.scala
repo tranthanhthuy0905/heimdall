@@ -21,10 +21,10 @@ class RtmClientImpl @Inject()(ws: WSClient)(implicit ex: ExecutionContext) exten
     val header = rtmRequest.media match {
       case EmptyMediaIdent() => Map()
       case media => Map(
-        "file_id" -> media.fileIds.map(_.toString).mkString(","),
-        "partner_id" -> media.partnerId.toString,
-        "media_id" -> (media.partnerId.toString + "_" +  media.fileIds.map(_.toString).mkString("_")),
-        "client_id" -> ( media.partnerId.toString + "_" +  rtmRequest.subjectId)
+        "File-Id" -> media.fileIds.map(_.toString).mkString(","),
+        "Partner-Id" -> media.partnerId.toString,
+        "Media-Id" -> (media.partnerId.toString + "_" +  media.fileIds.map(_.toString).mkString("_")),
+        "Client-Id" -> ( media.partnerId.toString + "_" +  rtmRequest.subjectId)
         )
     }
 
