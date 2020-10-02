@@ -31,6 +31,7 @@ GET  /media/start                           controllers.v1.ProbeController.probe
 GET  /media/hls/master                      controllers.v1.HlsController.playlist
 GET  /media/hls/variant                     controllers.v1.HlsController.playlist
 GET  /media/hls/segment                     controllers.v1.HlsController.segment
+GET  /media/hls/longsegment                 controllers.v1.HlsController.segment
 
 GET  /media/thumbnail                       controllers.v1.ThumbnailController.thumbnail
 GET  /media/downloadthumbnail               controllers.v1.ThumbnailDownloadController.downloadThumbnail
@@ -46,6 +47,7 @@ GET  /v2/media/start                        controllers.v2.ProbeController.probe
 GET  /v2/media/hls/master                   controllers.v2.HlsController.playlist
 GET  /v2/media/hls/variant                  controllers.v2.HlsController.playlist
 GET  /v2/media/hls/segment                  controllers.v2.HlsController.segment
+GET  /v2/media/hls/longsegment              controllers.v2.HlsController.segment
 
 GET  /v2/media/thumbnail                    controllers.v2.ThumbnailController.thumbnail
 GET  /v2/media/downloadthumbnail            controllers.v2.ThumbnailDownloadController.downloadThumbnail
