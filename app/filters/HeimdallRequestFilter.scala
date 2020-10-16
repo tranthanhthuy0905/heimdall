@@ -9,6 +9,7 @@ import models.common.{AuthorizationAttr, MediaIdent, MediaIdentAttr}
 import play.api.mvc.{Filter, RequestHeader, Result, Results}
 import play.api.routing.Router
 import utils.UUIDHelper
+import java.time.Duration
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -51,11 +52,6 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     nextFilter: RequestHeader => Future[Result],
     requestHeader: RequestHeader,
     actionName: String): Future[Result] = {
-    logger.info("requestBegin")(
-      "action" -> actionName,
-      "path"   -> requestHeader.path,
-      "query"  -> requestHeader.queryString
-    )
     if (internalRoutes.contains(requestHeader.path)) {
       executeRequest(startTime, nextFilter, requestHeader, actionName)
     } else {
@@ -89,6 +85,7 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     }
   }
 
+  private val logInterval = Duration.ofSeconds(10)
   private def executeRequest(
     startTime: Long,
     nextFilter: RequestHeader => Future[Result],
@@ -96,13 +93,15 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     actionName: String): Future[Result] = {
     nextFilter(requestHeader).map { result =>
       val requestTime = System.currentTimeMillis - startTime
-      logger.info("requestComplete")(
-        "action"   -> actionName,
-        "path"     -> requestHeader.path,
-        "query"    -> requestHeader.queryString,
-        "duration" -> s"${requestTime}ms",
-        "status"   -> result.header.status,
-      )
+      if (requestTime > logInterval.toMillis) {
+        logger.warn("requestDelay")(
+          "action"   -> actionName,
+          "path"     -> requestHeader.path,
+          "query"    -> requestHeader.queryString,
+          "duration" -> s"${requestTime}ms",
+          "status"   -> result.header.status,
+        )
+      }
       statsd.increment(
         s"$actionName.requests",
         s"status:${result.header.status.toString.toLowerCase}"

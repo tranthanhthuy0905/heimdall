@@ -35,25 +35,13 @@ class AuditClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
   }
 
   override def recordEndSuccess(event: AuditEvent): Future[String] = {
-    val eventJson = event.toJsonString
-    logger.info("auditRecordEventEndWithSuccess")(
-      "eventTypeUuid"      -> event.eventTypeUuid,
-      "targetTidEntity"    -> event.targetTid.entity,
-      "targetTidId"        -> event.targetTid.id,
-      "targetTidDomain"    -> event.targetTid.domain,
-      "updatedByTidEntity" -> event.updatedByTid.entity,
-      "updatedByTidId"     -> event.updatedByTid.id,
-      "updatedByTidDomain" -> event.updatedByTid.domain,
-      "eventJson"          -> eventJson
-    )
-
     client
       .recordEventEndWithSuccess(
         auth,
         event.eventTypeUuid,
         event.targetTid,
         event.updatedByTid,
-        eventJson
+        event.toJsonString
       )
       .toScalaFuture
   }
