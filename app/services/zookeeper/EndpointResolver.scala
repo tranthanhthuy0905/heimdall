@@ -164,7 +164,7 @@ class EndpointResolver(
     * Repeating EcomSaas's logic of randomly printing replica counts and priority map content.
     */
   private[this] def randomlyLogDetails(): Unit = {
-    if (rand.nextInt(100) == 13) {
+    if (rand.nextInt(1000) == 13) {
       logger.info("endpointResolverDetails")(
         "priorityMap"   -> priorityMap,
         "replicaCounts" -> replicaCounts
