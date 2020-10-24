@@ -90,23 +90,21 @@ object Watermark extends LazyLogging {
     * generateWatermark implements similar logic as ECOMSAAS's Label method:
     * https://git.taservs.net/ecom/ecomsaas/blob/367389cbfb68b5cfa157fd8913d270b288baa87a/wc/com.evidence.api/com.evidence.api/evidence/Stream.cs#L671
     */
-  def apply(partner: Partner, user: User): Option[String] = {
-    user.username match {
+  def apply(domain: Option[String], username: Option[String]): Option[String] = {
+    username match {
       case Some(username) =>
-        partner.domain match {
+        domain match {
           case Some(domain) =>
             Some(s"Viewed by $username ($domain) on ${DateTime.getUtcDate}")
           case None =>
             logger.error("failedToRetrievePartnerDomain")(
-              "user"    -> user,
-              "partner" -> partner
+              "user" -> username
             )
             None
         }
       case None =>
         logger.error("failedToRetrieveUsername")(
-          "user"    -> user,
-          "partner" -> partner
+          "partner" -> domain
         )
         None
     }

@@ -8,16 +8,19 @@ import com.evidence.service.komrade.thrift.KomradeService
 import com.evidence.service.thrift.v2.Authorization
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
+import play.api.cache.AsyncCacheApi
 
+import scala.concurrent.duration.{Duration, MINUTES}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait KomradeClient {
-  def getUser(partnerId: String, userId: String): Future[User]
-  def getPartner(partnerId: String): Future[Partner]
+  def getUser(partnerId: String, userId: String): Future[Option[String]]
+  def getPartner(partnerId: String): Future[Option[String]]
 }
 
 @Singleton
-class KomradeClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
+class CachedKomradeClientImpl @Inject()(config: Config,
+                                        cache: AsyncCacheApi)(implicit ex: ExecutionContext)
     extends KomradeClient
     with LazyLogging {
 
@@ -34,14 +37,23 @@ class KomradeClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
     Authorization(Option(authType), Option(secret))
   }
 
-  override def getUser(partnerId: String, userId: String): Future[User] = {
-    logger.debug("getUser")("partnerId" -> partnerId, "userId" -> userId)
-    client.getUser(partnerId, userId).toScalaFuture
+  // Streaming use komrade to get username and agency name for watermark string only
+  // it is safe to cached results for those calls since Komrade call is expensive (query DB)
+  private val cacheUserExpired = Duration(5, MINUTES)
+  private val cachePartnerExpired = Duration(30, MINUTES)
+
+  override def getUser(partnerId: String, userId: String): Future[Option[String]] = {
+    cache.getOrElseUpdate[Option[String]]((partnerId, userId).toString, cacheUserExpired) {
+      logger.debug("getUser")("partnerId" -> partnerId, "userId" -> userId)
+      client.getUser(partnerId, userId).toScalaFuture.map(_.username)
+    }
   }
 
-  override def getPartner(partnerId: String): Future[Partner] = {
-    logger.debug("getPartner")("partnerId" -> partnerId)
-    client.getPartner(partnerId).toScalaFuture
+  override def getPartner(partnerId: String): Future[Option[String]] = {
+    cache.getOrElseUpdate[Option[String]](partnerId, cachePartnerExpired) {
+      logger.debug("getPartner")("partnerId" -> partnerId)
+      client.getPartner(partnerId).toScalaFuture.map(_.domain)
+    }
   }
 
 }
