@@ -9,7 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import services.apidae.ApidaeRequest
 import utils.UUIDHelper
 
-case class ApidaeRequestAction @Inject()(implicit val executionContext: ExecutionContext)
+case class ApidaeRequestAction @Inject()()(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, ApidaeRequest]
     with LazyLogging
     with UUIDHelper {
