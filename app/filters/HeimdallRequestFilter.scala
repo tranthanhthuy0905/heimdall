@@ -53,7 +53,7 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     requestHeader: RequestHeader,
     actionName: String): Future[Result] = {
     if (internalRoutes.contains(requestHeader.path)) {
-      executeRequest(startTime, nextFilter, requestHeader, actionName)
+      executeRequest(startTime, System.currentTimeMillis, nextFilter, requestHeader, actionName)
     } else {
       authorizer.authorize(requestHeader).flatMap {
         case Right(authData) =>
@@ -62,6 +62,7 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
             case Some(mediaIdent) =>
               executeRequest(
                 startTime,
+                System.currentTimeMillis,
                 nextFilter,
                 requestHeader
                   .addAttr(AuthorizationAttr.Key, authData)
@@ -85,9 +86,10 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     }
   }
 
-  private val logInterval = Duration.ofSeconds(10)
+  private val logInterval = Duration.ofSeconds(6)
   private def executeRequest(
     startTime: Long,
+    executeStartTime: Long,
     nextFilter: RequestHeader => Future[Result],
     requestHeader: RequestHeader,
     actionName: String): Future[Result] = {
@@ -99,6 +101,7 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
           "path"     -> requestHeader.path,
           "query"    -> requestHeader.queryString,
           "duration" -> s"${requestTime}ms",
+          "overhead" -> s"${executeStartTime - startTime}ms",
           "status"   -> result.header.status,
         )
       }
