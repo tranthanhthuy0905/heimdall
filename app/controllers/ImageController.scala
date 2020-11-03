@@ -1,15 +1,15 @@
 package controllers
 
 import actions._
-import akka.stream.scaladsl.Source
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
-import play.api.http.{HttpChunk, HttpEntity}
+import play.api.http.HttpEntity
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.WSResponse
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import play.api.mvc._
+
 import scala.concurrent.{ExecutionContext, Future}
 import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.rti.metadata.MetadataJsonConversions
@@ -52,13 +52,10 @@ class ImageController @Inject()(
             fileTid(request.file.fileId, request.file.partnerId),
             request.request.clientIpAddress
           ))
-        httpEntity <- {
-          Future.successful(toHttpEntity(response))
+        result <- {
+          Future.successful(toResult(response))
         }
-      } yield
-        httpEntity.fold(BadRequest(_), entity => {
-          Ok.sendEntity(entity)
-        })
+      } yield result.fold(BadRequest(_), r => r)
     }
 
   def extractThumbnail: Action[AnyContent] =
@@ -67,16 +64,12 @@ class ImageController @Inject()(
         andThen featureValidationAction.build("edc.thumbnail_extraction.enable")
         andThen rtiThumbnailRequestAction
     ).async { implicit request =>
-      val authHandler = request.attrs(AuthorizationAttr.Key)
       for {
         response <- rti.thumbnail(request.presignedUrl, request.width, request.height, request.file)
-        httpEntity <- {
-          Future.successful(toHttpEntity(response))
+        result <- {
+          Future.successful(toResult(response))
         }
-      } yield
-        httpEntity.fold(BadRequest(_), entity => {
-          Ok.sendEntity(entity)
-        })
+      } yield result.fold(BadRequest(_), r => r)
     }
 
   def zoom: Action[AnyContent] =
@@ -97,11 +90,8 @@ class ImageController @Inject()(
             fileTid(request.file.fileId, request.file.partnerId),
             request.request.clientIpAddress
           ))
-        httpEntity <- Future.successful(toHttpEntity(response))
-      } yield
-        httpEntity.fold(BadRequest(_), entity => {
-          Ok.sendEntity(entity)
-        })
+        result <- Future.successful(toResult(response))
+      } yield result.fold(BadRequest(_), r => r)
     }
 
   def metadata: Action[AnyContent] =
@@ -111,27 +101,24 @@ class ImageController @Inject()(
         andThen rtiRequestAction
     ).async { implicit request =>
       for {
-        response   <- rti.metadata(request.presignedUrl, request.file)
-        httpEntity <- Future.successful(toMetadataEntity(response))
-      } yield
-        httpEntity.fold(BadRequest(_), metadata => {
-          Ok(metadata)
-        })
+        response <- rti.metadata(request.presignedUrl, request.file).filter(_.status equals OK)
+        result   <- Future.successful(toMetadataEntity(response))
+      } yield result.fold(BadRequest(_), Ok(_))
+
     }
 
-  private def toHttpEntity(response: WSResponse): Either[JsObject, HttpEntity] = {
+  private def toResult(response: WSResponse): Either[JsObject, Result] = {
     Some(response.status)
       .filter(_ equals play.api.http.Status.OK)
       .toRight(Json.obj("message" -> response.body))
       .map(_ => {
-        val contentType = response.headers.getOrElse("Content-Type", Seq("image/jpeg")).headOption
+        val contentType = response.headers.getOrElse("Content-Type", Seq()).headOption.getOrElse("image/jpeg")
 
         response.headers
           .get("Content-Length")
           .map(length =>
-            HttpEntity
-              .Streamed(response.bodyAsSource, Some(length.mkString.toLong), contentType))
-          .getOrElse(HttpEntity.Chunked(Source.apply(List(HttpChunk.Chunk(response.bodyAsBytes))), contentType))
+            Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
+          .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
       })
   }
 
