@@ -1,5 +1,6 @@
 package services.rtm
 
+import akka.util.ByteString
 import com.evidence.service.common.logging.LazyLogging
 import play.api.http.{HttpEntity, Status}
 import play.api.libs.ws.WSResponse
@@ -45,12 +46,12 @@ object RtmResponseHandler extends LazyLogging {
   }
 
   private def toResult(response: WSResponse): Result = {
-    Result(
-      ResponseHeader(response.status, response.headers.mapValues(_.head)),
-      HttpEntity.Strict(
-        response.bodyAsBytes,
-        Some(response.contentType)
-      )
-    )
+    val contentType = response.contentType
+    val httpEntity = response.headers
+      .get("Content-Length")
+      .map(length => HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType)))
+      .getOrElse(HttpEntity.Strict(ByteString(response.body), Some(contentType)))
+
+    Result(ResponseHeader(response.status, response.headers.mapValues(_.head)), httpEntity)
   }
 }
