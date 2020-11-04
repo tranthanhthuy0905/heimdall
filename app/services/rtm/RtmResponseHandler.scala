@@ -5,10 +5,11 @@ import com.evidence.service.common.logging.LazyLogging
 import play.api.http.{HttpEntity, Status}
 import play.api.libs.ws.WSResponse
 import play.api.mvc.{ResponseHeader, Result}
+import utils.ResponseHeaderHelpers
 
 import scala.concurrent.Future
 
-object RtmResponseHandler extends LazyLogging {
+object RtmResponseHandler extends LazyLogging with ResponseHeaderHelpers {
 
   def apply(response: WSResponse, okCallback: WSResponse => Result, logVars: Seq[(String, Any)]): Result = {
     response.status match {
@@ -52,6 +53,6 @@ object RtmResponseHandler extends LazyLogging {
       .map(length => HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType)))
       .getOrElse(HttpEntity.Strict(ByteString(response.body), Some(contentType)))
 
-    Result(ResponseHeader(response.status, response.headers.mapValues(_.head)), httpEntity)
+    Result(ResponseHeader(response.status, withHeader(response.headers)), httpEntity)
   }
 }

@@ -15,20 +15,22 @@ import scala.concurrent.{ExecutionContext, Future}
 import services.apidae.ApidaeClient
 import services.audit.{AuditClient, AuditConversions, EvidencePlaybackRequested}
 import services.rti.metadata.MetadataJsonConversions
+import utils.ResponseHeaderHelpers
 
 class MediaConvertController @Inject()(
-                                        heimdallRequestAction: HeimdallRequestAction,
-                                        tokenValidationAction: TokenValidationAction,
-                                        permValidation: PermValidationActionBuilder,
-                                        apidaeRequestAction: ApidaeRequestAction,
-                                        apidae: ApidaeClient,
-                                        audit: AuditClient,
-                                        config: Config,
-                                        components: ControllerComponents)(implicit ex: ExecutionContext)
+  heimdallRequestAction: HeimdallRequestAction,
+  tokenValidationAction: TokenValidationAction,
+  permValidation: PermValidationActionBuilder,
+  apidaeRequestAction: ApidaeRequestAction,
+  apidae: ApidaeClient,
+  audit: AuditClient,
+  config: Config,
+  components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
     with AuditConversions
-    with MetadataJsonConversions {
+    with MetadataJsonConversions
+    with ResponseHeaderHelpers {
 
   def convert: Action[AnyContent] =
     (
@@ -47,7 +49,8 @@ class MediaConvertController @Inject()(
             evidenceTid(request.file.evidenceId, request.file.partnerId),
             updatedByTid(authHandler.parsedJwt),
             fileTid(request.file.fileId, request.file.partnerId),
-            request.request.clientIpAddress))
+            request.request.clientIpAddress
+          ))
 
         apidae.transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
       }
@@ -63,19 +66,15 @@ class MediaConvertController @Inject()(
       if (!isApidaeEnable) {
         Future.successful(NotImplemented(Json.obj("message" -> "This function is under-construction for your region")))
       } else {
-        apidae.getTranscodingStatus(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
+        apidae
+          .getTranscodingStatus(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
       }
     }
 
   implicit def Response2Result(response: Future[WSResponse]): Future[Result] = {
-    response map {
-      response =>
-        val headers = response.headers map {
-          case (key, values) => (key, values.headOption.getOrElse(""))
-        }
-
-        val body = HttpEntity.Strict(ByteString(response.body), Some(ContentTypes.JSON))
-        Result(ResponseHeader(response.status, headers), body)
+    response map { response =>
+      val body = HttpEntity.Strict(ByteString(response.body), Some(ContentTypes.JSON))
+      Result(ResponseHeader(response.status, withHeader(response.headers)), body)
     }
   }
 }

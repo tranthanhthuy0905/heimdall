@@ -1,23 +1,20 @@
 package actions
 
-import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common._
 import play.api.mvc.{ActionRefiner, Results}
 import services.xpreport.playback.XpReportRequest
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 case class XpReportRequestAction @Inject()()(implicit val executionContext: ExecutionContext)
-    extends ActionRefiner[HeimdallRequest, XpReportRequest]
-{
+    extends ActionRefiner[HeimdallRequest, XpReportRequest] {
 
   def refine[A](request: HeimdallRequest[A]) = {
-    val result = for {
-      file         <- FutureEither.successful(request.media.headOption.toRight(Results.BadRequest))
-    } yield {
-      XpReportRequest(file, request)
-    }
-    result.future
+    Future(
+      request.media.headOption
+        .map(XpReportRequest(_, request))
+        .toRight(Results.BadRequest)
+    )
   }
 }
