@@ -9,6 +9,7 @@ import com.evidence.service.thrift.v2.Authorization
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
 import play.api.cache.AsyncCacheApi
+import utils.{HdlCache, HdlTtl}
 
 import scala.concurrent.duration.{Duration, MINUTES}
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,8 +20,7 @@ trait KomradeClient {
 }
 
 @Singleton
-class CachedKomradeClientImpl @Inject()(config: Config,
-                                        cache: AsyncCacheApi)(implicit ex: ExecutionContext)
+class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex: ExecutionContext)
     extends KomradeClient
     with LazyLogging {
 
@@ -31,7 +31,8 @@ class CachedKomradeClientImpl @Inject()(config: Config,
     client
   }
 
-  private val auth: Authorization = {
+  // test authorization when init class
+  {
     val secret   = config.getString("edc.service.komrade.thrift_auth_secret")
     val authType = config.getString("edc.service.komrade.thrift_auth_type")
     Authorization(Option(authType), Option(secret))
@@ -39,21 +40,45 @@ class CachedKomradeClientImpl @Inject()(config: Config,
 
   // Streaming use komrade to get username and agency name for watermark string only
   // it is safe to cached results for those calls since Komrade call is expensive (query DB)
-  private val cacheUserExpired = Duration(5, MINUTES)
-  private val cachePartnerExpired = Duration(30, MINUTES)
-
   override def getUser(partnerId: String, userId: String): Future[Option[String]] = {
-    cache.getOrElseUpdate[Option[String]]((partnerId, userId).toString, cacheUserExpired) {
-      logger.debug("getUser")("partnerId" -> partnerId, "userId" -> userId)
-      client.getUser(partnerId, userId).toScalaFuture.map(_.username)
+    val key = s"hdl-$partnerId-$userId"
+    cache.getOrElseUpdate[Option[String]](key, HdlTtl.usernameMemTTL) {
+      HdlCache.Username
+        .get(key)
+        .map { un =>
+          Future.successful(Some(un))
+        }
+        .getOrElse {
+          logger.debug("getUser")("partnerId" -> partnerId, "userId" -> userId)
+          val res = client.getUser(partnerId, userId).toScalaFuture.map { u =>
+            {
+              u.username.foreach(un => HdlCache.Username.set(key, un))
+              u.username
+            }
+          }
+          res
+        }
     }
   }
 
   override def getPartner(partnerId: String): Future[Option[String]] = {
-    cache.getOrElseUpdate[Option[String]](partnerId, cachePartnerExpired) {
-      logger.debug("getPartner")("partnerId" -> partnerId)
-      client.getPartner(partnerId).toScalaFuture.map(_.domain)
+    val key = s"hdl-$partnerId"
+    cache.getOrElseUpdate[Option[String]](key, HdlTtl.domainMemTTL) {
+      HdlCache.AgencyDomain
+        .get(key)
+        .map { un =>
+          Future.successful(Some(un))
+        }
+        .getOrElse {
+          logger.debug("getPartner")("partnerId" -> partnerId)
+          val res = client.getPartner(partnerId).toScalaFuture.map { p =>
+            {
+              p.domain.foreach(d => HdlCache.AgencyDomain.set(key, d))
+              p.domain
+            }
+          }
+          res
+        }
     }
   }
-
 }
