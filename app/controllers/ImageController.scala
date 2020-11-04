@@ -2,7 +2,6 @@ package controllers
 
 import actions._
 import com.evidence.service.common.logging.LazyLogging
-import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
 import play.api.http.HttpEntity
@@ -18,7 +17,6 @@ import utils.JsonFormat
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
-  tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
   featureValidationAction: FeatureValidationActionBuilder,
   watermarkAction: WatermarkAction,
@@ -26,7 +24,6 @@ class ImageController @Inject()(
   rtiThumbnailRequestAction: ThumbnailRequestAction,
   rti: RtiClient,
   audit: AuditClient,
-  config: Config,
   components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
@@ -110,7 +107,7 @@ class ImageController @Inject()(
   private def toResult(response: WSResponse): Either[JsObject, Result] = {
     Some(response.status)
       .filter(_ equals play.api.http.Status.OK)
-      .toRight(Json.obj("message" -> response.body))
+      .toRight(Json.obj("message" -> response.body[String]))
       .map(_ => {
         val contentType = response.headers.getOrElse("Content-Type", Seq()).headOption.getOrElse("image/jpeg")
 
@@ -125,7 +122,7 @@ class ImageController @Inject()(
   private def toMetadataEntity(response: WSResponse): Either[JsObject, JsValue] = {
     Some(response.status)
       .filter(_ equals play.api.http.Status.OK)
-      .toRight(Json.obj("message" -> response.body))
+      .toRight(Json.obj("message" -> response.body[String]))
       .map(_ => {
         val metadata = metadataFromJson(response.json)
         removeNullValues(Json.toJson(metadata).as[JsObject])
