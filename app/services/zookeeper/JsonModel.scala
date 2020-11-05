@@ -28,12 +28,6 @@ object RtmNodeInfo {
   * Example of perftrak data:
   *
   * {
-  *   "plane-blocked-backend": {
-  *     "component-aggregate": 0
-  *   },
-  *   "plane-blocked-frontend": {
-  *     "component-aggregate": 0
-  *    },
   *   "plane-caching": {
   *     "component-aggregate": 673710100,
   *     "component-tops": [                     <<<<< Tops
@@ -86,8 +80,8 @@ case class PlaneComputational(aggregate: Double, capacity: Double)
 
 object PerftrakModel {
   implicit val singleTopReads: Reads[SingleTop] = Json.reads[SingleTop]
-  implicit val planeCachingReads: Reads[PlaneCaching] =
-    (JsPath \ "plane-caching" \ "component-tops").read[Seq[SingleTop]].map(PlaneCaching)
+  implicit val planeCachingReads: Reads[Option[PlaneCaching]] =
+    (JsPath \ "plane-caching" \ "component-tops").readNullable[Seq[SingleTop]].map(_.map(PlaneCaching))
   implicit val planeComputationalReads: Reads[PlaneComputational] = (
     (JsPath \ "plane-computational" \ "component-aggregate").read[Double] and
       (JsPath \ "plane-computational" \ "component-capacity").read[Double]

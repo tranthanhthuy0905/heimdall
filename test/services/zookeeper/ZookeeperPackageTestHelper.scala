@@ -101,12 +101,6 @@ private[zookeeper] object ZookeeperPackageTestHelper {
     cap: Double = 128.0): String = {
     val jsonTops = tops.foldLeft("")((m, e) => m + s"""{"k":"${e.k}","v":1},""")
     s"""{
-       |  "plane-blocked-backend":{
-       |    "component-aggregate":0
-       |  },
-       |  "plane-blocked-frontend":{
-       |    "component-aggregate":0
-       |  },
        |  "plane-caching":{
        |    "component-aggregate":99614720,
        |    "component-tops":[
@@ -126,7 +120,7 @@ private[zookeeper] object ZookeeperPackageTestHelper {
   }
 
   def trim(str: String): String = {
-    val trimPattern = """\"(.+)\"""".r
+    val trimPattern          = """\"(.+)\"""".r
     val trimPattern(trimmed) = str
     trimmed
   }
@@ -134,22 +128,21 @@ private[zookeeper] object ZookeeperPackageTestHelper {
   def getKeysFromSplunkExport(filename: String): List[String] = {
     val source: String      = Source.fromFile(filename).getLines.mkString
     val splunkJson: JsValue = Json.parse(source)
-    val keysJson = splunkJson \\ "file_id"
-    val keys = keysJson.toList.map(k => trim(k.toString().replace("-","")))
+    val keysJson            = splunkJson \\ "file_id"
+    val keys                = keysJson.toList.map(k => trim(k.toString().replace("-", "")))
     keys
   }
 
   def getChildDataFromSplunkExport(filename: String): (util.List[ChildData], util.List[ChildData]) = {
     val source: String      = Source.fromFile(filename).getLines.mkString
     val splunkJson: JsValue = Json.parse(source)
-    val hosts = splunkJson \\ "host"
-    val snapshots = splunkJson \\ "_raw"
-    val valueTuples =  hosts zip snapshots
+    val hosts               = splunkJson \\ "host"
+    val snapshots           = splunkJson \\ "_raw"
+    val valueTuples         = hosts zip snapshots
     val perftrakChildren = valueTuples map { t =>
-      newChildData(
-        newPerftrakChildDataPath(newHostNameFromJsValue(t._1)), newPerftrakDataFromJsValue(t._2))
+      newChildData(newPerftrakChildDataPath(newHostNameFromJsValue(t._1)), newPerftrakDataFromJsValue(t._2))
     }
-    val rtmNodes = hosts map {h =>
+    val rtmNodes = hosts map { h =>
       newChildData(newRtmChildDataPath, newRtmNodeString(newHostNameFromJsValue(h)))
     }
     (rtmNodes.asJava, perftrakChildren.asJava)
@@ -160,10 +153,10 @@ private[zookeeper] object ZookeeperPackageTestHelper {
   }
 
   def newPerftrakDataFromJsValue(snapshotRaw: JsValue): String = {
-    val snapshotPattern = """.+snapshot=(.+) Current perftrak.*""".r
+    val snapshotPattern           = """.+snapshot=(.+) Current perftrak.*""".r
     val snapshotPattern(snapshot) = snapshotRaw.toString()
-    val cleanSnapshot: String = snapshot.toString().replaceAll("\\\\\"", "\"")
-    val result = trim(cleanSnapshot.toString())
+    val cleanSnapshot: String     = snapshot.toString().replaceAll("\\\\\"", "\"")
+    val result                    = trim(cleanSnapshot.toString())
     result
   }
 

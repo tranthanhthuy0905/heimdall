@@ -51,7 +51,7 @@ class JsonModelSpec extends PlaySpec {
           newPerftrakNodeString(Seq[SingleTop](SingleTop(fileId1, 1), SingleTop(fileId2, 1)), fileId3, 10, 100))
       val planeComputational = PerftrakModel.planeComputationalReads.reads(json)
       val planeCaching       = PerftrakModel.planeCachingReads.reads(json)
-      val result             = PerftrakDatum(endpoint, planeComputational.asOpt, planeCaching.asOpt)
+      val result             = PerftrakDatum(endpoint, planeComputational.asOpt, planeCaching.get)
       val expectedPlaneComp  = PlaneComputational(10, 100)
       val expectedPlaneCaching =
         PlaneCaching(Seq[SingleTop](SingleTop(fileId1, 1), SingleTop(fileId2, 1), SingleTop(fileId3, 1)))
@@ -61,12 +61,6 @@ class JsonModelSpec extends PlaySpec {
 
     "create PerftrakDatum with None objects using incomplete json value" in {
       val someJsonString = s"""{
-                              |  "plane-blocked-backend":{
-                              |    "component-aggregate":0
-                              |  },
-                              |  "plane-blocked-frontend":{
-                              |    "component-aggregate":0
-                              |  },
                               |  "plane-caching":{
                               |    "component-aggregate":99614720,
                               |    "component-capacity":1150699300
@@ -82,7 +76,7 @@ class JsonModelSpec extends PlaySpec {
       val json: JsValue      = Json.parse(someJsonString)
       val planeComputational = PerftrakModel.planeComputationalReads.reads(json)
       val planeCaching       = PerftrakModel.planeCachingReads.reads(json)
-      val result             = PerftrakDatum(endpoint, planeComputational.asOpt, planeCaching.asOpt)
+      val result             = PerftrakDatum(endpoint, planeComputational.asOpt, planeCaching.get)
       val expected           = PerftrakDatum(endpoint, None, None)
       result mustBe expected
     }

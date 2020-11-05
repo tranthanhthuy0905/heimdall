@@ -129,12 +129,11 @@ class PerftrakZookeeperNodeCache(nodeCache: PathChildrenCacheFacade, listenerCal
 
   private def getPlaneCaching(jsonData: JsValue): Option[PlaneCaching] = {
     val planeCaching: Option[PlaneCaching] = PerftrakModel.planeCachingReads.reads(jsonData) match {
-      case parsedData: JsSuccess[PlaneCaching] => Some(parsedData.value)
+      case parsedData: JsSuccess[Option[PlaneCaching]] => parsedData.value
       case e: JsError =>
         logger.info("failedToParsePlaneCachingPerftrakData")(
           "message" -> JsError.toJson(e).toString(),
-          "json"    -> jsonData.toString(),
-          "details" -> "plane-caching can be empty when there is no requests processing by RTM"
+          "json"    -> jsonData.toString()
         )
         None
     }
