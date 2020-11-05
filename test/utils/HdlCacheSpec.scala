@@ -9,13 +9,14 @@ import java.net.URL
 import scala.concurrent.duration.{Duration, HOURS, MINUTES}
 
 class HdlCacheSpec extends PlaySpec with EmbeddedRedis with BeforeAndAfterAll {
-  var redis: RedisServer = null
-  override def beforeAll() = {
-    redis = startRedis(42367)
+  var redis: Option[RedisServer] = None
+
+  override def beforeAll(): Unit = {
+    redis = Some(startRedis(42367))
   }
 
-  override def afterAll() = {
-    stopRedis(redis)
+  override def afterAll(): Unit = {
+    redis.foreach(stopRedis)
   }
 
   "HdlTtl" must {
@@ -30,24 +31,36 @@ class HdlCacheSpec extends PlaySpec with EmbeddedRedis with BeforeAndAfterAll {
     }
   }
   "HdlCache" must {
-    "be able to get/set/evict username" in {
+    "be able to get/set username" in {
       noException should be thrownBy HdlCache.Username.set("key", "someuser")
       HdlCache.Username.get("key") mustBe Some("someuser")
-      noException should be thrownBy HdlCache.Username.evict("key")
-      HdlCache.Username.get("key") mustBe None
+      noException should be thrownBy HdlCache.Username.set("key", "someuser2")
+      HdlCache.Username.get("key") mustBe Some("someuser2")
+      HdlCache.Username.get("key1") mustBe None
     }
-    "be able to get/set/evict domain" in {
+    "be able to get/set domain" in {
       noException should be thrownBy HdlCache.AgencyDomain.set("key", "somedomain")
       HdlCache.AgencyDomain.get("key") mustBe Some("somedomain")
-      noException should be thrownBy HdlCache.AgencyDomain.evict("key")
-      HdlCache.AgencyDomain.get("key") mustBe None
+      noException should be thrownBy HdlCache.AgencyDomain.set("key", "somedomain2")
+      HdlCache.AgencyDomain.get("key") mustBe Some("somedomain2")
+      HdlCache.AgencyDomain.get("key1") mustBe None
     }
-    "be able to get/set/evict url" in {
+    "be able to get/set url" in {
       val url = new URL("https://example.com")
       noException should be thrownBy HdlCache.PresignedUrl.set("key", url)
       HdlCache.PresignedUrl.get("key") mustBe Some(url)
-      noException should be thrownBy HdlCache.PresignedUrl.evict("key")
-      HdlCache.PresignedUrl.get("key") mustBe None
+      val url2 = new URL("https://example.com2")
+      noException should be thrownBy HdlCache.PresignedUrl.set("key", url2)
+      HdlCache.PresignedUrl.get("key") mustBe Some(url2)
+      HdlCache.PresignedUrl.get("key1") mustBe None
+    }
+  }
+}
+
+class HdlCacheNoRedisSpec extends PlaySpec {
+  "HdlCacheNoRedis" must {
+    "survive without redis" in {
+      (1 to 100).foreach(_ => noException should be thrownBy HdlCache.Username.set("key", "someuser"))
     }
   }
 }
