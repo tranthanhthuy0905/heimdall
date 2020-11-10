@@ -15,17 +15,17 @@ case class FeatureValidationActionBuilder @Inject()()(implicit val executionCont
   }
 }
 
-case class FeatureValidationAction @Inject()(featureEnabled: Boolean)()(
-  implicit val executionContext: ExecutionContext)
-  extends ActionFilter[HeimdallRequest]
+case class FeatureValidationAction @Inject()(featureEnabled: Boolean)()(implicit val executionContext: ExecutionContext)
+    extends ActionFilter[HeimdallRequest]
     with LazyLogging {
 
   def filter[A](request: HeimdallRequest[A]): Future[Option[Result]] = {
-    featureEnabled match {
-      case true =>
-        Future(None)
-      case false =>
-        Future(Some(Results.NotFound))
+    Future {
+      if (featureEnabled) {
+        None
+      } else {
+        Some(Results.NotFound)
+      }
     }
   }
 }

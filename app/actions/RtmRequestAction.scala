@@ -1,5 +1,8 @@
 package actions
 
+import java.net.{URL, URLEncoder}
+
+import akka.http.scaladsl.model.Uri
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.Inject
@@ -9,7 +12,7 @@ import services.dredd.DreddClient
 import services.rtm.{RtmQueryHelper, RtmRequest}
 import services.zookeeper.HeimdallLoadBalancer
 
-import scala.concurrent.duration.{Duration, HOURS}
+import scala.collection.immutable.Map
 import scala.concurrent.{ExecutionContext, Future}
 
 case class RtmRequestAction @Inject()(
@@ -21,34 +24,46 @@ case class RtmRequestAction @Inject()(
     with LazyLogging {
 
   def refine[A](input: HeimdallRequest[A]) = {
-    RtmQueryHelper(input.path, input.queryString) match {
-      case Some(rtmQuery) =>
-        for {
-          presignedUrls <- Future.traverse(input.media.toList)(
-            dredd.getUrl(_, input)
+    RtmQueryHelper(input.path, input.queryString).map { rtmQuery =>
+      for {
+        presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
+        endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString, input.rtmApiVersion)
+        queries       <- Future.successful(getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls))
+        rtmPath       <- Future.successful(getRTMPath(rtmQuery.path, input.rtmApiVersion, presignedUrls.length > 1))
+      } yield {
+        val uri = Uri
+          .from(
+            scheme = "https",
+            host = endpoint.host,
+            port = endpoint.port,
+            path = rtmPath,
+            queryString = Some(queries)
           )
-          endpoint <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString, input.rtmApiVersion)
-        } yield
-          Right(
-            new RtmRequest(
-              input.rtmApiVersion,
-              rtmQuery.path,
-              endpoint,
-              presignedUrls,
-              handleWatermark(rtmQuery.params, Some(input.watermark)),
-              input
-            )
-          )
-      case None =>
-        Future.successful(Left(Results.BadRequest))
-    }
+        Right(
+          new RtmRequest(
+            uri,
+            input
+          ))
+      }
+    }.getOrElse(Future.successful(Left(Results.BadRequest)))
   }
 
-  def handleWatermark(query: Map[String, String], watermark: Option[String]): Map[String, String] = {
-    watermark match {
-      case Some(labelValue) => query + ("label" -> labelValue)
-      case None             => query
-    }
+  private def getRTMPath(path: String, rtmApiVersion: Int, isMulticam: Boolean): String = {
+    if (rtmApiVersion == 2 && isMulticam) s"/multicam/$path" else path
   }
 
+  private def getRTMQueries(
+    queries: Map[String, String],
+    watermark: Option[String],
+    presignedUrls: Seq[URL]): String = {
+    (Map("source" -> presignedUrls.mkString(",")) ++ watermark
+      .map(watermark => queries + ("label" -> watermark))
+      .getOrElse(queries)).toSeq.map {
+      case (key, value) =>
+        URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(
+          value,
+          "UTF-8"
+        )
+    }.reduceLeft(_ + "&" + _)
+  }
 }

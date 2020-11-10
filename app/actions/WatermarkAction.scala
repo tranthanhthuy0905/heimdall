@@ -1,10 +1,10 @@
 package actions
 
 import com.evidence.service.common.logging.LazyLogging
-import com.evidence.service.komrade.thrift.{Partner, User}
+import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common.HeimdallRequest
-import play.api.mvc.{ActionRefiner, Results}
+import play.api.mvc.{ActionRefiner, Result, Results}
 import services.komrade.KomradeClient
 import utils.DateTime
 
@@ -16,7 +16,7 @@ case class WatermarkAction @Inject()(komrade: KomradeClient)(
 
   def refine[A](
     input: HeimdallRequest[A]
-  ): Future[Either[Results.Status, HeimdallRequest[A]]] =
+  ): Future[Either[Result, HeimdallRequest[A]]] =
     input.path match {
       case path if path.contains("thumbnail") =>
         /** isMulticam determines if heimdall is dealing with multicam request or not.
@@ -36,20 +36,17 @@ case class WatermarkAction @Inject()(komrade: KomradeClient)(
 
   private def getWatermarkedRequest[A](
     input: HeimdallRequest[A]
-  ): Future[Either[Results.Status, HeimdallRequest[A]]] = {
-    val watermark = for {
-      partner <- komrade.getPartner(input.audienceId)
-      user    <- komrade.getUser(input.audienceId, input.subjectId)
-    } yield Watermark(partner, user)
-    watermark.map {
-      _ match {
-        case Some(value) =>
-          Right(HeimdallRequest(input, value))
-        case None =>
-          Left(Results.InternalServerError)
-      }
-    }
+  ): Future[Either[Result, HeimdallRequest[A]]] = {
+    (for {
+      partner <- FutureEither(
+        komrade.getPartner(input.audienceId).map(withSomeValue(_, "failed to retrieve partner domain")))
+      user <- FutureEither(
+        komrade.getUser(input.audienceId, input.subjectId).map(withSomeValue(_, "failed to retrieve username")))
+    } yield HeimdallRequest(input, input.authorizationData, Watermark(partner, user))).future
   }
+
+  private def withSomeValue[T](optionValue: Option[T], errorMessage: String): Either[Result, T] =
+    optionValue.toRight(Results.BadRequest(errorMessage))
 
   private def isMulticam[A](request: HeimdallRequest[A]): Boolean = {
     request.media.evidenceIds.length > 1
@@ -90,23 +87,6 @@ object Watermark extends LazyLogging {
     * generateWatermark implements similar logic as ECOMSAAS's Label method:
     * https://git.taservs.net/ecom/ecomsaas/blob/367389cbfb68b5cfa157fd8913d270b288baa87a/wc/com.evidence.api/com.evidence.api/evidence/Stream.cs#L671
     */
-  def apply(domain: Option[String], username: Option[String]): Option[String] = {
-    username match {
-      case Some(username) =>
-        domain match {
-          case Some(domain) =>
-            Some(s"Viewed by $username ($domain) on ${DateTime.getUtcDate}")
-          case None =>
-            logger.error("failedToRetrievePartnerDomain")(
-              "user" -> username
-            )
-            None
-        }
-      case None =>
-        logger.error("failedToRetrieveUsername")(
-          "partner" -> domain
-        )
-        None
-    }
-  }
+  def apply(domain: String, username: String): String =
+    s"Viewed by $username ($domain) on ${DateTime.getUtcDate}"
 }

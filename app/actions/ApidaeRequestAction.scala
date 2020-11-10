@@ -18,8 +18,7 @@ case class ApidaeRequestAction @Inject()()(implicit val executionContext: Execut
 
     val result = for {
       file     <- request.media.headOption.toRight(Results.BadRequest)
-      userId   <- request.parsedJwt.map(_.subjectId).toRight(Results.BadRequest)
-      userUUID <- Convert.tryToUuid(userId).toRight(Results.BadRequest)
+      userUUID <- Convert.tryToUuid(request.subjectId).toRight(Results.BadRequest)
     } yield ApidaeRequest(file, userUUID, request)
     Future.successful(result)
   }

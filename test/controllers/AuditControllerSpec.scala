@@ -102,20 +102,6 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
       }
     }
 
-    "return InternalServerError on RuntimeException" in new MockContext {
-      when(
-        mockAuditClient
-          .recordEndSuccess(List[AuditEvent](ArgumentMatchers.any()))
-      ).thenThrow(new RuntimeException("Deliberate runtime exception"))
-      val fakeRequest = FakeRequest(GET, happyUri)
-        .addAttr(AuthorizationAttr.Key, authData)
-        .addAttr(MediaIdentAttr.Key, media)
-      val res = controller.recordMediaStreamedEvent(fakeRequest)
-      whenReady(res) { result =>
-        result.header.status mustBe Results.InternalServerError.header.status
-      }
-    }
-
     "return InternalServerError on failed recordEndSuccess" in new MockContext {
       when(
         mockAuditClient
@@ -129,7 +115,6 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
         result.header.status mustBe Results.InternalServerError.header.status
       }
     }
-
   }
 
 }

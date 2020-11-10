@@ -23,49 +23,29 @@ class AuditController @Inject()(
 
   def recordMediaStreamedEvent: Action[AnyContent] =
     (heimdallRequestAction andThen tokenValidationAction).async { request =>
-      request.parsedJwt match {
-        case None =>
-          Future.successful(BadRequest)
+      val auditEvents: List[EvidenceFileStreamedEvent] =
+        request.media.toList.map(
+          file =>
+            EvidenceFileStreamedEvent(
+              evidenceTid(file.evidenceId, file.partnerId),
+              updatedByTid(request.parsedJwt),
+              fileTid(file.fileId, file.partnerId),
+              RequestUtils.getClientIpAddress(request)
+          )
+        )
 
-        case Some(parsedJwt) =>
-          val auditEvents: List[EvidenceFileStreamedEvent] =
-            request.media.toList.map(
-              file =>
-                EvidenceFileStreamedEvent(
-                  evidenceTid(file.evidenceId, file.partnerId),
-                  updatedByTid(parsedJwt),
-                  fileTid(file.fileId, file.partnerId),
-                  RequestUtils.getClientIpAddress(request)
-              )
-            )
-
-          Try(audit.recordEndSuccess(auditEvents)) match {
-            case Success(value) =>
-              value.map { _ =>
-                Ok(Json.obj("status" -> "ok"))
-              } recoverWith {
-                case exception: Exception =>
-                  logger.error(
-                    exception,
-                    "failedToSendMediaStreamedAuditEvent"
-                  )(
-                    "exception"  -> exception.getMessage,
-                    "path"       -> request.path,
-                    "mediaIdent" -> request.media,
-                    "token"      -> request.streamingSessionToken
-                  )
-                  Future.successful(InternalServerError)
-              }
-            case Failure(exception) =>
-              logger.error(exception, "exceptionDuringEngagingAuditClient")(
-                "exception"  -> exception.getMessage,
-                "path"       -> request.path,
-                "mediaIdent" -> request.media,
-                "token"      -> request.streamingSessionToken
-              )
-              Future.successful(InternalServerError)
-          }
-
+      audit.recordEndSuccess(auditEvents).map(_ => Ok(Json.obj("status" -> "ok"))).recoverWith {
+        case exception =>
+          logger.error(
+            exception,
+            "failedToSendMediaStreamedAuditEvent"
+          )(
+            "exception"  -> exception.getMessage,
+            "path"       -> request.path,
+            "mediaIdent" -> request.media,
+            "token"      -> request.streamingSessionToken
+          )
+          Future.successful(InternalServerError)
       }
     }
 }
