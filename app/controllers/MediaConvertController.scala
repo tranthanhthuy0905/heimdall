@@ -21,6 +21,7 @@ class MediaConvertController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
+  featureValidationAction: FeatureValidationActionBuilder,
   apidaeRequestAction: ApidaeRequestAction,
   apidae: ApidaeClient,
   audit: AuditClient,
@@ -35,25 +36,20 @@ class MediaConvertController @Inject()(
   def convert: Action[AnyContent] =
     (
       heimdallRequestAction
+        andThen featureValidationAction.build("edc.service.apidae.enable")
         andThen permValidation.build(PermissionType.View)
         andThen apidaeRequestAction
     ).async { implicit request =>
-      val isApidaeEnable = config.getBoolean("edc.service.apidae.enable")
-      if (!isApidaeEnable) {
-        Future.successful(NotImplemented(Json.obj("message" -> "This function is under-construction for your region")))
-      } else {
-        val authHandler = request.attrs(AuthorizationAttr.Key)
+      val authHandler = request.attrs(AuthorizationAttr.Key)
+      audit.recordEndSuccess(
+        EvidencePlaybackRequested(
+          evidenceTid(request.file.evidenceId, request.file.partnerId),
+          updatedByTid(authHandler.parsedJwt),
+          fileTid(request.file.fileId, request.file.partnerId),
+          request.request.clientIpAddress
+        ))
 
-        audit.recordEndSuccess(
-          EvidencePlaybackRequested(
-            evidenceTid(request.file.evidenceId, request.file.partnerId),
-            updatedByTid(authHandler.parsedJwt),
-            fileTid(request.file.fileId, request.file.partnerId),
-            request.request.clientIpAddress
-          ))
-
-        apidae.transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
-      }
+      apidae.transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
     }
 
   def status: Action[AnyContent] =
