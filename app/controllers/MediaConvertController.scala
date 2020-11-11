@@ -3,6 +3,7 @@ package controllers
 import actions._
 import akka.util.ByteString
 import com.evidence.service.common.logging.LazyLogging
+import com.evidence.service.common.monad.FutureEither
 import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
@@ -13,7 +14,7 @@ import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponent
 
 import scala.concurrent.{ExecutionContext, Future}
 import services.apidae.ApidaeClient
-import services.audit.{AuditClient, AuditConversions, EvidencePlaybackRequested}
+import services.audit.{AuditClient, AuditConversions, AuditEvent, EvidencePlaybackRequested}
 import services.rti.metadata.MetadataJsonConversions
 import utils.ResponseHeaderHelpers
 
@@ -41,36 +42,43 @@ class MediaConvertController @Inject()(
         andThen apidaeRequestAction
     ).async { implicit request =>
       val authHandler = request.attrs(AuthorizationAttr.Key)
-      audit.recordEndSuccess(
-        EvidencePlaybackRequested(
-          evidenceTid(request.file.evidenceId, request.file.partnerId),
-          updatedByTid(authHandler.parsedJwt),
-          fileTid(request.file.fileId, request.file.partnerId),
-          request.request.clientIpAddress
-        ))
+      val playbackRequestedEvent = EvidencePlaybackRequested(
+        evidenceTid(request.file.evidenceId, request.file.partnerId),
+        updatedByTid(authHandler.parsedJwt),
+        fileTid(request.file.fileId, request.file.partnerId),
+        request.request.clientIpAddress
+      )
 
-      apidae.transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
+      logAuditEvent(playbackRequestedEvent)
+
+      FutureEither(
+        apidae
+          .transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
+          .map(withOKStatus))
+        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), response => Ok(response.body).as(ContentTypes.JSON))
     }
 
   def status: Action[AnyContent] =
     (
       heimdallRequestAction
+        andThen featureValidationAction.build("edc.service.apidae.enable")
         andThen permValidation.build(PermissionType.View)
         andThen apidaeRequestAction
     ).async { implicit request =>
-      val isApidaeEnable = config.getBoolean("edc.service.apidae.enable")
-      if (!isApidaeEnable) {
-        Future.successful(NotImplemented(Json.obj("message" -> "This function is under-construction for your region")))
-      } else {
+      FutureEither(
         apidae
           .getTranscodingStatus(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
-      }
+          .map(withOKStatus))
+        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), response => Ok(response.body).as(ContentTypes.JSON))
     }
 
-  implicit def Response2Result(response: Future[WSResponse]): Future[Result] = {
-    response map { response =>
-      val body = HttpEntity.Strict(ByteString(response.body), Some(ContentTypes.JSON))
-      Result(ResponseHeader(response.status, withHeader(response.headers)), body)
-    }
+  private def logAuditEvent(event: AuditEvent): Future[Either[Int, String]] = {
+    audit.recordEndSuccess(event).map(Right(_)).recover { case _ => Left(INTERNAL_SERVER_ERROR) }
+  }
+
+  private def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
+    Some(response)
+      .filter(_.status equals OK)
+      .toRight(response.status)
   }
 }

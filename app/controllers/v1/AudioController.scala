@@ -1,15 +1,15 @@
 package controllers.v1
 
 import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, TokenValidationAction}
+import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common.PermissionType
 import play.api.http.HttpEntity
-import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
-import services.rtm.{RtmClient, RtmResponseHandler}
+import services.rtm.RtmClient
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class AudioController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -28,26 +28,9 @@ class AudioController @Inject()(
         permValidation.build(PermissionType.View) andThen
         rtmRequestAction
     ).async { request =>
-      val okCallback = (response: WSResponse) => {
-        val contentType = response.headers
-          .get("Content-Type")
-          .flatMap(_.headOption)
-          .getOrElse("application/json")
-        Ok(response.json).as(contentType)
-      }
-
-      rtm.send(request) map { response =>
-        RtmResponseHandler(
-          response,
-          okCallback,
-          Seq[(String, Any)](
-            "path"       -> request.path,
-            "mediaIdent" -> request.media,
-            "status"     -> response.status,
-            "message"    -> response.body
-          )
-        )
-      }
+      FutureEither(rtm.send(request).map(withOKStatus))
+        .map(toSample)
+        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
     }
 
   def mp3: Action[AnyContent] =
@@ -56,27 +39,34 @@ class AudioController @Inject()(
         permValidation.build(PermissionType.View) andThen
         rtmRequestAction
     ).async { implicit request =>
-      for {
-        response   <- rtm.stream(request.toString)
-        httpResult <- Future.successful(toResult(response))
-      } yield httpResult.fold(BadRequest(_), r => r)
+      FutureEither(rtm.send(request).map(withOKStatus))
+        .map(toResult)
+        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
     }
 
-  private def toResult(response: WSResponse): Either[JsObject, Result] = {
-    Some(response.status)
-      .filter(_ equals play.api.http.Status.OK)
-      .toRight(Json.obj("message" -> response.body))
-      .map(_ => {
-        val contentType = response.headers
-          .get("Content-Type")
-          .flatMap(_.headOption)
-          .getOrElse("audio/mpeg")
+  private def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
+    Some(response)
+      .filter(_.status equals OK)
+      .toRight(response.status)
+  }
 
-        response.headers
-          .get("Content-Length")
-          .map(length =>
-            Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
-          .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
-      })
+  private def toSample(response: WSResponse): Result = {
+    val contentType = response.headers
+      .get("Content-Type")
+      .flatMap(_.headOption)
+      .getOrElse("application/json")
+    Ok(response.json).as(contentType)
+  }
+
+  private def toResult(response: WSResponse): Result = {
+    val contentType = response.headers
+      .get("Content-Type")
+      .flatMap(_.headOption)
+      .getOrElse("audio/mpeg")
+    response.headers
+      .get("Content-Length")
+      .map(length =>
+        Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
+      .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
   }
 }

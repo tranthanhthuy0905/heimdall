@@ -2,11 +2,13 @@ package controllers.v1
 
 import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, WatermarkAction}
 import com.evidence.service.common.logging.LazyLogging
+import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common.PermissionType
+import play.api.http.HttpEntity
 import play.api.libs.ws.WSResponse
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import services.rtm.{RtmClient, RtmResponseHandler}
+import play.api.mvc._
+import services.rtm.RtmClient
 
 import scala.concurrent.ExecutionContext
 
@@ -28,27 +30,26 @@ class ThumbnailController @Inject()(
         watermarkAction andThen
         rtmRequestAction
     ).async { request =>
-      val okCallback = (response: WSResponse) => {
-        val contentType = response.headers
-          .get("Content-Type")
-          .flatMap(_.headOption)
-          .getOrElse("image/jpeg")
-        Ok.chunked(response.bodyAsSource).as(contentType)
-      }
-
-      rtm.send(request) map { response =>
-        RtmResponseHandler(
-          response,
-          okCallback,
-          Seq[(String, Any)](
-            "path"       -> request.path,
-            "mediaIdent" -> request.media,
-            "status"     -> response.status,
-            "message"    -> response.body,
-            "token"      -> request.streamingSessionToken
-          )
-        )
-      }
+      (
+        for {
+          response <- FutureEither(rtm.send(request).map(withOKStatus))
+        } yield toResult(response)
+      ).fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
     }
+
+  private def toResult(response: WSResponse): Result = {
+    val contentType = response.headers.getOrElse("Content-Type", Seq()).headOption.getOrElse("image/jpeg")
+    response.headers
+      .get("Content-Length")
+      .map(length =>
+        Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
+      .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
+  }
+
+  private def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
+    Some(response)
+      .filter(_.status equals OK)
+      .toRight(response.status)
+  }
 
 }
