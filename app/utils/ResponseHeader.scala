@@ -1,6 +1,9 @@
 package utils
 
-trait ResponseHeaderHelpers {
+import play.api.libs.ws.WSResponse
+import play.api.mvc.BaseController
+
+trait WSResponseHelpers extends BaseController {
 
   protected val blacklist = Seq("content-length", "content-type", "transfer-encoding")
 
@@ -10,6 +13,12 @@ trait ResponseHeaderHelpers {
     headers
       .filterKeys(!byBlackList(_))
       .mapValues(_.headOption.getOrElse(""))
+  }
+
+  def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
+    Some(response)
+      .filter(_.status equals OK)
+      .toRight(response.status)
   }
 
 }

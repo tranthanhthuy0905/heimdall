@@ -12,6 +12,7 @@ import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 import services.audit.{AuditClient, AuditConversions, AuditEvent, EvidenceReviewEvent}
 import services.document.DocumentClient
+import utils.WSResponseHelpers
 
 class DocumentController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -23,7 +24,8 @@ class DocumentController @Inject()(
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
-    with AuditConversions {
+    with AuditConversions
+    with WSResponseHelpers {
 
   def view: Action[AnyContent] =
     (
@@ -55,11 +57,5 @@ class DocumentController @Inject()(
 
   private def logAuditEvent(event: AuditEvent): Future[Either[Int, String]] = {
     audit.recordEndSuccess(event).map(Right(_)).recover { case _ => Left(INTERNAL_SERVER_ERROR) }
-  }
-
-  private def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
-    Some(response)
-      .filter(_.status equals OK)
-      .toRight(response.status)
   }
 }

@@ -8,6 +8,7 @@ import play.api.http.HttpEntity
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.rtm.RtmClient
+import utils.WSResponseHelpers
 
 import scala.concurrent.ExecutionContext
 
@@ -19,7 +20,8 @@ class AudioController @Inject()(
   rtm: RtmClient,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
-    extends AbstractController(components) {
+    extends AbstractController(components)
+    with WSResponseHelpers {
 
   def sample: Action[AnyContent] =
     (
@@ -43,12 +45,6 @@ class AudioController @Inject()(
         .map(toResult)
         .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
     }
-
-  private def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
-    Some(response)
-      .filter(_.status equals OK)
-      .toRight(response.status)
-  }
 
   private def toSample(response: WSResponse): Result = {
     val contentType = response.headers

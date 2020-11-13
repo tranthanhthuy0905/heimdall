@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import services.audit.{AuditClient, AuditConversions, AuditEvent, EvidenceReviewEvent}
 import services.rti.metadata.MetadataJsonConversions
 import services.rti.RtiClient
-import utils.JsonFormat
+import utils.{JsonFormat, WSResponseHelpers}
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -30,7 +30,8 @@ class ImageController @Inject()(
     with LazyLogging
     with AuditConversions
     with MetadataJsonConversions
-    with JsonFormat {
+    with JsonFormat
+    with WSResponseHelpers {
 
   def view: Action[AnyContent] =
     (
@@ -115,11 +116,5 @@ class ImageController @Inject()(
   private def toMetadataEntity(response: WSResponse): Result = {
     val metadata = metadataFromJson(response.json)
     Ok(removeNullValues(Json.toJson(metadata).as[JsObject]))
-  }
-
-  private def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
-    Some(response)
-      .filter(_.status equals OK)
-      .toRight(response.status)
   }
 }

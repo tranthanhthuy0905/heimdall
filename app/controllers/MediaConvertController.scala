@@ -1,22 +1,19 @@
 package controllers
 
 import actions._
-import akka.util.ByteString
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
 import play.api.http.{ContentTypes, HttpEntity}
-import play.api.libs.json.Json
-import play.api.libs.ws.WSResponse
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, ResponseHeader, Result}
 
 import scala.concurrent.{ExecutionContext, Future}
 import services.apidae.ApidaeClient
 import services.audit.{AuditClient, AuditConversions, AuditEvent, EvidencePlaybackRequested}
 import services.rti.metadata.MetadataJsonConversions
-import utils.ResponseHeaderHelpers
+import utils.WSResponseHelpers
 
 class MediaConvertController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -32,7 +29,7 @@ class MediaConvertController @Inject()(
     with LazyLogging
     with AuditConversions
     with MetadataJsonConversions
-    with ResponseHeaderHelpers {
+    with WSResponseHelpers {
 
   def convert: Action[AnyContent] =
     (
@@ -74,11 +71,5 @@ class MediaConvertController @Inject()(
 
   private def logAuditEvent(event: AuditEvent): Future[Either[Int, String]] = {
     audit.recordEndSuccess(event).map(Right(_)).recover { case _ => Left(INTERNAL_SERVER_ERROR) }
-  }
-
-  private def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
-    Some(response)
-      .filter(_.status equals OK)
-      .toRight(response.status)
   }
 }

@@ -12,7 +12,7 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
 import services.rtm.{RtmClient, RtmRequest}
-import utils.RequestUtils
+import utils.{RequestUtils, WSResponseHelpers}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,7 +27,8 @@ class ProbeController @Inject()(
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
-    with AuditConversions {
+    with AuditConversions
+    with WSResponseHelpers {
 
   private def logAuditEvent(request: RtmRequest[AnyContent]): Future[Either[Int, List[String]]] = {
     val authHandler = request.attrs(AuthorizationAttr.Key)
@@ -77,12 +78,6 @@ class ProbeController @Inject()(
       .as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingToken))
 
     Ok(responseWithToken).as(contentType)
-  }
-
-  private def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
-    Some(response)
-      .filter(_.status equals OK)
-      .toRight(response.status)
   }
 
   def probe: Action[AnyContent] =

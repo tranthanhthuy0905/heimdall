@@ -9,6 +9,7 @@ import play.api.http.HttpEntity
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.rtm.RtmClient
+import utils.WSResponseHelpers
 
 import scala.concurrent.ExecutionContext
 
@@ -21,7 +22,8 @@ class ThumbnailController @Inject()(
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
-    with LazyLogging {
+    with LazyLogging
+    with WSResponseHelpers {
 
   def thumbnail: Action[AnyContent] =
     (
@@ -45,11 +47,4 @@ class ThumbnailController @Inject()(
         Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
       .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
   }
-
-  private def withOKStatus(response: WSResponse): Either[Int, WSResponse] = {
-    Some(response)
-      .filter(_.status equals OK)
-      .toRight(response.status)
-  }
-
 }
