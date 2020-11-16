@@ -5,14 +5,12 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
-import play.api.http.HttpEntity
-import play.api.libs.ws.WSResponse
 import play.api.mvc._
 
-import scala.concurrent.{ExecutionContext, Future}
-import services.audit.{AuditClient, AuditConversions, AuditEvent, EvidenceReviewEvent}
+import scala.concurrent.ExecutionContext
+import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.document.DocumentClient
-import utils.WSResponseHelpers
+import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 class DocumentController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -25,7 +23,8 @@ class DocumentController @Inject()(
     extends AbstractController(components)
     with LazyLogging
     with AuditConversions
-    with WSResponseHelpers {
+    with WSResponseHelpers
+    with HdlResponseHelpers {
 
   def view: Action[AnyContent] =
     (
@@ -41,21 +40,9 @@ class DocumentController @Inject()(
       (
         for {
           response <- FutureEither(documentClient.view(request.presignedUrl).map(withOKStatus))
-          _        <- FutureEither(logAuditEvent(viewEvent))
-        } yield toResult(response)
-      ).fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+          _ <- FutureEither(audit.recordEndSuccess(viewEvent))
+            .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
+        } yield response
+      ).fold(error, streamed(_, "application/pdf"))
     }
-
-  private def toResult(response: WSResponse): Result = {
-    val contentType = response.headers.getOrElse("Content-Type", Seq()).headOption.getOrElse("application/pdf")
-    response.headers
-      .get("Content-Length")
-      .map(length =>
-        Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
-      .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
-  }
-
-  private def logAuditEvent(event: AuditEvent): Future[Either[Int, String]] = {
-    audit.recordEndSuccess(event).map(Right(_)).recover { case _ => Left(INTERNAL_SERVER_ERROR) }
-  }
 }

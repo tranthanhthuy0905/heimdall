@@ -5,11 +5,10 @@ import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common.{HeimdallRequest, PermissionType}
 import models.hls.HlsManifestFormatter
-import play.api.http.HttpEntity
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.rtm.RtmClient
-import utils.WSResponseHelpers
+import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 import scala.concurrent.ExecutionContext
 
@@ -23,7 +22,8 @@ class HlsController @Inject()(
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
-    with WSResponseHelpers {
+    with WSResponseHelpers
+    with HdlResponseHelpers {
 
   def playlist: Action[AnyContent] =
     (
@@ -34,7 +34,7 @@ class HlsController @Inject()(
     ).async { request =>
       FutureEither(rtm.send(request).map(withOKStatus))
         .map(toManifest(_, request))
-        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+        .fold(error, Ok(_).as("application/x-mpegURL"))
     }
 
   def segment: Action[AnyContent] =
@@ -46,31 +46,15 @@ class HlsController @Inject()(
         rtmRequestAction
     ).async { request =>
       FutureEither(rtm.send(request).map(withOKStatus))
-        .map(toResult)
-        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+        .fold(error, streamed(_, "video/MP2T"))
     }
 
-  private def toResult(response: WSResponse): Result = {
-    val contentType = response.headers.getOrElse("Content-Type", Seq()).headOption.getOrElse("video/MP2T")
-    response.headers
-      .get("Content-Length")
-      .map(length =>
-        Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
-      .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
-  }
-
-  private def toManifest(response: WSResponse, request: HeimdallRequest[AnyContent]): Result = {
-    val contentType = response.headers
-      .get("Content-Type")
-      .flatMap(_.headOption)
-      .getOrElse("application/x-mpegURL")
-    val newManifest =
-      HlsManifestFormatter(
-        response.body,
-        request.media,
-        request.apiPathPrefixForBuildingHlsManifest,
-        Some(request.streamingSessionToken)
-      )
-    Ok(newManifest).as(contentType)
+  private def toManifest(response: WSResponse, request: HeimdallRequest[AnyContent]): String = {
+    HlsManifestFormatter(
+      response.body,
+      request.media,
+      request.apiPathPrefixForBuildingHlsManifest,
+      Some(request.streamingSessionToken)
+    )
   }
 }

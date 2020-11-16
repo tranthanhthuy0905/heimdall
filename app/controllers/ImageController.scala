@@ -5,16 +5,16 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
-import play.api.http.HttpEntity
+import play.api.http.ContentTypes
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
 
-import scala.concurrent.{ExecutionContext, Future}
-import services.audit.{AuditClient, AuditConversions, AuditEvent, EvidenceReviewEvent}
+import scala.concurrent.ExecutionContext
+import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.rti.metadata.MetadataJsonConversions
 import services.rti.RtiClient
-import utils.{JsonFormat, WSResponseHelpers}
+import utils.{HdlResponseHelpers, JsonFormat, WSResponseHelpers}
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -31,7 +31,8 @@ class ImageController @Inject()(
     with AuditConversions
     with MetadataJsonConversions
     with JsonFormat
-    with WSResponseHelpers {
+    with WSResponseHelpers
+    with HdlResponseHelpers {
 
   def view: Action[AnyContent] =
     (
@@ -50,8 +51,9 @@ class ImageController @Inject()(
 
       (for {
         response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-        _        <- FutureEither(logAuditEvent(viewAuditEvent))
-      } yield toResult(response)).fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+        _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
+          .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
+      } yield response).fold(error, streamed(_, "image/jpeg"))
     }
 
   def extractThumbnail: Action[AnyContent] =
@@ -60,10 +62,11 @@ class ImageController @Inject()(
         andThen featureValidationAction.build("edc.thumbnail_extraction.enable")
         andThen rtiThumbnailRequestAction
     ).async { implicit request =>
-      (for {
-        response <- FutureEither(
-          rti.thumbnail(request.presignedUrl, request.width, request.height, request.file).map(withOKStatus))
-      } yield toResult(response)).fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+      FutureEither(
+        rti
+          .thumbnail(request.presignedUrl, request.width, request.height, request.file)
+          .map(withOKStatus))
+        .fold(error, streamed(_, "image/jpeg"))
     }
 
   def zoom: Action[AnyContent] =
@@ -84,9 +87,10 @@ class ImageController @Inject()(
       (
         for {
           response <- FutureEither(rti.zoom(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-          _        <- FutureEither(logAuditEvent(viewAuditEvent))
-        } yield toResult(response)
-      ).fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+          _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
+            .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
+        } yield response
+      ).fold(error, streamed(_, "image/jpeg"))
     }
 
   def metadata: Action[AnyContent] =
@@ -97,24 +101,11 @@ class ImageController @Inject()(
     ).async { implicit request =>
       (for {
         response <- FutureEither(rti.metadata(request.presignedUrl, request.file).map(withOKStatus))
-      } yield toMetadataEntity(response)).fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+      } yield toMetadataEntity(response)).fold(error, Ok(_).as(ContentTypes.JSON))
     }
 
-  private def logAuditEvent(event: AuditEvent): Future[Either[Int, String]] = {
-    audit.recordEndSuccess(event).map(Right(_)).recover { case _ => Left(INTERNAL_SERVER_ERROR) }
-  }
-
-  private def toResult(response: WSResponse): Result = {
-    val contentType = response.headers.getOrElse("Content-Type", Seq()).headOption.getOrElse("image/jpeg")
-    response.headers
-      .get("Content-Length")
-      .map(length =>
-        Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
-      .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
-  }
-
-  private def toMetadataEntity(response: WSResponse): Result = {
+  private def toMetadataEntity(response: WSResponse): JsObject = {
     val metadata = metadataFromJson(response.json)
-    Ok(removeNullValues(Json.toJson(metadata).as[JsObject]))
+    removeNullValues(Json.toJson(metadata))
   }
 }

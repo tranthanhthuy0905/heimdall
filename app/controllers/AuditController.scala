@@ -4,13 +4,13 @@ import actions.{HeimdallRequestAction, TokenValidationAction}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
-import play.api.http.HttpEntity
+import play.api.http.ContentTypes
 import play.api.libs.json.Json
 import play.api.mvc._
-import services.audit.{AuditClient, AuditConversions, AuditEvent, EvidenceFileStreamedEvent}
-import utils.RequestUtils
+import services.audit.{AuditClient, AuditConversions, EvidenceFileStreamedEvent}
+import utils.{HdlResponseHelpers, RequestUtils}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class AuditController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -20,7 +20,8 @@ class AuditController @Inject()(
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
-    with AuditConversions {
+    with AuditConversions
+    with HdlResponseHelpers {
 
   def recordMediaStreamedEvent: Action[AnyContent] =
     (heimdallRequestAction andThen tokenValidationAction).async { request =>
@@ -35,11 +36,8 @@ class AuditController @Inject()(
           )
         )
 
-      FutureEither(logAuditEvent(auditEvents))
-        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), _ => Ok(Json.obj("status" -> "ok")))
+      FutureEither(audit.recordEndSuccess(auditEvents))
+        .mapLeft(toHttpStatus("failedToSendMediaStreamedAuditEvent")(_, Some(request.media)))
+        .fold(error, _ => Ok(Json.obj("status" -> "ok")).as(ContentTypes.JSON))
     }
-
-  private def logAuditEvent(event: List[AuditEvent]): Future[Either[Int, List[String]]] = {
-    audit.recordEndSuccess(event).map(Right(_)).recover { case _ => Left(INTERNAL_SERVER_ERROR) }
-  }
 }

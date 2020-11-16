@@ -6,14 +6,14 @@ import com.evidence.service.common.monad.FutureEither
 import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
-import play.api.http.{ContentTypes, HttpEntity}
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, ResponseHeader, Result}
+import play.api.http.ContentTypes
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import services.apidae.ApidaeClient
-import services.audit.{AuditClient, AuditConversions, AuditEvent, EvidencePlaybackRequested}
+import services.audit.{AuditClient, AuditConversions, EvidencePlaybackRequested}
 import services.rti.metadata.MetadataJsonConversions
-import utils.WSResponseHelpers
+import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 class MediaConvertController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -29,7 +29,8 @@ class MediaConvertController @Inject()(
     with LazyLogging
     with AuditConversions
     with MetadataJsonConversions
-    with WSResponseHelpers {
+    with WSResponseHelpers
+    with HdlResponseHelpers {
 
   def convert: Action[AnyContent] =
     (
@@ -46,13 +47,14 @@ class MediaConvertController @Inject()(
         request.request.clientIpAddress
       )
 
-      logAuditEvent(playbackRequestedEvent)
+      FutureEither(audit.recordEndSuccess(playbackRequestedEvent))
+        .mapLeft(toHttpStatus("failedToSendEvidencePlaybackRequestedAuditEvent")(_))
 
       FutureEither(
         apidae
           .transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
           .map(withOKStatus))
-        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), response => Ok(response.body).as(ContentTypes.JSON))
+        .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
     }
 
   def status: Action[AnyContent] =
@@ -66,10 +68,6 @@ class MediaConvertController @Inject()(
         apidae
           .getTranscodingStatus(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
           .map(withOKStatus))
-        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), response => Ok(response.body).as(ContentTypes.JSON))
+        .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
     }
-
-  private def logAuditEvent(event: AuditEvent): Future[Either[Int, String]] = {
-    audit.recordEndSuccess(event).map(Right(_)).recover { case _ => Left(INTERNAL_SERVER_ERROR) }
-  }
 }

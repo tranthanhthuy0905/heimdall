@@ -4,11 +4,10 @@ import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAc
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common.PermissionType
-import play.api.http.HttpEntity
-import play.api.libs.ws.WSResponse
+import play.api.http.ContentTypes
 import play.api.mvc._
 import services.rtm.RtmClient
-import utils.WSResponseHelpers
+import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 import scala.concurrent.ExecutionContext
 
@@ -21,7 +20,8 @@ class AudioController @Inject()(
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
-    with WSResponseHelpers {
+    with WSResponseHelpers
+    with HdlResponseHelpers {
 
   def sample: Action[AnyContent] =
     (
@@ -31,8 +31,7 @@ class AudioController @Inject()(
         rtmRequestAction
     ).async { request =>
       FutureEither(rtm.send(request).map(withOKStatus))
-        .map(toSample)
-        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+        .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
     }
 
   def mp3: Action[AnyContent] =
@@ -42,27 +41,6 @@ class AudioController @Inject()(
         rtmRequestAction
     ).async { implicit request =>
       FutureEither(rtm.send(request).map(withOKStatus))
-        .map(toResult)
-        .fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+        .fold(error, streamed(_, "audio/mpeg"))
     }
-
-  private def toSample(response: WSResponse): Result = {
-    val contentType = response.headers
-      .get("Content-Type")
-      .flatMap(_.headOption)
-      .getOrElse("application/json")
-    Ok(response.json).as(contentType)
-  }
-
-  private def toResult(response: WSResponse): Result = {
-    val contentType = response.headers
-      .get("Content-Type")
-      .flatMap(_.headOption)
-      .getOrElse("audio/mpeg")
-    response.headers
-      .get("Content-Length")
-      .map(length =>
-        Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
-      .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
-  }
 }

@@ -5,11 +5,9 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common.PermissionType
-import play.api.http.HttpEntity
-import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.rtm.RtmClient
-import utils.WSResponseHelpers
+import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 import scala.concurrent.ExecutionContext
 
@@ -23,7 +21,8 @@ class ThumbnailController @Inject()(
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
-    with WSResponseHelpers {
+    with WSResponseHelpers
+    with HdlResponseHelpers {
 
   def thumbnail: Action[AnyContent] =
     (
@@ -32,19 +31,7 @@ class ThumbnailController @Inject()(
         watermarkAction andThen
         rtmRequestAction
     ).async { request =>
-      (
-        for {
-          response <- FutureEither(rtm.send(request).map(withOKStatus))
-        } yield toResult(response)
-      ).fold(l => Result(ResponseHeader(l), HttpEntity.NoEntity), r => r)
+      FutureEither(rtm.send(request).map(withOKStatus))
+        .fold(error, streamed(_, "image/jpeg"))
     }
-
-  private def toResult(response: WSResponse): Result = {
-    val contentType = response.headers.getOrElse("Content-Type", Seq()).headOption.getOrElse("image/jpeg")
-    response.headers
-      .get("Content-Length")
-      .map(length =>
-        Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
-      .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
-  }
 }

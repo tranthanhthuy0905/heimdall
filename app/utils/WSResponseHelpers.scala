@@ -20,5 +20,4 @@ trait WSResponseHelpers extends BaseController {
       .filter(_.status equals OK)
       .toRight(response.status)
   }
-
 }
