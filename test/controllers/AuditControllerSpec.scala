@@ -83,7 +83,7 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
       when(
         mockAuditClient
           .recordEndSuccess(List[AuditEvent](ArgumentMatchers.any()))
-      ).thenReturn(Future.successful(List(randomUUID.toString)))
+      ).thenReturn(Future.successful(Right(List(randomUUID.toString))))
       val fakeRequest = FakeRequest(GET, happyUri)
         .addAttr(AuthorizationAttr.Key, authData)
         .addAttr(MediaIdentAttr.Key, media)
@@ -106,7 +106,7 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
       when(
         mockAuditClient
           .recordEndSuccess(List[AuditEvent](ArgumentMatchers.any()))
-      ).thenReturn(Future.failed(new Exception("Deliberate failure")))
+      ).thenReturn(Future.successful(Left(new Exception("Deliberate failure"))))
       val fakeRequest = FakeRequest(GET, happyUri)
         .addAttr(AuthorizationAttr.Key, authData)
         .addAttr(MediaIdentAttr.Key, media)

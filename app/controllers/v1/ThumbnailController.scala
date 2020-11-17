@@ -2,11 +2,12 @@ package controllers.v1
 
 import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, WatermarkAction}
 import com.evidence.service.common.logging.LazyLogging
+import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import models.common.PermissionType
-import play.api.libs.ws.WSResponse
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import services.rtm.{RtmClient, RtmResponseHandler}
+import play.api.mvc._
+import services.rtm.RtmClient
+import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 import scala.concurrent.ExecutionContext
 
@@ -19,7 +20,9 @@ class ThumbnailController @Inject()(
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
-    with LazyLogging {
+    with LazyLogging
+    with WSResponseHelpers
+    with HdlResponseHelpers {
 
   def thumbnail: Action[AnyContent] =
     (
@@ -28,27 +31,7 @@ class ThumbnailController @Inject()(
         watermarkAction andThen
         rtmRequestAction
     ).async { request =>
-      val okCallback = (response: WSResponse) => {
-        val contentType = response.headers
-          .get("Content-Type")
-          .flatMap(_.headOption)
-          .getOrElse("image/jpeg")
-        Ok.chunked(response.bodyAsSource).as(contentType)
-      }
-
-      rtm.send(request) map { response =>
-        RtmResponseHandler(
-          response,
-          okCallback,
-          Seq[(String, Any)](
-            "path"       -> request.path,
-            "mediaIdent" -> request.media,
-            "status"     -> response.status,
-            "message"    -> response.body,
-            "token"      -> request.streamingSessionToken
-          )
-        )
-      }
+      FutureEither(rtm.send(request).map(withOKStatus))
+        .fold(error, streamed(_, "image/jpeg"))
     }
-
 }

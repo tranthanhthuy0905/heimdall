@@ -10,8 +10,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuditClient {
-  def recordEndSuccess(event: AuditEvent): Future[String]
-  def recordEndSuccess(event: List[AuditEvent]): Future[List[String]]
+  def recordEndSuccess(event: AuditEvent): Future[Either[Throwable, String]]
+  def recordEndSuccess(event: List[AuditEvent]): Future[Either[Throwable, List[String]]]
 }
 
 @Singleton
@@ -30,11 +30,7 @@ class AuditClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
     Authorization(authType, "N/A", "N/A", secret)
   }
 
-  override def recordEndSuccess(events: List[AuditEvent]): Future[List[String]] = {
-    Future.traverse(events)(recordEndSuccess)
-  }
-
-  override def recordEndSuccess(event: AuditEvent): Future[String] = {
+  private def doRecordAudit(event: AuditEvent): Future[String] =
     client
       .recordEventEndWithSuccess(
         auth,
@@ -44,6 +40,15 @@ class AuditClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
         event.toJsonString
       )
       .toScalaFuture
+
+  override def recordEndSuccess(events: List[AuditEvent]): Future[Either[Throwable, List[String]]] = {
+    Future
+      .traverse(events)(doRecordAudit)
+      .transformWith(value => Future.successful(value.toEither))
   }
 
+  override def recordEndSuccess(event: AuditEvent): Future[Either[Throwable, String]] = {
+    doRecordAudit(event)
+      .transformWith(value => Future.successful(value.toEither))
+  }
 }

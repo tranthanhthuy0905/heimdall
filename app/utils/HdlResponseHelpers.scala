@@ -1,0 +1,41 @@
+package utils
+
+import com.evidence.service.common.logging.LazyLogging
+import models.common.MediaIdent
+import play.api.http.HttpEntity
+import play.api.libs.ws.WSResponse
+import play.api.mvc._
+
+trait HdlResponseHelpers extends BaseController with LazyLogging {
+
+  private def getContentType(response: WSResponse, defaultContentType: String): String = {
+    response.headers
+      .get("Content-Type")
+      .flatMap(_.headOption)
+      .getOrElse(defaultContentType)
+  }
+
+  def streamed(response: WSResponse, defaultContentType: String): Result = {
+    val contentType = getContentType(response, defaultContentType)
+    response.headers
+      .get("Content-Length")
+      .map(length =>
+        Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
+      .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
+  }
+
+  def error(errorStatus: Int): Result = Result(ResponseHeader(errorStatus), HttpEntity.NoEntity)
+
+  def errorWithLog(errorStatus: Int)(name: String, logVars: Seq[(String, Any)]): Result = {
+    logger.error(name)(logVars: _*)
+    error(errorStatus)
+  }
+
+  def toHttpStatus(name: String)(error: Throwable, mediaIndent: Option[MediaIdent] = None): Int = {
+    logger.error(error, name)(
+      "exception"   -> error.getMessage,
+      "mediaIndent" -> mediaIndent
+    )
+    INTERNAL_SERVER_ERROR
+  }
+}

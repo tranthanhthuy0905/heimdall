@@ -1,12 +1,14 @@
 package controllers.v1
 
-import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction, TokenValidationAction, WatermarkAction}
+import actions._
+import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
-import models.common.PermissionType
+import models.common.{HeimdallRequest, PermissionType}
 import models.hls.HlsManifestFormatter
 import play.api.libs.ws.WSResponse
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import services.rtm.{RtmClient, RtmResponseHandler}
+import play.api.mvc._
+import services.rtm.RtmClient
+import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 import scala.concurrent.ExecutionContext
 
@@ -19,7 +21,9 @@ class HlsController @Inject()(
   rtm: RtmClient,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
-    extends AbstractController(components) {
+    extends AbstractController(components)
+    with WSResponseHelpers
+    with HdlResponseHelpers {
 
   def playlist: Action[AnyContent] =
     (
@@ -28,35 +32,9 @@ class HlsController @Inject()(
         permValidation.build(PermissionType.Stream) andThen
         rtmRequestAction
     ).async { request =>
-      val okCallback = (response: WSResponse) => {
-        val contentType = response.headers
-          .get("Content-Type")
-          .flatMap(_.headOption)
-          .getOrElse("application/x-mpegURL")
-        val newManifest =
-          HlsManifestFormatter(
-            response.body,
-            request.media,
-            request.apiPathPrefixForBuildingHlsManifest,
-            Some(request.streamingSessionToken)
-          )
-        Ok(newManifest).as(contentType)
-      }
-
-      rtm.send(request) map { response =>
-        RtmResponseHandler(
-          response,
-          okCallback,
-          Seq[(String, Any)](
-            "path"       -> request.path,
-            "token"      -> request.streamingSessionToken,
-            "mediaIdent" -> request.media,
-            "status"     -> response.status,
-            "message"    -> response.body
-          )
-        )
-      }
-
+      FutureEither(rtm.send(request).map(withOKStatus))
+        .map(toManifest(_, request))
+        .fold(error, Ok(_).as("application/x-mpegURL"))
     }
 
   def segment: Action[AnyContent] =
@@ -67,26 +45,16 @@ class HlsController @Inject()(
         watermarkAction andThen
         rtmRequestAction
     ).async { request =>
-      val okCallback = (response: WSResponse) => {
-        val contentType = response.headers
-          .get("Content-Type")
-          .flatMap(_.headOption)
-          .getOrElse("video/MP2T")
-        Ok.chunked(response.bodyAsSource).as(contentType)
-      }
-
-      rtm.send(request) map { response =>
-        RtmResponseHandler(
-          response,
-          okCallback,
-          Seq[(String, Any)](
-            "path"       -> request.path,
-            "token"      -> request.streamingSessionToken,
-            "mediaIdent" -> request.media,
-            "status"     -> response.status,
-            "message"    -> response.body
-          )
-        )
-      }
+      FutureEither(rtm.send(request).map(withOKStatus))
+        .fold(error, streamed(_, "video/MP2T"))
     }
+
+  private def toManifest(response: WSResponse, request: HeimdallRequest[AnyContent]): String = {
+    HlsManifestFormatter(
+      response.body,
+      request.media,
+      request.apiPathPrefixForBuildingHlsManifest,
+      Some(request.streamingSessionToken)
+    )
+  }
 }
