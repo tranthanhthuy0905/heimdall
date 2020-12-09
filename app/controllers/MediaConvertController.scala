@@ -21,6 +21,7 @@ class MediaConvertController @Inject()(
   permValidation: PermValidationActionBuilder,
   featureValidationAction: FeatureValidationActionBuilder,
   apidaeRequestAction: ApidaeRequestAction,
+  mediaConvertValidation: MediaConvertValidation,
   apidae: ApidaeClient,
   audit: AuditClient,
   config: Config,
@@ -38,6 +39,7 @@ class MediaConvertController @Inject()(
         andThen featureValidationAction.build("edc.service.apidae.enable")
         andThen permValidation.build(PermissionType.View)
         andThen apidaeRequestAction
+        andThen mediaConvertValidation
     ).async { implicit request =>
       val authHandler = request.attrs(AuthorizationAttr.Key)
       val playbackRequestedEvent = EvidencePlaybackRequested(
