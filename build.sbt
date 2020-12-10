@@ -6,8 +6,6 @@ resolvers ++= Common.resolvers
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayAkkaHttpServer)
 
-javaOptions in Universal += "-J-Xmx4096M"
-
 // Do not run scaladoc/javadoc
 sources in(Compile, doc) := Seq.empty
 publishArtifact in(Compile, packageDoc) := false
