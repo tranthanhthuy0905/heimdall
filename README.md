@@ -109,7 +109,6 @@ ffplay "http://localhost:9000/media/thumbnail?file_id=$FILEID&evidence_id=$EVIDE
 │   │   ├── dredd               → Dredd client
 │   │   ├── global              → Heimdall application lifecycle
 │   │   ├── komrade             → Komrade client
-│   │   ├── nino                → Nino client
 │   │   ├── rtm                 → RTM client
 │   │   ├── sessions            → Sessions-service client 
 │   │   └── zookeeper

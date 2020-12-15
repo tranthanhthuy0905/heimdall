@@ -38,7 +38,6 @@ libraryDependencies ++= Seq(
   "com.evidence" %% "audit-service-thrift" % Common.serviceThriftVersion,
   "com.evidence" %% "dredd-service-thrift" % Common.serviceThriftVersion,
   "com.evidence" %% "komrade-service-thrift" % Common.serviceThriftVersion,
-  "com.evidence" %% "nino-service-thrift" % Common.serviceThriftVersion,
   "com.evidence" %% "sessions-service-thrift" % Common.serviceThriftVersion,
   "com.evidence" % "edc-thrift-java" % Common.serviceThriftVersion
 )

@@ -5,24 +5,21 @@ import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import models.common.{HeimdallRequest, PermissionType}
 import play.api.mvc.{ActionFilter, Result, Results}
-import services.nino.NinoClient
-import services.pdp.{PdpClient, PdpEnable}
+import services.pdp.PdpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class PermValidationActionBuilder @Inject()(nino: NinoClient, pdp: PdpClient, pdpEnable: PdpEnable)(
+case class PermValidationActionBuilder @Inject()(pdp: PdpClient)(
   implicit val executionContext: ExecutionContext) {
 
   def build(permission: PermissionType.Value) = {
-    PermValidationAction(permission)(nino, pdp, pdpEnable)(executionContext)
+    PermValidationAction(permission)(pdp)(executionContext)
   }
 }
 
-case class PermValidationAction @Inject()(permission: PermissionType.Value)(
-  nino: NinoClient,
-  pdp: PdpClient,
-  pdpEnable: PdpEnable)(implicit val executionContext: ExecutionContext)
-    extends ActionFilter[HeimdallRequest]
+case class PermValidationAction @Inject()(permission: PermissionType.Value)(pdp: PdpClient)(
+  implicit val executionContext: ExecutionContext
+) extends ActionFilter[HeimdallRequest]
     with LazyLogging {
 
   def filter[A](request: HeimdallRequest[A]): Future[Option[Result]] = {
@@ -52,33 +49,10 @@ case class PermValidationAction @Inject()(permission: PermissionType.Value)(
     jwt: String,
     entities: List[EntityDescriptor],
     permission: PermissionType.Value): Future[Boolean] = {
-    if (pdpEnable.isSet) {
-      pdpAuthorize(jwt, entities, permission)
-    } else {
-      ninoAuthorize(jwt, entities, permission)
-    }
-  }
-
-  private def pdpAuthorize(
-    jwt: String,
-    entities: List[EntityDescriptor],
-    permission: PermissionType.Value): Future[Boolean] = {
     val action = permission match {
       case PermissionType.Stream => PermissionType.FileStream
       case PermissionType.View   => PermissionType.EvidenceViewBasic
     }
     pdp.enforceBatch(jwt: String, entities: List[EntityDescriptor], action.toString)
   }
-
-  private def ninoAuthorize(
-    jwt: String,
-    entities: List[EntityDescriptor],
-    permission: PermissionType.Value): Future[Boolean] = {
-    permission match {
-      case PermissionType.Stream => nino.enforceStreamPermission(jwt, entities)
-      case PermissionType.View   => nino.enforceViewPermission(jwt, entities)
-      case _                     => Future.successful(false)
-    }
-  }
-
 }

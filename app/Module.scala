@@ -7,8 +7,7 @@ import services.document.{DocumentClient, DocumentClientImpl}
 import services.dredd.{DreddClient, CachedDreddClientImpl}
 import services.global.HeimdallApplicationLifecycle
 import services.komrade.{KomradeClient, CachedKomradeClientImpl}
-import services.nino.{NinoClient, NinoClientImpl}
-import services.pdp.{PdpClient, PdpClientImpl, PdpEnable, PdpEnableImpl}
+import services.pdp.{PdpClient, PdpClientImpl}
 import services.rti.{RtiClient, RtiClientImpl}
 import services.rtm.{RtmClient, RtmClientImpl}
 import services.sessions.{SessionsClient, SessionsClientImpl}
@@ -22,9 +21,7 @@ class Module extends AbstractModule {
     bind(classOf[Authorizer]).to(classOf[AuthorizerImpl])
     bind(classOf[DreddClient]).to(classOf[CachedDreddClientImpl])
     bind(classOf[KomradeClient]).to(classOf[CachedKomradeClientImpl])
-    bind(classOf[NinoClient]).to(classOf[NinoClientImpl])
     bind(classOf[PdpClient]).to(classOf[PdpClientImpl])
-    bind(classOf[PdpEnable]).to(classOf[PdpEnableImpl])
     bind(classOf[RtmClient]).to(classOf[RtmClientImpl])
     bind(classOf[RtiClient]).to(classOf[RtiClientImpl])
     bind(classOf[ApidaeClient]).to(classOf[ApidaeClientImpl])
