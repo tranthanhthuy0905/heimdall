@@ -1,13 +1,13 @@
 import sbt._
 
 object Common {
-  val serviceCommonVersion = "19.13.1942"
+  val serviceCommonVersion = "23.0.2677"
   val serviceCommonCryptoVersion = "1.4.+"
   val paradiseVersion = "2.1.0"
   val scalaTestVersion = "3.0.5"
   val scalaMockVersion = "4.1.0"
   val json4sTestVersion = "3.5.3"
-  val serviceThriftVersion = "23.82.2246"
+  val serviceThriftVersion = "24.60.4260"
   val pdpProtoVersion = "0.2.195"
 
   val resolvers = Seq(

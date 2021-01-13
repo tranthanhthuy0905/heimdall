@@ -11,6 +11,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
+import services.queue.{EventMessage, ProbeNotifier, VideoProbeEvent}
 import services.rtm.{RtmClient, RtmRequest}
 import utils.{HdlResponseHelpers, RequestUtils, WSResponseHelpers}
 
@@ -23,7 +24,8 @@ class ProbeController @Inject()(
   rtm: RtmClient,
   sessionData: StreamingSessionData,
   audit: AuditClient,
-  components: ControllerComponents
+  components: ControllerComponents,
+  notifier: ProbeNotifier
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
@@ -45,6 +47,13 @@ class ProbeController @Inject()(
                 RequestUtils.getClientIpAddress(request)
             )
           )
+
+        val event: EventMessage = VideoProbeEvent(
+          partnerId = request.media.partnerId.toString,
+          evidenceId = request.media.evidenceIds.headOption.map(_.toString).getOrElse(""),
+          fileId = request.media.fileIds.headOption.map(_.toString).getOrElse("")
+        )
+        notifier.send(event)
 
         (
           for {

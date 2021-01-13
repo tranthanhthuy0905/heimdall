@@ -4,10 +4,11 @@ import org.apache.curator.framework.CuratorFramework
 import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.audit.{AuditClient, AuditClientImpl}
 import services.document.{DocumentClient, DocumentClientImpl}
-import services.dredd.{DreddClient, CachedDreddClientImpl}
+import services.dredd.{CachedDreddClientImpl, DreddClient}
 import services.global.HeimdallApplicationLifecycle
-import services.komrade.{KomradeClient, CachedKomradeClientImpl}
+import services.komrade.{CachedKomradeClientImpl, KomradeClient}
 import services.pdp.{PdpClient, PdpClientImpl}
+import services.queue.{ProbeNotifier, ProbeNotifierProvider}
 import services.rti.{RtiClient, RtiClientImpl}
 import services.rtm.{RtmClient, RtmClientImpl}
 import services.sessions.{SessionsClient, SessionsClientImpl}
@@ -31,5 +32,6 @@ class Module extends AbstractModule {
     // Providers
     bind(classOf[CuratorFramework]).toProvider(classOf[ZookeeperClientProvider]).in(classOf[Singleton])
     bind(classOf[HeimdallLoadBalancer]).toProvider(classOf[HeimdallLoadBalancerProvider]).in(classOf[Singleton])
+    bind(classOf[ProbeNotifier]).toProvider(classOf[ProbeNotifierProvider]).in(classOf[Singleton])
   }
 }

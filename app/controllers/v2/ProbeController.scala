@@ -5,6 +5,7 @@ import javax.inject.Inject
 import models.auth.StreamingSessionData
 import play.api.mvc.ControllerComponents
 import services.audit.AuditClient
+import services.queue.ProbeNotifier
 import services.rtm.RtmClient
 
 import scala.concurrent.ExecutionContext
@@ -27,8 +28,9 @@ class ProbeController @Inject()(
   rtm: RtmClient,
   sessionData: StreamingSessionData,
   audit: AuditClient,
-  components: ControllerComponents
+  components: ControllerComponents,
+  notifier: ProbeNotifier
 )(implicit ex: ExecutionContext)
-    extends controllers.v1.ProbeController(heimdallRequestAction, permValidation, rtmRequestAction, rtm, sessionData, audit, components) {
+    extends controllers.v1.ProbeController(heimdallRequestAction, permValidation, rtmRequestAction, rtm, sessionData, audit, components, notifier) {
 
 }
