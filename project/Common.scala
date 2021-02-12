@@ -10,11 +10,7 @@ object Common {
   val serviceThriftVersion = "24.60.4260"
   val pdpProtoVersion = "0.2.195"
 
-  val resolvers = Seq(
-    "Nexus" at "https://nexus.taservs.net/content/groups/public",
-    "Twitter" at "https://maven.twttr.com",
-    "OpenSaml" at "https://build.shibboleth.net/nexus/content/repositories/releases"
-  )
+  val resolvers = Seq("Nexus" at "https://nexus.taservs.net/content/groups/public")
 
   lazy val protoDependencies = Seq("io.grpc" % "grpc-netty-shaded" % "1.24.0")
 
