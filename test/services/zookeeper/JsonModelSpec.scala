@@ -66,9 +66,6 @@ class JsonModelSpec extends PlaySpec {
                               |    "component-capacity":1150699300
                               |  },
                               |  "plane-computational":{
-                              |  },
-                              |  "plane-perf-penalty":{
-                              |    "component-aggregate":0
                               |  }
                               |}""".stripMargin
 

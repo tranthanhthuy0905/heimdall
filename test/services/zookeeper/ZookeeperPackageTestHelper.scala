@@ -112,9 +112,6 @@ private[zookeeper] object ZookeeperPackageTestHelper {
        |  "plane-computational":{
        |    "component-aggregate":$agg,
        |    "component-capacity":$cap
-       |  },
-       |  "plane-perf-penalty":{
-       |    "component-aggregate":0
        |  }
        |}""".stripMargin
   }

@@ -50,9 +50,6 @@ object RtmNodeInfo {
   *   "plane-computational": {                  <<<<< PlaneComputational
   *     "component-aggregate": 0,
   *     "component-capacity": 32
-  *   },
-  *   "plane-perf-penalty": {
-  *     "component-aggregate": 0
   *   }
   * }
   *
