@@ -87,6 +87,7 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
   }
 
   private val logInterval = Duration.ofSeconds(6)
+  private val metricInterval = Duration.ofSeconds(31)
   private def executeRequest(
     startTime: Long,
     executeStartTime: Long,
@@ -109,6 +110,13 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
         s"$actionName.requests",
         s"status:${result.header.status.toString.toLowerCase}"
       )
+      // TODO temporary metric to investigate VIC-156/VIC-94, it is safe to remove after the ticket is closed
+      statsd.recordExecutionTime(s"$actionName.temp.execution_time",
+       requestTime,
+       s"status:${result.header.status.toString.toLowerCase}",
+       s"31sec:${requestTime <= metricInterval.toMillis}",
+       )
+
       result
     }
   }
