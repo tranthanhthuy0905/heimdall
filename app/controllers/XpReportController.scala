@@ -7,7 +7,7 @@ import javax.inject.Inject
 import models.common.{FileIdent, PermissionType}
 import play.api.libs.json.{JsBoolean, JsValue}
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
-import services.xpreport.playback.{EventsInfo, PlaybackJsonConversions, StalledInfo}
+import services.xpreport.playback.{EventsInfo, PlaybackJsonConversions, StalledData, StalledInfo}
 
 import scala.concurrent.ExecutionContext
 
@@ -58,14 +58,22 @@ class XpReportController @Inject()(
   }
 
   private def logStalledImpl(fileIdent: FileIdent, stalledInfo: StalledInfo): Unit = {
-    val logVars: Seq[LogVariable] = Seq(
-      "event_type"   -> "stalled",
-      "evidence_id"  -> fileIdent.evidenceId,
-      "partner_id"   -> fileIdent.partnerId,
-      "file_id"      -> fileIdent.fileId,
-      "stalled_info" -> stalledInfo,
-    ) ++ logStalledInfoDetail(stalledInfo)
+    val event = stalledInfo.event.flatMap(_.value).getOrElse("START")
+    stalledInfo.data match {
+      case Some(StalledData(_, _, _, buffering)) =>
+        // Log only when buffering duration larger than 2s
+        if (event == "END" && buffering.stalledDuration.flatMap(_.value).getOrElse(0.0) >= 2000) {
+          val logVars: Seq[LogVariable] = Seq(
+            "event_type"   -> "stalled",
+            "evidence_id"  -> fileIdent.evidenceId,
+            "partner_id"   -> fileIdent.partnerId,
+            "file_id"      -> fileIdent.fileId,
+            "stalled_info" -> stalledInfo,
+          ) ++ logStalledInfoDetail(stalledInfo)
 
-    logger.info("ExperienceReport")(logVars: _*)
+          logger.info("ExperienceReport")(logVars: _*)
+        }
+      case None => None
+    }
   }
 }
