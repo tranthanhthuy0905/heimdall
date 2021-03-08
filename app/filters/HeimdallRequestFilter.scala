@@ -113,13 +113,9 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
       // TODO temporary metric to investigate VIC-156/VIC-94, it is safe to remove after the ticket is closed
       statsd.recordExecutionTime(s"$actionName.temp.execution_time",
        requestTime,
-       s"status:${result.header.status.toString.toLowerCase}")
-      // TODO temporary metric to record all request that have execution time <31 seconds
-      if (requestTime <= metricInterval.toMillis) {
-        statsd.recordExecutionTime(s"$actionName.temp.execution_time.31sec",
-        requestTime,
-        s"status:${result.header.status.toString.toLowerCase}")
-      }
+       s"status:${result.header.status.toString.toLowerCase}",
+       s"31sec:${requestTime <= metricInterval.toMillis}",
+       )
 
       result
     }
