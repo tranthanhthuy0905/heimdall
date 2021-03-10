@@ -3,7 +3,6 @@ package services.xpreport.playback
 trait PlaybackJsonFields {
   // common
   protected final val tokenField              = "token"
-  protected final val eventTimeField          = "time"
   protected final val dataField               = "data"
   protected final val browserNameField        = "browserName"
   protected final val fileExtensionField      = "fileExtension"

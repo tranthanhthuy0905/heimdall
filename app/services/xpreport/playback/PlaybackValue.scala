@@ -10,12 +10,6 @@ object Token extends PlaybackJsonFields {
   implicit val token: Reads[Token] = (JsPath \ tokenField).readNullable[String].map(Token(_))
 }
 
-case class Time(value: Option[String])
-
-object Time extends PlaybackJsonFields {
-  implicit val token: Reads[Time] = (JsPath \ eventTimeField).readNullable[String].map(Time(_))
-}
-
 case class BrowserName(value: Option[String])
 
 object BrowserName extends PlaybackJsonFields {
@@ -38,7 +32,6 @@ object TranscodedVideo extends PlaybackJsonFields {
 
 // ------ Info data ------
 //{
-//  time: String
 //  token: String
 //  data: {
 //    browserName: string
@@ -63,7 +56,6 @@ object TranscodedVideo extends PlaybackJsonFields {
 //  }
 //}
 case class EventsInfo(
-  time: Option[Time],
   token: Option[Token],
   data: Option[Data],
 )
@@ -107,7 +99,6 @@ object Duration extends PlaybackJsonFields {
 
 // ------ Stalled data ------
 //{
-//  time: String
 //  token: String
 //  event: String
 //  data: {
@@ -128,7 +119,6 @@ object Event extends PlaybackJsonFields {
 }
 
 case class StalledInfo(
-  time: Option[Time],
   token: Option[Token],
   event: Option[Event],
   data: Option[StalledData],

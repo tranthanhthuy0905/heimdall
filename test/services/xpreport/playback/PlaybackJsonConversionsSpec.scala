@@ -14,7 +14,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
   val res2160 = "2160"
 
   val streamToken = "abcde12345"
-  val time = "2018:10:19 16:56:15"
 
   "PlaybackJsonConversionsSpec" should {
     "parse playback info and calculate lagRatio correctly with full playback json" in {
@@ -58,7 +57,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val playbackInfoJson =
         s"""
            |{
-           |    "$eventTimeField" : "$time",
            |    "$tokenField" : "$streamToken",
            |    "$dataField" : {
            |        "$browserNameField": "$browserName",
@@ -102,7 +100,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
 
       val playbackInfo = playbackInfoFromJson(Json.parse(playbackInfoJson))
       val expectPlaybackInfo = EventsInfo(
-        time = Some(Time(Some(time))),
         token = Some(Token(Some(streamToken))),
         data = Some(
           Data(
@@ -152,7 +149,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
 
       val expectLagRatio = Seq(
         "stream_token" -> streamToken,
-        "event_time" -> time,
         "browser_name" -> browserName,
         "file_extension" -> fileExtension,
         "transcoded_video" -> true
@@ -217,7 +213,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
 
       val playbackInfo = playbackInfoFromJson(Json.parse(playbackInfoJson))
       val expectPlaybackInfo = EventsInfo(
-        time = Some(Time(None)),
         token = Some(Token(Some(streamToken))),
         data = Some(
           Data(
@@ -246,7 +241,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val lagRatio = logEventsInfoDetail(eventsInfo = playbackInfo)
       val expectLagRatio = Seq(
         "stream_token" -> streamToken,
-        "event_time" -> "unknown",
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
         "transcoded_video" -> false
@@ -266,7 +260,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       lagRatio.toSet mustBe expectLagRatio.toSet
     }
 
-    "parse playback info and calculate lagRatio correctly if missing data and time" in {
+    "parse playback info and calculate lagRatio correctly if missing data" in {
       val playbackInfoJson =
         s"""
            |{
@@ -276,7 +270,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
 
       val playbackInfo = playbackInfoFromJson(Json.parse(playbackInfoJson))
       val expectPlaybackInfo = EventsInfo(
-        time = Some(Time(None)),
         token = Some(Token(Some(streamToken))),
         data = None
       )
@@ -285,7 +278,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val lagRatio = logEventsInfoDetail(eventsInfo = playbackInfo)
       val expectLagRatio = Seq(
         "stream_token" -> streamToken,
-        "event_time" -> "unknown",
       )
       lagRatio.toSet mustBe expectLagRatio.toSet
     }
@@ -332,7 +324,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
 
       val playbackInfo = playbackInfoFromJson(Json.parse(playbackInfoJson))
       val expectPlaybackInfo = EventsInfo(
-        time = Some(Time(None)),
         token = Some(Token(None)),
         data = Some(
           Data(
@@ -361,7 +352,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val lagRatio = logEventsInfoDetail(eventsInfo = playbackInfo)
       val expectLagRatio = Seq(
         "stream_token" -> "unknown",
-        "event_time" -> "unknown",
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
         "transcoded_video" -> "unknown"
@@ -424,7 +414,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
 
       val playbackInfo = playbackInfoFromJson(Json.parse(playbackInfoJson))
       val expectPlaybackInfo = EventsInfo(
-        time = Some(Time(None)),
         token = Some(Token(Some(streamToken))),
         data = Some(
           Data(
@@ -453,7 +442,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val lagRatio = logEventsInfoDetail(eventsInfo = playbackInfo)
       val expectLagRatio = Seq(
         "stream_token" -> streamToken,
-        "event_time" -> "unknown",
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
         "transcoded_video" -> "unknown",
@@ -478,7 +466,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val stalledInfoJson =
         s"""
            |{
-           |    "$eventTimeField" : "$time",
            |    "$tokenField" : "$streamToken",
            |    "$eventField" : "$event",
            |    "$dataField" : {
@@ -490,7 +477,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
            |""".stripMargin
       val stalledInfo = stalledInfoFromJson(Json.parse(stalledInfoJson))
       val expectStalledInfo = StalledInfo(
-        time = Some(Time(Some(time))),
         token = Some(Token(Some(streamToken))),
         event = Some(Event(Some(event))),
         data = Some(
@@ -511,7 +497,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val logDetail = logStalledInfoDetail(stalledInfo)
       val expectedLogDetail = Seq(
         "stream_token" -> streamToken,
-        "event_time" -> time,
         "event_state" -> event,
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
@@ -534,7 +519,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
            |""".stripMargin
       val stalledInfo = stalledInfoFromJson(Json.parse(stalledInfoJson))
       val expectStalledInfo = StalledInfo(
-        time = Some(Time(None)),
         token = Some(Token(None)),
         event = Some(Event(None)),
         data = Some(
@@ -555,7 +539,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val logDetail = logStalledInfoDetail(stalledInfo)
       val expectedLogDetail = Seq(
         "stream_token" -> "unknown",
-        "event_time" -> "unknown",
         "event_state" -> "START",
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
@@ -571,7 +554,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val stalledInfoJson =
         s"""
            |{
-           |    "$eventTimeField" : "$time",
            |    "$tokenField" : "$streamToken",
            |    "$eventField" : "$event",
            |    "$dataField" : {
@@ -584,7 +566,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
            |""".stripMargin
       val stalledInfo = stalledInfoFromJson(Json.parse(stalledInfoJson))
       val expectStalledInfo = StalledInfo(
-        time = Some(Time(Some(time))),
         token = Some(Token(Some(streamToken))),
         event = Some(Event(Some(event))),
         data = Some(
@@ -605,7 +586,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val logDetail = logStalledInfoDetail(stalledInfo)
       val expectedLogDetail = Seq(
         "stream_token" -> streamToken,
-        "event_time" -> time,
         "event_state" -> event,
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
@@ -626,7 +606,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val stalledInfoJson =
         s"""
            |{
-           |    "$eventTimeField" : "$time",
            |    "$tokenField" : "$streamToken",
            |    "$eventField" : "$event",
            |    "$dataField" : {
@@ -643,7 +622,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
            |""".stripMargin
       val stalledInfo = stalledInfoFromJson(Json.parse(stalledInfoJson))
       val expectStalledInfo = StalledInfo(
-        time = Some(Time(Some(time))),
         token = Some(Token(Some(streamToken))),
         event = Some(Event(Some(event))),
         data = Some(
@@ -664,7 +642,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val logDetail = logStalledInfoDetail(stalledInfo)
       val expectedLogDetail = Seq(
         "stream_token" -> streamToken,
-        "event_time" -> time,
         "event_state" -> event,
         "browser_name" -> browserName,
         "file_extension" -> fileExtension,

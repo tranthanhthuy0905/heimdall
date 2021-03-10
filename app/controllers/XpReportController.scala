@@ -51,7 +51,6 @@ class XpReportController @Inject()(
       "evidence_id" -> fileIdent.evidenceId,
       "partner_id"  -> fileIdent.partnerId,
       "file_id"     -> fileIdent.fileId,
-      "events_info" -> eventsInfo,
     ) ++ logEventsInfoDetail(eventsInfo)
 
     logger.info("ExperienceReport")(logVars: _*)
@@ -68,7 +67,6 @@ class XpReportController @Inject()(
             "evidence_id"  -> fileIdent.evidenceId,
             "partner_id"   -> fileIdent.partnerId,
             "file_id"      -> fileIdent.fileId,
-            "stalled_info" -> stalledInfo,
           ) ++ logStalledInfoDetail(stalledInfo)
 
           logger.info("ExperienceReport")(logVars: _*)
