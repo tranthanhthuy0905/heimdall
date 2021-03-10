@@ -155,19 +155,20 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "event_time" -> time,
         "browser_name" -> browserName,
         "file_extension" -> fileExtension,
-        "transcoded_video" -> true,
+        "transcoded_video" -> true
+      ) ++ Seq (
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
         "buffering_time_all" -> bufferingTime.foldLeft(0.0)(_ + _._2),
-      ) ++ resolution.flatMap( x =>
+      ).filter(_._2 > 0.0) ++ resolution.flatMap( x =>
         Seq(
           "buffering_time_" + x -> bufferingTime(x),
           "input_delay_" + x -> inputDelay(x),
           "view_duration_" + x -> viewDuration(x),
           "lag_ratio_" + x -> (inputDelay(x) + bufferingTime(x)) / viewDuration(x)
         )
-      )
+      ).filter(_._2 > 0.0)
 
       lagRatio.toSet mustBe expectLagRatio.toSet
     }
@@ -248,19 +249,20 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "event_time" -> "unknown",
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
-        "transcoded_video" -> false,
+        "transcoded_video" -> false
+      ) ++ Seq(
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
         "buffering_time_all" -> bufferingTime.foldLeft(0.0)(_ + _._2),
-      ) ++ resolution.flatMap( x =>
+      ).filter(_._2 > 0.0) ++ resolution.flatMap( x =>
         Seq(
           "buffering_time_" + x -> bufferingTime(x),
           "input_delay_" + x -> inputDelay(x),
           "view_duration_" + x -> viewDuration(x),
           "lag_ratio_" + x -> (inputDelay(x) + bufferingTime(x)) / viewDuration(x)
         )
-      )
+      ).filter(_._2 > 0.0)
       lagRatio.toSet mustBe expectLagRatio.toSet
     }
 
@@ -284,10 +286,6 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val expectLagRatio = Seq(
         "stream_token" -> streamToken,
         "event_time" -> "unknown",
-        "view_duration_all" -> 0.0,
-        "buffering_time_all" -> 0.0,
-        "input_delay_all" -> 0.0,
-        "lag_ratio_all" -> 0.0,
       )
       lagRatio.toSet mustBe expectLagRatio.toSet
     }
@@ -366,19 +364,20 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "event_time" -> "unknown",
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
-        "transcoded_video" -> "unknown",
+        "transcoded_video" -> "unknown"
+      ) ++ Seq(
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
         "buffering_time_all" -> bufferingTime.foldLeft(0.0)(_ + _._2),
-      ) ++ resolution.flatMap( x =>
+      ).filter(_._2 > 0.0) ++ resolution.flatMap( x =>
         Seq(
           "buffering_time_" + x -> bufferingTime(x),
           "input_delay_" + x -> inputDelay(x),
           "view_duration_" + x -> viewDuration(x),
           "lag_ratio_" + x -> (inputDelay(x) + bufferingTime(x)) / viewDuration(x)
         )
-      )
+      ).filter(_._2 > 0.0)
       lagRatio.toSet mustBe expectLagRatio.toSet
     }
 
@@ -458,18 +457,19 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
         "transcoded_video" -> "unknown",
+      ) ++ Seq (
         "lag_ratio_all" -> 0.0,
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
         "view_duration_all" -> viewDuration.foldLeft(0.0)(_ + _._2),
         "buffering_time_all" -> bufferingTime.foldLeft(0.0)(_ + _._2),
-      ) ++ resolution.flatMap( x =>
+      ).filter(_._2 > 0.0) ++ resolution.flatMap( x =>
         Seq(
           "buffering_time_" + x -> bufferingTime(x),
           "input_delay_" + x -> inputDelay(x),
           "view_duration_" + x -> viewDuration(x),
           "lag_ratio_" + x -> 0.0
         )
-      )
+      ).filter(_._2 > 0.0)
       lagRatio.toSet mustBe expectLagRatio.toSet
     }
 

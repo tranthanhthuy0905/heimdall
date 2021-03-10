@@ -76,20 +76,20 @@ trait PlaybackJsonConversions {
   //     "buffering_time_all" -> totalViewDuration
   //     "lag_ratio_all" -> lagRatioAll
   //   )
-  private def lagRatioAll(eventsInfo: EventsInfo): Seq[(String, Any)] = {
+  private def lagRatioAll(eventsInfo: EventsInfo): Seq[(String, Double)] = {
     val data = eventsInfo.data.map(x => x.aggregationEvents.data)
     val durList = data.map(y => y.map(kv => kv._2))
     val totalBufferingTime = durList.map(_.foldLeft(0.0)(_ + _.totalBufferingTime.getOrElse(0.0))).getOrElse(0.0)
     val totalInputDelay    = durList.map(_.foldLeft(0.0)(_ + _.totalInputDelay.getOrElse(0.0))).getOrElse(0.0)
     val totalViewDuration  = durList.map(_.foldLeft(0.0)(_ + _.totalViewDuration.getOrElse(0.0))).getOrElse(0.0)
-    val lagRatio = if (totalViewDuration != 0) (totalBufferingTime + totalInputDelay) / totalViewDuration else 0.0
+    val lagRatio = if (totalViewDuration > 0.0) (totalBufferingTime + totalInputDelay) / totalViewDuration else 0.0
 
     Seq(
       "buffering_time_all" -> totalBufferingTime,
       "input_delay_all" -> totalInputDelay,
       "view_duration_all" -> totalViewDuration,
       "lag_ratio_all" -> lagRatio
-    )
+    ).filter(_._2 > 0.0)
   }
 
   // Calculate Lag Ratio for all resolution at that time
@@ -102,8 +102,8 @@ trait PlaybackJsonConversions {
   //   "view_duration_360" -> viewDuration360
   //   "lag_ratio_480" -> lagRatio480 ...
   //   )
-  private def lagRatioByResolution(eventsInfo: EventsInfo): Seq[(String, Any)] = {
-    var ret = Seq[(String, Any)]()
+  private def lagRatioByResolution(eventsInfo: EventsInfo): Seq[(String, Double)] = {
+    var ret = Seq[(String, Double)]()
 
     for {
       map <- eventsInfo.data.map(x => x.aggregationEvents.data)
@@ -112,7 +112,8 @@ trait PlaybackJsonConversions {
       val bufferingTime = duration.totalBufferingTime.getOrElse(0.0)
       val inputDelay = duration.totalInputDelay.getOrElse(0.0)
       val viewDuration = duration.totalViewDuration.getOrElse(0.0)
-      val lagRatio = if (viewDuration != 0) (bufferingTime + inputDelay) / viewDuration else 0.0
+      val lagRatio = if (viewDuration > 0.0) (bufferingTime + inputDelay) / viewDuration else 0.0
+
       ret = ret ++ Seq(
         "buffering_time_" + resolution -> bufferingTime,
         "input_delay_" + resolution -> inputDelay,
@@ -121,7 +122,7 @@ trait PlaybackJsonConversions {
       )
     }
 
-    ret
+    ret.filter(_._2 > 0.0)
   }
 
   private def parseTime(inputTime: Time): String = {
