@@ -6,7 +6,6 @@ trait PlaybackJsonConversions {
 
   def playbackInfoFromJson(json: JsValue): EventsInfo = {
    EventsInfo(
-     json.asOpt[Time],
      json.asOpt[Token],
      json.asOpt[Data],
    )
@@ -14,7 +13,6 @@ trait PlaybackJsonConversions {
 
   def stalledInfoFromJson(json: JsValue): StalledInfo = {
     StalledInfo(
-      json.asOpt[Time],
       json.asOpt[Token],
       json.asOpt[Event],
       json.asOpt[StalledData],
@@ -38,14 +36,11 @@ trait PlaybackJsonConversions {
     var ret = Seq[(String, Any)]()
 
     for {
-      eventTime <- eventsInfo.time
       inputToken <- eventsInfo.token
     } {
-      val time = parseTime(eventTime)
       val token = parseToken(inputToken)
       ret = ret ++ Seq(
         "stream_token" -> token,
-        "event_time" -> time,
       )
     }
 
@@ -125,13 +120,6 @@ trait PlaybackJsonConversions {
     ret.filter(_._2 > 0.0)
   }
 
-  private def parseTime(inputTime: Time): String = {
-    inputTime match {
-      case Time(Some(time)) => time
-      case _ => "unknown"
-    }
-  }
-
   private def parseToken(inputToken: Token): String = {
     inputToken match {
       case Token(Some(token)) => token
@@ -143,13 +131,11 @@ trait PlaybackJsonConversions {
     var ret = Seq[(String, Any)]()
 
     for {
-      eventTime <- stalledInfo.time
       eventState <- stalledInfo.event
       stalledData <- stalledInfo.data
       inputToken <- stalledInfo.token
       buffering = stalledData.buffering
     } {
-      val time = parseTime(eventTime)
       val token = parseToken(inputToken)
       val event = eventState.value.getOrElse("START")
 
@@ -168,7 +154,6 @@ trait PlaybackJsonConversions {
 
       ret = ret ++ Seq(
         "stream_token" -> token,
-        "event_time" -> time,
         "event_state" -> event,
       )
 
