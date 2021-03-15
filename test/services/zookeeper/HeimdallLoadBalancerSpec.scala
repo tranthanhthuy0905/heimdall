@@ -9,7 +9,6 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.mockito.Mockito._
 
-
 class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
 
   import ZookeeperPackageTestHelper._
@@ -22,10 +21,10 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
     maxAgg: Int = 10) {
 
     var nodeAndPerftrackAware: Map[Int, (PathChildrenCacheFacade, PathChildrenCacheFacade)] = Map()
-    var lastKey: Map[Int, String] = Map()
+    var lastKey: Map[Int, String]                                                           = Map()
 
     private def newCacheMock: PathChildrenCacheFacade = {
-      val cacheMock = mock[PathChildrenCacheFacade]
+      val cacheMock         = mock[PathChildrenCacheFacade]
       val listenerContainer = new ListenerContainer[PathChildrenCacheListener]
       when(cacheMock.getListenable) thenReturn listenerContainer
       cacheMock
@@ -33,18 +32,19 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
 
     val numberOfRTMVersion = if (enableRTMv2) 2 else 1
     for (apiVersion <- 1 to numberOfRTMVersion) {
-      val rtmCacheMock = newCacheMock
+      val rtmCacheMock      = newCacheMock
       val perftrakCacheMock = newCacheMock
 
-      val lk: String = someKey
+      val lk: String                          = someKey
       val listOfRtmData: util.List[ChildData] = newListOfRtmChildData(rtmChildrenCount)
-      val listOfPerftrakData: util.List[ChildData] = newListOfPerftrakChildData(perftrakChildrenCount, minAgg, maxAgg, 128, lk)
+      val listOfPerftrakData: util.List[ChildData] =
+        newListOfPerftrakChildData(perftrakChildrenCount, minAgg, maxAgg, lk)
 
       when(rtmCacheMock.getCurrentData) thenReturn listOfRtmData
       when(perftrakCacheMock.getCurrentData) thenReturn listOfPerftrakData
 
       nodeAndPerftrackAware = nodeAndPerftrackAware + (apiVersion -> (rtmCacheMock, perftrakCacheMock))
-      lastKey = lastKey + (apiVersion -> lk)
+      lastKey = lastKey + (apiVersion                             -> lk)
     }
   }
 
@@ -80,7 +80,7 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
           HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
       nodeAndPerftrackAware.keySet.foreach(rtmVersion => {
-        val result: Option[ServiceEndpoint] = loadBalancer.getInstance(lastKey(rtmVersion), rtmVersion)
+        val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(lastKey(rtmVersion), rtmVersion)
         val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(60), 8900))
         result mustBe expected
       })
@@ -93,7 +93,7 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
           HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
       nodeAndPerftrackAware.keySet.foreach(rtmVersion => {
-        val result: Option[ServiceEndpoint] = loadBalancer.getInstance(someKey, rtmVersion)
+        val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(someKey, rtmVersion)
         val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(2), 8900))
         result mustBe expected
       })

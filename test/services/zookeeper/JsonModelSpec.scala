@@ -47,12 +47,11 @@ class JsonModelSpec extends PlaySpec {
       val fileId2  = randomKey
       val fileId3  = randomKey
       val json: JsValue =
-        Json.parse(
-          newPerftrakNodeString(Seq[SingleTop](SingleTop(fileId1, 1), SingleTop(fileId2, 1)), fileId3, 10, 100))
+        Json.parse(newPerftrakNodeString(Seq[SingleTop](SingleTop(fileId1, 1), SingleTop(fileId2, 1)), fileId3, 0.1))
       val planeComputational = PerftrakModel.planeComputationalReads.reads(json)
       val planeCaching       = PerftrakModel.planeCachingReads.reads(json)
       val result             = PerftrakDatum(endpoint, planeComputational.asOpt, planeCaching.get)
-      val expectedPlaneComp  = PlaneComputational(10, 100)
+      val expectedPlaneComp  = PlaneComputational(0.1)
       val expectedPlaneCaching =
         PlaneCaching(Seq[SingleTop](SingleTop(fileId1, 1), SingleTop(fileId2, 1), SingleTop(fileId3, 1)))
       val expected = PerftrakDatum(endpoint, Some(expectedPlaneComp), Some(expectedPlaneCaching))

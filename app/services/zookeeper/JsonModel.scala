@@ -48,8 +48,7 @@ object RtmNodeInfo {
   *     "component-capacity": 1150699300
   *   },
   *   "plane-computational": {                  <<<<< PlaneComputational
-  *     "component-aggregate": 0,
-  *     "component-capacity": 32
+  *     "component-aggregate": 0
   *   }
   * }
   *
@@ -70,17 +69,14 @@ case class PlaneCaching(tops: Seq[SingleTop])
   * PlaneComputational wraps plane-computational values published by RTM.
   *
   * @param aggregate stores value retrieved from perftrak plane-computational → component-aggregate.
-  * @param capacity stores value retrieved from perftrak plane-computational → component-capacity.
-  *                 RTM calculates capacity as a number of logical CPUs * max number of streams per core.
+  *                  value must be normalized to 1
   */
-case class PlaneComputational(aggregate: Double, capacity: Double)
+case class PlaneComputational(aggregate: Double)
 
 object PerftrakModel {
   implicit val singleTopReads: Reads[SingleTop] = Json.reads[SingleTop]
   implicit val planeCachingReads: Reads[Option[PlaneCaching]] =
     (JsPath \ "plane-caching" \ "component-tops").readNullable[Seq[SingleTop]].map(_.map(PlaneCaching))
-  implicit val planeComputationalReads: Reads[PlaneComputational] = (
-    (JsPath \ "plane-computational" \ "component-aggregate").read[Double] and
-      (JsPath \ "plane-computational" \ "component-capacity").read[Double]
-  )(PlaneComputational.apply _)
+  implicit val planeComputationalReads: Reads[PlaneComputational] =
+    (JsPath \ "plane-computational" \ "component-aggregate").read[Double].map(PlaneComputational.apply)
 }

@@ -7,13 +7,6 @@ case class PerftrakDatum(
   planeComputational: Option[PlaneComputational],
   planeCaching: Option[PlaneCaching]) {
 
-  def isPlaneComputationalEmpty: Boolean = {
-    planeComputational match {
-      case Some(value) => value.capacity <= 0 && value.aggregate <= 0
-      case _           => true
-    }
-  }
-
   def isPlaneCachingEmpty: Boolean = {
     planeCaching match {
       case Some(value) => value.tops.isEmpty
