@@ -29,7 +29,6 @@ object RtmNodeInfo {
   *
   * {
   *   "plane-caching": {
-  *     "component-aggregate": 673710100,
   *     "component-tops": [                     <<<<< Tops
   *       {
   *         "k": "9ab207374d354948866bc52280e64098",
@@ -44,8 +43,7 @@ object RtmNodeInfo {
   *         "k": "48454df382724423b73c7bb65c5e58ed",
   *         "v": 4718592
   *       }
-  *     ],
-  *     "component-capacity": 1150699300
+  *     ]
   *   },
   *   "plane-computational": {                  <<<<< PlaneComputational
   *     "component-aggregate": 0

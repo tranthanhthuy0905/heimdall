@@ -101,12 +101,10 @@ private[zookeeper] object ZookeeperPackageTestHelper {
     val jsonTops = tops.foldLeft("")((m, e) => m + s"""{"k":"${e.k}","v":1},""")
     s"""{
        |  "plane-caching":{
-       |    "component-aggregate":99614720,
        |    "component-tops":[
        |    $jsonTops{
        |      "k":"$lastTop","v":1
-       |    }],
-       |    "component-capacity":1150699300
+       |    }]
        |  },
        |  "plane-computational":{
        |    "component-aggregate":$agg

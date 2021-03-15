@@ -61,8 +61,6 @@ class JsonModelSpec extends PlaySpec {
     "create PerftrakDatum with None objects using incomplete json value" in {
       val someJsonString = s"""{
                               |  "plane-caching":{
-                              |    "component-aggregate":99614720,
-                              |    "component-capacity":1150699300
                               |  },
                               |  "plane-computational":{
                               |  }
