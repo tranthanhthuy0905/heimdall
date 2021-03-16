@@ -213,9 +213,11 @@ object EndpointResolver extends LazyLogging {
   }
 
   def perftrakDataToPriorityMap(perftrakData: List[PerftrakDatum]): Map[ServiceEndpoint, Double] = {
-    perftrakData.foldLeft(Map[ServiceEndpoint, Double]()) { (m, datum) =>
-      m + (datum.endpoint -> (-1) * datum.planeComputational.get.aggregate)
-    }
+    perftrakData
+      .filter(_.planeComputationalAggregate > 0)
+      .foldLeft(Map[ServiceEndpoint, Double]()) { (m, datum) =>
+        m + (datum.endpoint -> (-1) * datum.planeComputationalAggregate)
+      }
   }
 
 }
