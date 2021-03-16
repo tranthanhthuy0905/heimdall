@@ -98,7 +98,7 @@ class EndpointResolver(
     if (enableCache) {
       var topContributingKeysMap = scala.collection.mutable.Map[String, ServiceEndpoint]()
       perftrakData.foreach { datum =>
-        if (!datum.isPlaneCachingEmpty) {
+        if (datum.hasPlaneCaching) {
           val tops = datum.planeCaching.get.tops
           tops.foreach { top =>
             if (topContributingKeysMap.contains(top.k)) {
