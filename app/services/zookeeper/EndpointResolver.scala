@@ -55,9 +55,10 @@ class EndpointResolver(
 
   private[this] final val (minReplicaCount, maxReplicaCount) = (1.0, 1001.0)
 
-  private[this] val rand          = new scala.util.Random(DateTime.now(DateTimeZone.UTC).getMillis)
-  private[this] val replicaCounts = initReplicaCounts(endpoints, perftrakData, priorityMap, defaultPriority, maxPriority)
-  private[this] val hashRing      = new ConsistentHashRing[ServiceEndpoint](endpointStringer, replicaCounts)
+  private[this] val rand = new scala.util.Random(DateTime.now(DateTimeZone.UTC).getMillis)
+  private[this] val replicaCounts =
+    initReplicaCounts(endpoints, perftrakData, priorityMap, defaultPriority, maxPriority)
+  private[this] val hashRing = new ConsistentHashRing[ServiceEndpoint](endpointStringer, replicaCounts)
   private[this] val topContributorsCacheOpt =
     initTopContributorsCache(enableCache, perftrakData, priorityMap, defaultPriority)
 
@@ -97,7 +98,7 @@ class EndpointResolver(
     if (enableCache) {
       var topContributingKeysMap = scala.collection.mutable.Map[String, ServiceEndpoint]()
       perftrakData.foreach { datum =>
-        if (!datum.isPlaneCachingEmpty) {
+        if (datum.hasPlaneCaching) {
           val tops = datum.planeCaching.get.tops
           tops.foreach { top =>
             if (topContributingKeysMap.contains(top.k)) {
@@ -151,10 +152,10 @@ class EndpointResolver(
     val result = (minReplicaCount + (maxReplicaCount - minReplicaCount) * factor).round.toInt
     if (rand.nextInt(50000) == 13) {
       logger.info("replicaCount")(
-        "priority" -> priority,
+        "priority"        -> priority,
         "defaultPriority" -> defaultPriority,
-        "rangePriority" -> rangePriority,
-        "factor" -> factor
+        "rangePriority"   -> rangePriority,
+        "factor"          -> factor
       )
     }
     result
@@ -182,9 +183,9 @@ object EndpointResolver extends LazyLogging {
     perftrakData: List[PerftrakDatum],
     enableCache: Boolean): EndpointResolver = {
 
-    val priorityMap = perftrakDataToPriorityMap(perftrakData)
+    val priorityMap                             = perftrakDataToPriorityMap(perftrakData)
     val (minPriority, maxPriority, sumPriority) = getMinMaxAndSum(priorityMap)
-    val avgPriority = sumPriority / priorityMap.size
+    val avgPriority                             = sumPriority / priorityMap.size
 
     if (!((avgPriority - minPriority) > -0.000001 && (avgPriority - maxPriority) < 0.000001)) {
 
@@ -195,6 +196,7 @@ object EndpointResolver extends LazyLogging {
         "avgPriority" -> avgPriority)
       new EndpointResolver(endpoints, perftrakData, priorityMap, 0.0, 0.0, enableCache)
     } else {
+
       /** The idea behind this calculation of thresholdPriority (instead of just taking minPriority)
         * is to make allocated number of replicas more stable.
         * From: https://git.taservs.net/ecom/ecomsaas/blob/3b916d8c56812f5524cce34e8453dfb7c3de5387/wc/com.evidence/com.evidence/transcode/Odt2BackendResolver.cs#L424
@@ -211,9 +213,11 @@ object EndpointResolver extends LazyLogging {
   }
 
   def perftrakDataToPriorityMap(perftrakData: List[PerftrakDatum]): Map[ServiceEndpoint, Double] = {
-    perftrakData.filter(!_.isPlaneComputationalEmpty).foldLeft(Map[ServiceEndpoint, Double]()) { (m, datum) =>
-      m + (datum.endpoint -> (-1) * (datum.planeComputational.get.aggregate / datum.planeComputational.get.capacity))
-    }
+    perftrakData
+      .filter(_.planeComputationalAggregate > 0)
+      .foldLeft(Map[ServiceEndpoint, Double]()) { (m, datum) =>
+        m + (datum.endpoint -> (-1) * datum.planeComputationalAggregate)
+      }
   }
 
 }

@@ -97,21 +97,17 @@ private[zookeeper] object ZookeeperPackageTestHelper {
   def newPerftrakNodeString(
     tops: Seq[SingleTop] = Seq[SingleTop](),
     lastTop: String = someKey,
-    agg: Double = 8.8,
-    cap: Double = 128.0): String = {
+    agg: Double = 0.1): String = {
     val jsonTops = tops.foldLeft("")((m, e) => m + s"""{"k":"${e.k}","v":1},""")
     s"""{
        |  "plane-caching":{
-       |    "component-aggregate":99614720,
        |    "component-tops":[
        |    $jsonTops{
        |      "k":"$lastTop","v":1
-       |    }],
-       |    "component-capacity":1150699300
+       |    }]
        |  },
        |  "plane-computational":{
-       |    "component-aggregate":$agg,
-       |    "component-capacity":$cap
+       |    "component-aggregate":$agg
        |  }
        |}""".stripMargin
   }
@@ -161,7 +157,6 @@ private[zookeeper] object ZookeeperPackageTestHelper {
     n: Int,
     minAgg: Int = 1,
     maxAgg: Int = 10,
-    cap: Double = 128.0,
     lastKey: String = someKey): util.List[ChildData] = {
     val children: Seq[ChildData] =
       (1 until n)
@@ -170,12 +165,12 @@ private[zookeeper] object ZookeeperPackageTestHelper {
           hn =>
             newChildData(
               newPerftrakChildDataPath(hn),
-              newPerftrakNodeString(newRandomSingleTops(5), randomKey, intInRange(minAgg, maxAgg), cap)))
+              newPerftrakNodeString(newRandomSingleTops(5), randomKey, intInRange(minAgg, maxAgg))))
 
     if (n > 0 && !lastKey.isEmpty) {
       val lastChild = newChildData(
         newPerftrakChildDataPath(newHostName(n)),
-        newPerftrakNodeString(newRandomSingleTops(5), lastKey, intInRange(minAgg, maxAgg).toDouble, cap))
+        newPerftrakNodeString(newRandomSingleTops(5), lastKey, intInRange(minAgg, maxAgg).toDouble))
       List.concat(children, List(lastChild)).asJava
     } else {
       children.asJava
