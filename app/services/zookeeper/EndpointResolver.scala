@@ -55,21 +55,16 @@ class EndpointResolver(
 
   private[this] final val (minReplicaCount, maxReplicaCount) = (1.0, 1001.0)
 
-  private[this] val rand = new scala.util.Random(DateTime.now(DateTimeZone.UTC).getMillis)
-  private[this] val replicaCounts =
-    initReplicaCounts(endpoints, perftrakData, priorityMap, defaultPriority, maxPriority)
-  private[this] val hashRing = new ConsistentHashRing[ServiceEndpoint](endpointStringer, replicaCounts)
+  private[this] val rand          = new scala.util.Random(DateTime.now(DateTimeZone.UTC).getMillis)
+  private[this] val replicaCounts = initReplicaCounts(endpoints, priorityMap, defaultPriority, maxPriority)
+  private[this] val hashRing      = new ConsistentHashRing[ServiceEndpoint](endpointStringer, replicaCounts)
   private[this] val topContributorsCacheOpt =
     initTopContributorsCache(enableCache, perftrakData, priorityMap, defaultPriority)
 
   randomlyLogDetails()
 
-  def this(enableCache: Boolean) {
-    this(List[ServiceEndpoint](), List[PerftrakDatum](), Map[ServiceEndpoint, Double](), 0.0, 0.0, false)
-  }
-
   def get(key: String): Option[ServiceEndpoint] = {
-    val wasCached = topContributorsCacheOpt.getOrElse(Map[String, ServiceEndpoint]().empty).contains(key)
+    val wasCached = topContributorsCacheOpt.exists(_.contains(key))
     statsd.increment("get_endpoint", s"was_cached:$wasCached")
 
     if (wasCached) {
@@ -98,9 +93,8 @@ class EndpointResolver(
     if (enableCache) {
       var topContributingKeysMap = scala.collection.mutable.Map[String, ServiceEndpoint]()
       perftrakData.foreach { datum =>
-        if (datum.hasPlaneCaching) {
-          val tops = datum.planeCaching.get.tops
-          tops.foreach { top =>
+        datum.planeCaching.foreach(pc =>
+          pc.tops.foreach { top =>
             if (topContributingKeysMap.contains(top.k)) {
               if (priorityMap.getOrElse(datum.endpoint, defaultPriority) > priorityMap
                     .getOrElse(topContributingKeysMap(top.k), defaultPriority)) {
@@ -109,8 +103,7 @@ class EndpointResolver(
             } else {
               topContributingKeysMap += (top.k -> datum.endpoint)
             }
-          }
-        }
+        })
       }
       Some(topContributingKeysMap.toMap)
     } else {
@@ -120,7 +113,6 @@ class EndpointResolver(
 
   private[this] def initReplicaCounts(
     endpoints: List[ServiceEndpoint],
-    perftrakData: List[PerftrakDatum],
     priorityMap: Map[ServiceEndpoint, Double],
     defaultPriority: Double,
     maxPriority: Double): Map[ServiceEndpoint, Int] = {
@@ -177,6 +169,16 @@ class EndpointResolver(
 }
 
 object EndpointResolver extends LazyLogging {
+
+  def apply(): EndpointResolver = {
+    new EndpointResolver(
+      List[ServiceEndpoint](),
+      List[PerftrakDatum](),
+      Map[ServiceEndpoint, Double](),
+      0.0,
+      0.0,
+      enableCache = false)
+  }
 
   def apply(
     endpoints: List[ServiceEndpoint],
