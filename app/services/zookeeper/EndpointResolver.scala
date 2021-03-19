@@ -12,11 +12,20 @@ import scala.util.{Success, Try}
   *
   * The replica number is based on a node's priority value.
   *
-  * Priority (p) is calculated as current normalized component aggregate (a) multiplied by (-1):
-  * p = -1 * a.
+  * Priority (p) is calculated as current component aggregate (a)
+  * value divided by node capacity (c) multiplied by (-1):
+  * p = -1 * a / c.
   *
   * Aggregate value shows how busy current node is.
   * I.e. greater the value, busier the node.
+  * Capacity is constant for a node. Moreover, with current terraform setup it is constant for
+  * all nodes of an environment.
+  *
+  * RTM calculates capacity as a number of logical CPUs * max number of streams per core.
+  * For instance, capacity value equals to 128 for every RTM node in US1.
+  *
+  * It is sufficient to use aggregate value only for calculating number of hash replicas.
+  * An advantage of using capacity is to allow heterogeneous RTM setup.
   *
   * (-1) is used to allow priority to be in direct relationship with the number of replicas.
   * This is also optional and can be removed.
@@ -46,36 +55,31 @@ class EndpointResolver(
 
   private[this] final val (minReplicaCount, maxReplicaCount) = (1.0, 1001.0)
 
-  private[this] val rand = new scala.util.Random(DateTime.now(DateTimeZone.UTC).getMillis)
-  private lazy val replicaCounts: Map[ServiceEndpoint, Int] =
-    initReplicaCounts(endpoints, priorityMap, defaultPriority, maxPriority)
-  private lazy val hashRing = new ConsistentHashRing[ServiceEndpoint](endpointStringer, replicaCounts)
+  private[this] val rand          = new scala.util.Random(DateTime.now(DateTimeZone.UTC).getMillis)
+  private[this] val replicaCounts = initReplicaCounts(endpoints, priorityMap, defaultPriority, maxPriority)
+  private[this] val hashRing      = new ConsistentHashRing[ServiceEndpoint](endpointStringer, replicaCounts)
   private[this] val topContributorsCacheOpt =
     initTopContributorsCache(enableCache, perftrakData, priorityMap, defaultPriority)
 
   randomlyLogDetails()
 
   def get(key: String): Option[ServiceEndpoint] = {
-    topContributorsCacheOpt
-      .map(
-        _.get(key).map(
-          e => {
-            statsd.increment("get_endpoint", "was_cached:true")
-            e
-          }
-        ))
-      .getOrElse({
-        statsd.increment("get_endpoint", "was_cached:false")
-        if (hashRing.isEmpty) {
-          logger.error("noServersAvailable")("key" -> key)
-          None
-        } else {
-          logger.debug("gettingEndpointFromHashRing")(
-            "key"     -> key,
-            "details" -> "Key was not found in cache, using hash ring to get endpoint")
-          hashRing.get(key)
-        }
-      })
+    val wasCached = topContributorsCacheOpt.exists(_.contains(key))
+    statsd.increment("get_endpoint", s"was_cached:$wasCached")
+
+    if (wasCached) {
+      Some(topContributorsCacheOpt.get(key))
+    } else {
+      if (hashRing.isEmpty) {
+        logger.error("noServersAvailable")("key" -> key)
+        None
+      } else {
+        logger.debug("gettingEndpointFromHashRing")(
+          "key"     -> key,
+          "details" -> "Key was not found in cache, using hash ring to get endpoint")
+        hashRing.get(key)
+      }
+    }
   }
 
   def getReplicaCounts: Map[ServiceEndpoint, Int] = replicaCounts
