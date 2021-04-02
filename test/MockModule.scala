@@ -8,6 +8,7 @@ import services.dredd.DreddClient
 import services.komrade.KomradeClient
 import services.pdp.{PdpClient, PdpClientImpl}
 import services.queue.ProbeNotifier
+import services.routesplitter.{RouteSplitter, RouteSplitterProvider}
 import services.rti.RtiClient
 import services.rtm.RtmClient
 import services.sessions.SessionsClient
@@ -28,6 +29,7 @@ class MockModule extends Module with MockitoSugar {
     bind(classOf[DocumentClient]).toInstance(mock[DocumentClientImpl])
 
     bind(classOf[CuratorFramework]).toInstance(mock[CuratorFramework])
+    bind(classOf[RouteSplitter]).toProvider(classOf[RouteSplitterProvider])
     bind(classOf[HeimdallLoadBalancer]).toInstance(mock[HeimdallLoadBalancer])
     bind(classOf[ProbeNotifier]).toInstance(mock[ProbeNotifier])
   }

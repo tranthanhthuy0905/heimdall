@@ -1,6 +1,7 @@
 package actions
 
 import java.net.{URL, URLEncoder}
+import java.util.UUID
 
 import akka.http.scaladsl.model.Uri
 import com.evidence.service.common.logging.LazyLogging
@@ -9,6 +10,7 @@ import javax.inject.Inject
 import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
+import services.routesplitter.RouteSplitter
 import services.rtm.{RtmQueryHelper, RtmRequest}
 import services.zookeeper.HeimdallLoadBalancer
 
@@ -18,7 +20,8 @@ import scala.concurrent.{ExecutionContext, Future}
 case class RtmRequestAction @Inject()(
   config: Config,
   dredd: DreddClient,
-  loadBalancer: HeimdallLoadBalancer
+  loadBalancer: HeimdallLoadBalancer,
+  routeSplitter: RouteSplitter
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, RtmRequest]
     with LazyLogging {
@@ -27,9 +30,10 @@ case class RtmRequestAction @Inject()(
     RtmQueryHelper(input.path, input.queryString).map { rtmQuery =>
       for {
         presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
-        endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString, input.rtmApiVersion)
+        rtmApiVersion <- Future.successful(routeSplitter.getApiVersion(input.media.fileIds.headOption.getOrElse(UUID.randomUUID)))
+        endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString, rtmApiVersion)
         queries       <- Future.successful(getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls))
-        rtmPath       <- Future.successful(getRTMPath(rtmQuery.path, input.rtmApiVersion, presignedUrls.length > 1))
+        rtmPath       <- Future.successful(getRTMPath(rtmQuery.path, rtmApiVersion, presignedUrls.length > 1))
       } yield {
         val uri = Uri
           .from(

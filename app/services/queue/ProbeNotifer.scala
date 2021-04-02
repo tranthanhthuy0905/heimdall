@@ -31,4 +31,3 @@ object ProbeNotifier extends LazyLogging{
 class ProbeNotifierProvider @Inject()(config: Config) extends Provider[ProbeNotifier] {
   def get(): ProbeNotifier = ProbeNotifier(config)
 }
-
