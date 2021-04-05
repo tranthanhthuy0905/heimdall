@@ -9,8 +9,8 @@ import com.typesafe.config.Config
 trait RouteSplitter extends StrictStatsD {
   def getApiVersion(key: UUID): Int
 
-  def withStatsLogged(key: UUID, version: Int): Int = {
-    statsd.increment(s"route_splitter_v${version.toString}", s"v${version}", key.toString)
+  def withStatsLogged(version: Int): Int = {
+    statsd.increment(s"route_splitter", s"v${version}")
     version
   }
 }
@@ -20,7 +20,7 @@ case class DefaultRouteSplitter(percentageThreshold: Int) extends RouteSplitter 
     val mod = java.lang.Math.floorMod(key.toString.hashCode, 100)
     if (mod < percentageThreshold) 1 else 2
   }
-  override def getApiVersion(key: UUID): Int = withStatsLogged(key, doGetApiVersion(key))
+  override def getApiVersion(key: UUID): Int = withStatsLogged(doGetApiVersion(key))
 
 }
 
@@ -32,7 +32,7 @@ case class NoOpRouteSplitter(config: Config) extends RouteSplitter with StrictSt
       1
   }
 
-  override def getApiVersion(key: UUID): Int = withStatsLogged(key, doGetApiVersion(key))
+  override def getApiVersion(key: UUID): Int = withStatsLogged(doGetApiVersion(key))
 }
 
 class RouteSplitterProvider @Inject()(config: Config)
