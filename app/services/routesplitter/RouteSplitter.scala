@@ -10,7 +10,7 @@ trait RouteSplitter extends StrictStatsD {
   def getApiVersion(key: UUID): Int
 
   def withStatsLogged(version: Int): Int = {
-    statsd.increment(s"route_splitter", s"v${version}")
+    statsd.increment(s"route_splitter", s"rtm:v${version}")
     version
   }
 }
@@ -35,8 +35,8 @@ case class NoOpRouteSplitter(config: Config) extends RouteSplitter with StrictSt
   override def getApiVersion(key: UUID): Int = withStatsLogged(doGetApiVersion(key))
 }
 
-class RouteSplitterProvider @Inject()(config: Config)
-  extends Provider[RouteSplitter] {
+class RouteSplitterProvider @Inject()(config: Config) extends Provider[RouteSplitter] {
+
   def get(): RouteSplitter = {
     if (config.getBoolean("service.route_splitter.enabled"))
       DefaultRouteSplitter(config.getInt("service.route_splitter.percentage_threshold"))
