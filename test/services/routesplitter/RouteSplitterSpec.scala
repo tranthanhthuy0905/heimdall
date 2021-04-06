@@ -31,19 +31,9 @@ class RouteSplitterSpec extends PlaySpec with MockitoSugar {
   }
 
   "NoOpRouteSplitter" should {
-    "always return 1 if preferred_version is not set" in {
-      val mockConfig = mock[Config]
-      when(mockConfig.hasPath("service.route_splitter.preferred_version")) thenReturn false
-      val routeSplitter = new NoOpRouteSplitter(mockConfig)
-      routeSplitter.getApiVersion(UUID.randomUUID) mustEqual 1
-    }
-
-    "return preferred_version value if it is set" in {
-      val mockConfig = mock[Config]
-      when(mockConfig.hasPath("service.route_splitter.preferred_version")) thenReturn true
-      when(mockConfig.getInt("service.route_splitter.preferred_version")) thenReturn 2
-      val routeSplitter = new NoOpRouteSplitter(mockConfig)
-      routeSplitter.getApiVersion(UUID.randomUUID) mustEqual 2
+    "always return the default version" in {
+      val routeSplitter = NoOpRouteSplitter()
+      routeSplitter.getApiVersion(UUID.randomUUID, 1) mustEqual 1
     }
   }
 
@@ -52,8 +42,8 @@ class RouteSplitterSpec extends PlaySpec with MockitoSugar {
       val PERCENTAGE_THRESHOLD = 50
       val TOLERANCE = 5
       val TOTAL_REQUESTS = 10000
-      val routeSplitter = new DefaultRouteSplitter(PERCENTAGE_THRESHOLD)
-      val targetCount = (1 to TOTAL_REQUESTS).map(_ => routeSplitter.getApiVersion(UUID.randomUUID))
+      val routeSplitter = DefaultRouteSplitter(PERCENTAGE_THRESHOLD)
+      val targetCount = (1 to TOTAL_REQUESTS).map(_ => routeSplitter.getApiVersion(UUID.randomUUID, 1000))
         .filter(_ equals 1)
         .sum
 
