@@ -2,12 +2,13 @@ package controllers.v1
 
 import actions._
 import com.evidence.service.common.monad.FutureEither
+import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import javax.inject.Inject
 import models.common.{HeimdallRequest, PermissionType}
 import models.hls.HlsManifestFormatter
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
-import services.rtm.RtmClient
+import services.rtm.{RtmClient, RtmRequest}
 import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 import scala.concurrent.ExecutionContext
@@ -23,7 +24,8 @@ class HlsController @Inject()(
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with WSResponseHelpers
-    with HdlResponseHelpers {
+    with HdlResponseHelpers
+    with StrictStatsD {
 
   def playlist: Action[AnyContent] =
     (
@@ -44,9 +46,13 @@ class HlsController @Inject()(
         permValidation.build(PermissionType.Stream) andThen
         watermarkAction andThen
         rtmRequestAction
-    ).async { request =>
-      FutureEither(rtm.send(request).map(withOKStatus))
-        .fold(error, streamed(_, "video/MP2T"))
+    ).async { request: RtmRequest[AnyContent] =>
+      executionTime(
+        "HlsController.segment",
+        FutureEither(rtm.send(request).map(withOKStatus))
+          .fold(error, streamed(_, "video/MP2T")),
+        s"rtm:v${request.getOverrideRtmApiVersion}"
+      )
     }
 
   private def toManifest(response: WSResponse, request: HeimdallRequest[AnyContent]): String = {
