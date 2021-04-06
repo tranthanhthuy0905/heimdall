@@ -46,6 +46,7 @@ case class RtmRequestAction @Inject()(
         Right(
           new RtmRequest(
             uri,
+            rtmApiVersion,
             input
           ))
       }
