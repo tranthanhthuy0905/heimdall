@@ -7,7 +7,7 @@ import com.google.inject.{Inject, Provider}
 import com.typesafe.config.Config
 
 trait RouteSplitter extends StrictStatsD {
-  def getApiVersion(key: UUID): Int
+  def getApiVersion(key: UUID, defaultVersion: Int): Int
 
   def withStatsLogged(version: Int): Int = {
     statsd.increment(s"route_splitter", s"rtm:v${version}")
@@ -20,19 +20,12 @@ case class DefaultRouteSplitter(percentageThreshold: Int) extends RouteSplitter 
     val mod = java.lang.Math.floorMod(key.toString.hashCode, 100)
     if (mod < percentageThreshold) 1 else 2
   }
-  override def getApiVersion(key: UUID): Int = withStatsLogged(doGetApiVersion(key))
+  override def getApiVersion(key: UUID, defaultVersion: Int): Int = withStatsLogged(doGetApiVersion(key))
 
 }
 
-case class NoOpRouteSplitter(config: Config) extends RouteSplitter with StrictStatsD {
-  private def doGetApiVersion(key: UUID): Int = {
-    if (config.hasPath("service.route_splitter.preferred_version"))
-      config.getInt("service.route_splitter.preferred_version")
-    else
-      1
-  }
-
-  override def getApiVersion(key: UUID): Int = withStatsLogged(doGetApiVersion(key))
+case class NoOpRouteSplitter() extends RouteSplitter with StrictStatsD {
+  override def getApiVersion(key: UUID, defaultVersion: Int): Int = withStatsLogged(defaultVersion)
 }
 
 class RouteSplitterProvider @Inject()(config: Config) extends Provider[RouteSplitter] {
@@ -41,6 +34,6 @@ class RouteSplitterProvider @Inject()(config: Config) extends Provider[RouteSpli
     if (config.getBoolean("service.route_splitter.enabled"))
       DefaultRouteSplitter(config.getInt("service.route_splitter.percentage_threshold"))
     else
-      NoOpRouteSplitter(config)
+      NoOpRouteSplitter()
   }
 }

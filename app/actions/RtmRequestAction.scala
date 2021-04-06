@@ -30,7 +30,7 @@ case class RtmRequestAction @Inject()(
     RtmQueryHelper(input.path, input.queryString).map { rtmQuery =>
       for {
         presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
-        rtmApiVersion <- Future.successful(routeSplitter.getApiVersion(input.media.fileIds.headOption.getOrElse(UUID.randomUUID)))
+        rtmApiVersion <- Future.successful(routeSplitter.getApiVersion(input.media.fileIds.headOption.getOrElse(UUID.randomUUID)), input.rtmApiVersion)
         endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString, rtmApiVersion)
         queries       <- Future.successful(getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls))
         rtmPath       <- Future.successful(getRTMPath(rtmQuery.path, rtmApiVersion, presignedUrls.length > 1))
