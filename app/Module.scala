@@ -4,6 +4,7 @@ import org.apache.curator.framework.CuratorFramework
 import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.audit.{AuditClient, AuditClientImpl}
 import services.document.{DocumentClient, DocumentClientImpl}
+import services.drd.{DrdClient, DrdClientImpl}
 import services.dredd.{CachedDreddClientImpl, DreddClient}
 import services.global.HeimdallApplicationLifecycle
 import services.komrade.{CachedKomradeClientImpl, KomradeClient}
@@ -27,6 +28,7 @@ class Module extends AbstractModule {
     bind(classOf[RtmClient]).to(classOf[RtmClientImpl])
     bind(classOf[RtiClient]).to(classOf[RtiClientImpl])
     bind(classOf[ApidaeClient]).to(classOf[ApidaeClientImpl])
+    bind(classOf[DrdClient]).to(classOf[DrdClientImpl])
     bind(classOf[DocumentClient]).to(classOf[DocumentClientImpl])
     bind(classOf[SessionsClient]).to(classOf[SessionsClientImpl])
     bind(classOf[StreamingSessionData]).to(classOf[StreamingSessionDataImpl])
