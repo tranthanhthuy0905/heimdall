@@ -54,3 +54,7 @@ GET  /v2/media/downloadthumbnail            controllers.v2.ThumbnailDownloadCont
 
 GET  /v2/media/audio/sample                 controllers.v2.AudioController.sample
 GET  /v2/media/audio/mp3                    controllers.v2.AudioController.mp3
+
+# Routing for DRD (Document Redaction) service
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+POST  /v1/redaction/document/evidences/:evidenceId/redactions                 controllers.RedactionController.createDocumentRedaction
