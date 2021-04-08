@@ -57,4 +57,4 @@ GET  /v2/media/audio/mp3                    controllers.v2.AudioController.mp3
 
 # Routing for DRD (Document Redaction) service
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-POST  /media/document/evidences/:evidenceId/redactions                 controllers.RedactionController.createDocumentRedaction
+POST  /api/v1/redaction/document/evidences/:evidenceId/redactions                 controllers.RedactionController.createDocumentRedaction(evidenceId: String)

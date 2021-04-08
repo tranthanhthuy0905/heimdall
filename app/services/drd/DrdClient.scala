@@ -15,21 +15,24 @@ trait DrdClient {
 }
 
 @Singleton
-class DrdClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: ExecutionContext) extends DrdClient with LazyLogging {
+class DrdClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: ExecutionContext)
+    extends DrdClient
+    with LazyLogging {
 
   def createRedaction(partnerId: UUID, userId: UUID, evidenceId: UUID): Future[WSResponse] = {
-    // TODO: Get Evidence Title from evidenceId
+    // TODO: validate evidence type
+    // TODO: Using sage/dredd to get Evidence Title from (evidenceId, partnerId)
     val evidenceTitle = "a test title"
 
     buildDrdEndpoint(s"/v1/evidences/${evidenceId.toString}/redactions")
       .addHttpHeaders(
-        "Partner-Id"  -> partnerId.toString,
-        "Authenticated-User-Id"  -> userId.toString,
+        "Partner-Id"            -> partnerId.toString,
+        "Authenticated-User-Id" -> userId.toString,
       )
       .withMethod("POST")
       .withBody(
         Json.obj(
-          "EvidenceTitle"  -> evidenceTitle,
+          "EvidenceTitle" -> evidenceTitle,
         ))
       .execute()
   }
