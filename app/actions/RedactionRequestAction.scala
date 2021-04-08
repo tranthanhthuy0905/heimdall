@@ -11,14 +11,14 @@ import utils.UUIDHelper
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class DrdRequestActionBuilder @Inject()(pdp: PdpClient)(implicit val executionContext: ExecutionContext) {
+case class RedactionRequestActionBuilder @Inject()(pdp: PdpClient)(implicit val executionContext: ExecutionContext) {
 
   def build(evidenceId: String) = {
-    DrdRequestAction(evidenceId)(executionContext)
+    RedactionRequestAction(evidenceId)(executionContext)
   }
 }
 
-case class DrdRequestAction @Inject()(evidenceId: String)(implicit val executionContext: ExecutionContext)
+case class RedactionRequestAction @Inject()(evidenceId: String)(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, DrdEvidenceRequest]
     with LazyLogging
     with UUIDHelper {

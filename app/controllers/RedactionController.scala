@@ -1,10 +1,9 @@
 package controllers
 
-import actions.{DrdPermValidationAction, DrdRequestActionBuilder, HeimdallRequestAction, PermValidationActionBuilder}
+import actions.{HeimdallRequestAction, RedactionPermValidationAction, RedactionRequestActionBuilder}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
-import models.common.PermissionType
 import play.api.http.ContentTypes
 import play.api.mvc._
 import services.audit.AuditConversions
@@ -15,8 +14,8 @@ import scala.concurrent.ExecutionContext
 
 class RedactionController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
-  drdPermValidation: DrdPermValidationAction,
-  drdRequestActionBuilder: DrdRequestActionBuilder,
+  drdPermValidation: RedactionPermValidationAction,
+  redactionRequestActionBuilder: RedactionRequestActionBuilder,
   drdClient: DrdClient,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
@@ -29,7 +28,7 @@ class RedactionController @Inject()(
   def createDocumentRedaction(evidenceId: String): Action[AnyContent] =
     (
       heimdallRequestAction
-        andThen drdRequestActionBuilder.build(evidenceId)
+        andThen redactionRequestActionBuilder.build(evidenceId)
         andThen drdPermValidation
     ).async { implicit request =>
       FutureEither(

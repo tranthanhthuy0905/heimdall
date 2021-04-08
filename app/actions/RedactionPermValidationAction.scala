@@ -10,7 +10,7 @@ import services.pdp.PdpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class DrdPermValidationAction @Inject()(pdp: PdpClient)(
+case class RedactionPermValidationAction @Inject()(pdp: PdpClient)(
   implicit val executionContext: ExecutionContext
 ) extends ActionFilter[DrdEvidenceRequest]
     with LazyLogging {
