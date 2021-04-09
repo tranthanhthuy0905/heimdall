@@ -37,7 +37,7 @@ class RedactionController @Inject()(
       FutureEither(
         drdClient
           .call(
-            s"/v1/evidences/${evidenceId}/redactions",
+            s"/v1/evidences/${request.evidenceId}/redactions",
             request.method,
             request.partnerId,
             request.userId,
@@ -59,7 +59,7 @@ class RedactionController @Inject()(
       FutureEither(
         drdClient
           .call(
-            s"/v1/evidences/${evidenceId}/${path}",
+            s"/v1/evidences/${request.evidenceId}/${path}",
             request.method,
             request.partnerId,
             request.userId,
