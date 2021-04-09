@@ -41,7 +41,7 @@ class RedactionController @Inject()(
             request.method,
             request.partnerId,
             request.userId,
-            Option(
+            Some(
               Json.obj(
                 "EvidenceTitle" -> "a test title",
               ))
