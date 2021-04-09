@@ -37,7 +37,7 @@ class RedactionController @Inject()(
       FutureEither(
         drdClient
           .call(
-            s"/v1/evidences/${request.evidenceId}/redactions",
+            request.path,
             request.method,
             request.partnerId,
             request.userId,
@@ -50,7 +50,18 @@ class RedactionController @Inject()(
         .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
     }
 
-  def callDocumentRedactionAPI(evidenceId: String, path: String): Action[AnyContent] =
+  def getDocumentRedactions(evidenceId: String): Action[AnyContent] = callDocumentRedactionAPI(evidenceId)
+
+  def deleteDocumentRedaction(evidenceId: String, redactionId: String): Action[AnyContent] =
+    callDocumentRedactionAPI(evidenceId)
+
+  def getXfdf(evidenceId: String, redactionId: String): Action[AnyContent] =
+    callDocumentRedactionAPI(evidenceId)
+
+  def postXfdfCommands(evidenceId: String, redactionId: String): Action[AnyContent] =
+    callDocumentRedactionAPI(evidenceId)
+
+  private def callDocumentRedactionAPI(evidenceId: String): Action[AnyContent] =
     (
       heimdallRequestAction
         andThen redactionRequestActionBuilder.build(evidenceId)
@@ -59,7 +70,7 @@ class RedactionController @Inject()(
       FutureEither(
         drdClient
           .call(
-            s"/v1/evidences/${request.evidenceId}/${path}",
+            request.path,
             request.method,
             request.partnerId,
             request.userId,
