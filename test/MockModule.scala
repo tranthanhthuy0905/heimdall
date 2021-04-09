@@ -4,6 +4,7 @@ import org.scalatest.mockito.MockitoSugar
 import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.audit.AuditClient
 import services.document.{DocumentClient, DocumentClientImpl}
+import services.drd.{DrdClient, DrdClientImpl}
 import services.dredd.DreddClient
 import services.komrade.KomradeClient
 import services.pdp.{PdpClient, PdpClientImpl}
@@ -23,6 +24,7 @@ class MockModule extends Module with MockitoSugar {
     bind(classOf[PdpClient]).toInstance(mock[PdpClientImpl])
     bind(classOf[RtiClient]).toInstance(mock[RtiClient])
     bind(classOf[ApidaeClient]).to(classOf[ApidaeClientImpl])
+    bind(classOf[DrdClient]).to(classOf[DrdClientImpl])
     bind(classOf[RtmClient]).toInstance(mock[RtmClient])
     bind(classOf[SessionsClient]).toInstance(mock[SessionsClient])
     bind(classOf[StreamingSessionData]).toInstance(mock[StreamingSessionData])

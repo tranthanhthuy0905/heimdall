@@ -34,7 +34,8 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     * nginx must deny access to Heimdall's endpoints listed as Internals.
     * See the `deny` access directive of nginx.
     */
-  final val internalRoutes = List("/media/alive")
+  final val internalRoutes       = List("/media/alive")
+  final val redactionRoutePrefix = "/api/v1/redaction/"
 
   def apply(
     nextFilter: RequestHeader => Future[Result]
@@ -54,6 +55,21 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     actionName: String): Future[Result] = {
     if (internalRoutes.contains(requestHeader.path)) {
       executeRequest(startTime, System.currentTimeMillis, nextFilter, requestHeader, actionName)
+    } else if (requestHeader.path.startsWith(redactionRoutePrefix)) {
+      // if redaction APIs
+      authorizer.authorize(requestHeader).flatMap {
+        case Right(authData) =>
+          executeRequest(
+            startTime,
+            System.currentTimeMillis,
+            nextFilter,
+            requestHeader
+              .addAttr(AuthorizationAttr.Key, authData),
+            actionName
+          )
+        case Left(e) =>
+          Future.successful(e)
+      }
     } else {
       authorizer.authorize(requestHeader).flatMap {
         case Right(authData) =>
