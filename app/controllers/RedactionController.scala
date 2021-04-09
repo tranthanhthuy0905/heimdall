@@ -5,7 +5,8 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import play.api.http.ContentTypes
-import play.api.mvc._
+import play.api.libs.json.Json
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.audit.AuditConversions
 import services.drd.DrdClient
 import utils.{HdlResponseHelpers, WSResponseHelpers}
@@ -31,9 +32,39 @@ class RedactionController @Inject()(
         andThen redactionRequestActionBuilder.build(evidenceId)
         andThen drdPermValidation
     ).async { implicit request =>
+      // TODO: validate evidence type
+      // TODO: Using sage/dredd to get Evidence Title from (evidenceId, partnerId)
       FutureEither(
         drdClient
-          .createRedaction(request.partnerId, request.userId, request.evidenceId)
+          .call(
+            s"/v1/evidences/${evidenceId}/redactions",
+            request.method,
+            request.partnerId,
+            request.userId,
+            Option(
+              Json.obj(
+                "EvidenceTitle" -> "a test title",
+              ))
+          )
+          .map(withOKStatus))
+        .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
+    }
+
+  def callDocumentRedactionAPI(evidenceId: String, path: String): Action[AnyContent] =
+    (
+      heimdallRequestAction
+        andThen redactionRequestActionBuilder.build(evidenceId)
+        andThen drdPermValidation
+    ).async { implicit request =>
+      FutureEither(
+        drdClient
+          .call(
+            s"/v1/evidences/${evidenceId}/${path}",
+            request.method,
+            request.partnerId,
+            request.userId,
+            request.body.asJson
+          )
           .map(withOKStatus))
         .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
     }

@@ -5,13 +5,14 @@ import java.util.UUID
 
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
 
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 trait DrdClient {
-  def createRedaction(partnerId: UUID, userId: UUID, evidenceId: UUID): Future[WSResponse]
+  def call(endpoint: String, method: String, partnerId: UUID, userId: UUID, body: Option[JsValue]): Future[WSResponse]
 }
 
 @Singleton
@@ -19,24 +20,16 @@ class DrdClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
     extends DrdClient
     with LazyLogging {
 
-  def createRedaction(partnerId: UUID, userId: UUID, evidenceId: UUID): Future[WSResponse] = {
-    // TODO: validate evidence type
-    // TODO: Using sage/dredd to get Evidence Title from (evidenceId, partnerId)
-    val evidenceTitle = "a test title"
-
-    buildDrdEndpoint(s"/v1/evidences/${evidenceId.toString}/redactions")
+  def call(endpoint: String, method: String, partnerId: UUID, userId: UUID, body: Option[JsValue]) = {
+    ws.url(config.getString("edc.service.drd.host") + endpoint)
       .addHttpHeaders(
         "Partner-Id"            -> partnerId.toString,
         "Authenticated-User-Id" -> userId.toString,
+        "Accept"                -> "application/json",
       )
-      .withMethod("POST")
-      .withBody(
-        Json.obj(
-          "EvidenceTitle" -> evidenceTitle,
-        ))
+      .withMethod(method)
+      .withBody(body.getOrElse(JsObject.empty))
+      .withRequestTimeout(30.second)
       .execute()
   }
-
-  private def buildDrdEndpoint(endpoint: String) =
-    ws.url(config.getString("edc.service.drd.host") + endpoint)
 }
