@@ -23,6 +23,8 @@ case class RedactionPermValidationAction @Inject()(pdp: PdpClient)(
       )
     )
 
+    // TODO: double-check PermissionType
+    // https://taserintl.atlassian.net/browse/MSR-2624?focusedCommentId=512469
     authorize(request.request.jwt, entities, PermissionType.EvidenceView) map {
       case true =>
         None

@@ -57,4 +57,11 @@ GET  /v2/media/audio/mp3                    controllers.v2.AudioController.mp3
 
 # Routing for DRD (Document Redaction) service
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-POST  /api/v1/redaction/document/evidences/:evidenceId/redactions                 controllers.RedactionController.createDocumentRedaction(evidenceId: String)
+POST   /api/v1/redaction/document/evidences/:evidenceId/redactions                            controllers.RedactionController.createDocumentRedaction(evidenceId: String)
+
+GET    /api/v1/redaction/document/evidences/:evidenceId/redactions                            controllers.RedactionController.getDocumentRedactions(evidenceId: String)
+DELETE /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId               controllers.RedactionController.deleteDocumentRedaction(evidenceId: String, redactionId: String)
+# xfdf apis
+GET    /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/xfdf          controllers.RedactionController.getXfdf(evidenceId: String, redactionId: String)
+POST   /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/xfdf_commands controllers.RedactionController.postXfdfCommands(evidenceId: String, redactionId: String)
+
