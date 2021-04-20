@@ -85,7 +85,7 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
   }
 
   override def getWatermarkSettings(partnerId: String): Future[Option[WatermarkSetting]] = {
-    val key = s"hdl-$partnerId"
+    val key = getWatermarkSettingsRedisKey(partnerId)
     HdlCache.WatermarkSettings
       .get(key)
       .map { un =>
@@ -103,8 +103,12 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
   }
 
   override def updateWatermarkSettings(partnerId: String, watermarkSetting: WatermarkSetting): Future[Unit] = {
-    val key = s"hdl-$partnerId"
+    val key = getWatermarkSettingsRedisKey(partnerId)
     client.createOrUpdateWatermarkSetting(auth, watermarkSetting).toScalaFuture
       .map( _ => HdlCache.WatermarkSettings.set(key, watermarkSetting))
   }
+
+  // If watermark settings have new setting, increase the version in the key
+  // so we don't have to care about the outdated values in cache
+  private def getWatermarkSettingsRedisKey(partnerId: String): String = s"hdl-v1-$partnerId"
 }
