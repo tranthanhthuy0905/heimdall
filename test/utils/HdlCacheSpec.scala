@@ -6,6 +6,8 @@ import org.scalatest.BeforeAndAfterAll
 import redis.embedded.RedisServer
 import java.net.URL
 
+import com.evidence.service.komrade.thrift.{WatermarkPosition, WatermarkSetting}
+
 import scala.concurrent.duration.{Duration, HOURS, MINUTES}
 
 class HdlCacheSpec extends PlaySpec with EmbeddedRedis with BeforeAndAfterAll {
@@ -28,6 +30,7 @@ class HdlCacheSpec extends PlaySpec with EmbeddedRedis with BeforeAndAfterAll {
       HdlTtl.urlExpired mustBe Duration(2, HOURS)
       HdlTtl.urlMemTTL mustBe Duration(20, MINUTES)
       HdlTtl.urlRedisTTL mustBe Duration(1, HOURS)
+      HdlTtl.watermarkSettingsRedisTTL mustBe Duration(5, HOURS)
     }
   }
   "HdlCache" must {
@@ -53,6 +56,16 @@ class HdlCacheSpec extends PlaySpec with EmbeddedRedis with BeforeAndAfterAll {
       noException should be thrownBy HdlCache.PresignedUrl.set("key", url2)
       HdlCache.PresignedUrl.get("key") mustBe Some(url2)
       HdlCache.PresignedUrl.get("key1") mustBe None
+    }
+    "be able to get/set watermark settings" in {
+      val setting = WatermarkSetting("someagency", WatermarkPosition.Center)
+      noException should be thrownBy HdlCache.WatermarkSettings.set("key", setting)
+      HdlCache.WatermarkSettings.get("key") mustBe Some(setting)
+
+      val setting2 = WatermarkSetting("someagency", WatermarkPosition.BottomRight)
+      noException should be thrownBy HdlCache.WatermarkSettings.set("key", setting2)
+      HdlCache.WatermarkSettings.get("key") mustBe Some(setting2)
+      HdlCache.WatermarkSettings.get("key1") mustBe None
     }
   }
 }
