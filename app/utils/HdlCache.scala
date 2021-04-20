@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit
 
 import com.evidence.service.common.cache.{Cache, CacheConfig}
 import com.evidence.service.common.config.Configuration
+import com.evidence.service.komrade.thrift.{WatermarkSetting}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -37,6 +38,9 @@ case object HdlTtl {
 
   val urlMemTTL: FiniteDuration =
     Duration(config.getDuration("service.cache.url.mem-ttl", TimeUnit.MINUTES), TimeUnit.MINUTES)
+
+  val watermarkSettingsRedisTTL: FiniteDuration =
+    Duration(config.getDuration("service.cache.watermark-settings.redis-ttl", TimeUnit.HOURS), TimeUnit.HOURS)
 }
 
 case object HdlCache {
@@ -72,6 +76,18 @@ case object HdlCache {
 
     override def set(key: String, value: URL): Unit =
       cache.setSync(key, "HdlPresignedUrl", value.toString)
+
+    override def evict(key: String): Unit = cache.deleteSync(key)
+  }
+
+  case object WatermarkSettings extends HdlCache[String, WatermarkSetting] {
+    private val cache = new Cache[WatermarkSetting](CacheConfig(ttl = Some(HdlTtl.watermarkSettingsRedisTTL)))
+
+    override def get(key: String): Option[WatermarkSetting] =
+      cache.getSync(key, "HdlWatermarkSettings", refreshTTL = false)
+
+    override def set(key: String, value: WatermarkSetting): Unit =
+      cache.setSync(key, "HdlWatermarkSettings", value)
 
     override def evict(key: String): Unit = cache.deleteSync(key)
   }

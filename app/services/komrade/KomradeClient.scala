@@ -17,6 +17,8 @@ import scala.concurrent.{ExecutionContext, Future}
 trait KomradeClient {
   def getUser(partnerId: String, userId: String): Future[Option[String]]
   def getPartner(partnerId: String): Future[Option[String]]
+  def getWatermarkSettings(partnerId: String): Future[Option[WatermarkSetting]]
+  def updateWatermarkSettings(partnerId: String, watermarkSetting: WatermarkSetting): Future[Unit]
 }
 
 @Singleton
@@ -32,7 +34,7 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
   }
 
   // test authorization when init class
-  {
+  private val auth: Authorization = {
     val secret   = config.getString("edc.service.komrade.thrift_auth_secret")
     val authType = config.getString("edc.service.komrade.thrift_auth_type")
     Authorization(Option(authType), Option(secret))
@@ -81,4 +83,32 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
         }
     }
   }
+
+  override def getWatermarkSettings(partnerId: String): Future[Option[WatermarkSetting]] = {
+    val key = getWatermarkSettingsRedisKey(partnerId)
+    HdlCache.WatermarkSettings
+      .get(key)
+      .map { un =>
+        Future.successful(Some(un))
+      }
+      .getOrElse {
+        logger.debug("getWatermarkSettings")("partnerId" -> partnerId)
+        val request = GetWatermarkSettingRequest(partnerId)
+        val res = client.getWatermarkSetting(auth, request).toScalaFuture.map { s =>
+          s.setting.foreach(x => HdlCache.WatermarkSettings.set(key, x))
+          s.setting
+        }
+        res
+      }
+  }
+
+  override def updateWatermarkSettings(partnerId: String, watermarkSetting: WatermarkSetting): Future[Unit] = {
+    val key = getWatermarkSettingsRedisKey(partnerId)
+    client.createOrUpdateWatermarkSetting(auth, watermarkSetting).toScalaFuture
+      .map( _ => HdlCache.WatermarkSettings.set(key, watermarkSetting))
+  }
+
+  // If watermark settings have new setting, increase the version in the key
+  // so we don't have to care about the outdated values in cache
+  private def getWatermarkSettingsRedisKey(partnerId: String): String = s"hdl-v1-$partnerId"
 }
