@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait KomradeClient {
   def getUser(partnerId: String, userId: String): Future[Option[String]]
   def getPartner(partnerId: String): Future[Option[String]]
-  def getWatermarkSettings(partnerId: String): Future[Option[WatermarkSetting]]
+  def getWatermarkSettings(partnerId: String): Future[WatermarkSetting]
   def updateWatermarkSettings(partnerId: String, watermarkSetting: WatermarkSetting): Future[Unit]
 }
 
@@ -84,19 +84,19 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
     }
   }
 
-  override def getWatermarkSettings(partnerId: String): Future[Option[WatermarkSetting]] = {
+  override def getWatermarkSettings(partnerId: String): Future[WatermarkSetting] = {
     val key = getWatermarkSettingsRedisKey(partnerId)
     HdlCache.WatermarkSettings
       .get(key)
-      .map { un =>
-        Future.successful(Some(un))
+      .map { settings =>
+        Future.successful(settings)
       }
       .getOrElse {
         logger.debug("getWatermarkSettings")("partnerId" -> partnerId)
         val request = GetWatermarkSettingRequest(partnerId)
         val res = client.getWatermarkSetting(auth, request).toScalaFuture.map { s =>
           s.setting.foreach(x => HdlCache.WatermarkSettings.set(key, x))
-          s.setting
+          s.setting.getOrElse(WatermarkSetting(partnerId, WatermarkPosition.BottomLeft))
         }
         res
       }
