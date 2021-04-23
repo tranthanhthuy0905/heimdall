@@ -29,7 +29,6 @@ case class TokenValidationAction @Inject()(sessionData: StreamingSessionData)(
           "streamingSessionToken" -> request.streamingSessionToken,
           "path"                  -> request.path,
           "query"                 -> request.queryString,
-          "cookie"                -> request.cookie
         )
         Some(Results.Forbidden)
       }

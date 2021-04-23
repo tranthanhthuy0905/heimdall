@@ -38,7 +38,6 @@ case class PermValidationAction @Inject()(permission: PermissionType.Value)(pdp:
           "streamingSessionToken" -> request.streamingSessionToken,
           "path"                  -> request.path,
           "query"                 -> request.queryString,
-          "cookie"                -> request.cookie,
           "permission"            -> permission
         )
         Some(Results.Forbidden)
