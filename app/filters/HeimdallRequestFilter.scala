@@ -36,6 +36,7 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     */
   final val internalRoutes       = List("/media/alive")
   final val redactionRoutePrefix = "/api/v1/redaction/"
+  final val agenciesSettingsPrefix = "/agencies"
 
   def apply(
     nextFilter: RequestHeader => Future[Result]
@@ -55,8 +56,8 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     actionName: String): Future[Result] = {
     if (internalRoutes.contains(requestHeader.path)) {
       executeRequest(startTime, System.currentTimeMillis, nextFilter, requestHeader, actionName)
-    } else if (requestHeader.path.startsWith(redactionRoutePrefix)) {
-      // if redaction APIs
+    } else if (requestHeader.path.startsWith(redactionRoutePrefix) || requestHeader.path.startsWith(agenciesSettingsPrefix)) {
+      // if redaction APIs or agencies settings APIs
       authorizer.authorize(requestHeader).flatMap {
         case Right(authData) =>
           executeRequest(
