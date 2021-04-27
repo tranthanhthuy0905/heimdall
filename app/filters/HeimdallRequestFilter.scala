@@ -36,7 +36,7 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     */
   final val internalRoutes       = List("/media/alive")
   final val redactionRoutePrefix = "/api/v1/redaction/"
-  final val agenciesSettingsPrefix = "/agencies"
+  final val agenciesSettingsPrefix = "/media/settings/agencies"
 
   def apply(
     nextFilter: RequestHeader => Future[Result]
