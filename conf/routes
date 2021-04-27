@@ -66,5 +66,5 @@ GET    /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/
 POST   /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/xfdf_commands controllers.RedactionController.postXfdfCommands(evidenceId: String, redactionId: String)
 
 # APIs for evidence playback settings
-GET    /agencies/:agencyId/evidencePlaybackSettings/watermark     controllers.PartnerController.getWatermarkSettings(agencyId)
-POST   /agencies/:agencyId/evidencePlaybackSettings/watermark     controllers.PartnerController.updateWatermarkSettings(agencyId)
+GET    /media/settings/agencies/:agencyId/evidencePlaybackSettings/watermark     controllers.PartnerController.getWatermarkSettings(agencyId)
+POST   /media/settings/agencies/:agencyId/evidencePlaybackSettings/watermark     controllers.PartnerController.updateWatermarkSettings(agencyId)
