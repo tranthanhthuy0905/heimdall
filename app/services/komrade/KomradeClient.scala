@@ -1,5 +1,6 @@
 package services.komrade
 
+import com.evidence.service.common.Convert
 import com.evidence.service.common.finagle.FinagleClient
 import com.evidence.service.common.finagle.FutureConverters._
 import com.evidence.service.common.logging.LazyLogging
@@ -110,5 +111,9 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
 
   // If watermark settings have new setting, increase the version in the key
   // so we don't have to care about the outdated values in cache
-  private def getWatermarkSettingsRedisKey(partnerId: String): String = s"hdl-v1-$partnerId"
+  private def getWatermarkSettingsRedisKey(partnerId: String): String = {
+    Convert.tryToUuid(partnerId)
+      .map(normalizedPartnerId => s"hdl-v2-${normalizedPartnerId.toString}")
+      .getOrElse(s"hdl-v2-$partnerId")
+  }
 }
