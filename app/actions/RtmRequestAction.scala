@@ -10,8 +10,9 @@ import javax.inject.Inject
 import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
+import services.komrade.KomradeClient
 import services.routesplitter.RouteSplitter
-import services.rtm.{RtmQueryHelper, RtmRequest}
+import services.rtm.{HeimdallRoutes, RtmQueryHelper, RtmRequest}
 import services.zookeeper.HeimdallLoadBalancer
 
 import scala.collection.immutable.Map
@@ -20,11 +21,13 @@ import scala.concurrent.{ExecutionContext, Future}
 case class RtmRequestAction @Inject()(
   config: Config,
   dredd: DreddClient,
+  komrade: KomradeClient,
   loadBalancer: HeimdallLoadBalancer,
   routeSplitter: RouteSplitter
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, RtmRequest]
-    with LazyLogging {
+    with LazyLogging
+    with HeimdallRoutes {
 
   def refine[A](input: HeimdallRequest[A]) = {
     RtmQueryHelper(input.path, input.queryString).map { rtmQuery =>
@@ -32,7 +35,8 @@ case class RtmRequestAction @Inject()(
         presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
         rtmApiVersion <- Future.successful(routeSplitter.getApiVersion(input.media.fileIds.headOption.getOrElse(UUID.randomUUID), input.rtmApiVersion))
         endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString, rtmApiVersion)
-        queries       <- Future.successful(getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls))
+        isRequestingMaster <- Future.successful(input.path.startsWith(hlsMaster) || input.path.startsWith(hlsMasterV2))
+        queries       <- getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls, isRequestingMaster, input.audienceId)
         rtmPath       <- Future.successful(getRTMPath(rtmQuery.path, rtmApiVersion, presignedUrls.length > 1))
       } yield {
         val uri = Uri
@@ -58,12 +62,25 @@ case class RtmRequestAction @Inject()(
   }
 
   private def getRTMQueries(
-    queries: Map[String, String],
-    watermark: Option[String],
-    presignedUrls: Seq[URL]): String = {
-    (Map("source" -> presignedUrls.mkString(",")) ++ watermark
+                             queries: Map[String, String],
+                             watermark: Option[String],
+                             presignedUrls: Seq[URL],
+                             isRequestingMaster: Boolean,
+                             partnerId: String): Future[String] = {
+    val presignedUrlsMap = Map("source" -> presignedUrls.mkString(","))
+    var watermarkMap = watermark
       .map(watermark => queries + ("label" -> watermark))
-      .getOrElse(queries)).toSeq.map {
+      .getOrElse(queries)
+    if (isRequestingMaster){
+      komrade.getWatermarkSettings(partnerId).map(watermarkSettings => {
+        watermarkMap = watermarkMap + ("lp" -> watermarkSettings.position.value.toString)
+        buildQueryParams(presignedUrlsMap ++ watermarkMap)
+      })
+    } else Future.successful(buildQueryParams(presignedUrlsMap ++ watermarkMap))
+  }
+
+  private def buildQueryParams(map: Map[String, String]): String = {
+    map.toSeq.map {
       case (key, value) =>
         URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(
           value,
