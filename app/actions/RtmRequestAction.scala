@@ -5,7 +5,6 @@ import java.util.UUID
 
 import akka.http.scaladsl.model.Uri
 import com.evidence.service.common.logging.LazyLogging
-import com.evidence.service.komrade.thrift.{WatermarkPosition, WatermarkSetting}
 import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.HeimdallRequest
