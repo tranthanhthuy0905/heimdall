@@ -37,8 +37,7 @@ case class RtmRequestAction @Inject()(
         rtmApiVersion <- Future.successful(routeSplitter.getApiVersion(input.media.fileIds.headOption.getOrElse(UUID.randomUUID), input.rtmApiVersion))
         endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString, rtmApiVersion)
         isRequestingMaster <- Future.successful(input.path.startsWith(hlsMaster) || input.path.startsWith(hlsMasterV2))
-        watermarkSettings: Option[WatermarkSetting] <- if (isRequestingMaster) komrade.getWatermarkSettings(input.audienceId) else Future(None)
-        queries       <- Future.successful(getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls, watermarkSettings))
+        queries       <- getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls, isRequestingMaster, input.audienceId)
         rtmPath       <- Future.successful(getRTMPath(rtmQuery.path, rtmApiVersion, presignedUrls.length > 1))
       } yield {
         val uri = Uri
@@ -67,16 +66,22 @@ case class RtmRequestAction @Inject()(
                              queries: Map[String, String],
                              watermark: Option[String],
                              presignedUrls: Seq[URL],
-                             watermarkSettings: Option[WatermarkSetting]): String = {
+                             isRequestingMaster: Boolean,
+                             partnerId: String): Future[String] = {
     val presignedUrlsMap = Map("source" -> presignedUrls.mkString(","))
     var watermarkMap = watermark
       .map(watermark => queries + ("label" -> watermark))
       .getOrElse(queries)
-    watermarkMap = watermarkSettings
-      .map(settings => watermarkMap + ("lp" -> settings.position.value.toString))
-      .getOrElse(watermarkMap)
+    if (isRequestingMaster){
+      komrade.getWatermarkSettings(partnerId).map(watermarkSettings => {
+        watermarkMap = watermarkMap + ("lp" -> watermarkSettings.position.value.toString)
+        buildQueryParams(presignedUrlsMap ++ watermarkMap)
+      })
+    } else Future.successful(buildQueryParams(presignedUrlsMap ++ watermarkMap))
+  }
 
-    (presignedUrlsMap ++ watermarkMap).toSeq.map {
+  private def buildQueryParams(map: Map[String, String]): String = {
+    map.toSeq.map {
       case (key, value) =>
         URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(
           value,
