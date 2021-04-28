@@ -37,9 +37,8 @@ case class RtmRequestAction @Inject()(
         rtmApiVersion <- Future.successful(routeSplitter.getApiVersion(input.media.fileIds.headOption.getOrElse(UUID.randomUUID), input.rtmApiVersion))
         endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString, rtmApiVersion)
         isRequestingMaster <- Future.successful(input.path.startsWith(hlsMaster) || input.path.startsWith(hlsMasterV2))
-        watermarkSettings <- komrade.getWatermarkSettings(input.audienceId)
-        queries       <- Future.successful(getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls,
-                                                                            isRequestingMaster, watermarkSettings))
+        watermarkSettings: Option[WatermarkSetting] <- if (isRequestingMaster) komrade.getWatermarkSettings(input.audienceId) else Future(None)
+        queries       <- Future.successful(getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls, watermarkSettings))
         rtmPath       <- Future.successful(getRTMPath(rtmQuery.path, rtmApiVersion, presignedUrls.length > 1))
       } yield {
         val uri = Uri
@@ -68,15 +67,14 @@ case class RtmRequestAction @Inject()(
                              queries: Map[String, String],
                              watermark: Option[String],
                              presignedUrls: Seq[URL],
-                             isRequestingMaster: Boolean,
-                             watermarkSetting: WatermarkSetting): String = {
+                             watermarkSettings: Option[WatermarkSetting]): String = {
     val presignedUrlsMap = Map("source" -> presignedUrls.mkString(","))
     var watermarkMap = watermark
       .map(watermark => queries + ("label" -> watermark))
       .getOrElse(queries)
-    if (isRequestingMaster) {
-      watermarkMap = watermarkMap + ("lp" -> watermarkSetting.position.value.toString)
-    }
+    watermarkMap = watermarkSettings
+      .map(settings => watermarkMap + ("lp" -> settings.position.value.toString))
+      .getOrElse(watermarkMap)
 
     (presignedUrlsMap ++ watermarkMap).toSeq.map {
       case (key, value) =>
