@@ -113,7 +113,7 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
   // so we don't have to care about the outdated values in cache
   private def getWatermarkSettingsRedisKey(partnerId: String): String = {
     Convert.tryToUuid(partnerId)
-      .map(normalizedPartnerId => s"hdl-v2-${normalizedPartnerId.toString}")
-      .getOrElse(s"hdl-v2-$partnerId")
+      .map(normalizedPartnerId => s"hdl-v1-${normalizedPartnerId.toString}")
+      .getOrElse(s"hdl-v1-$partnerId")
   }
 }
