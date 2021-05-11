@@ -1,7 +1,9 @@
 package services.audit
 
+import com.evidence.api.thrift.v1.TidEntities
 import play.api.libs.json._
 import com.evidence.service.audit.Tid
+import com.evidence.service.komrade.thrift.WatermarkSetting
 
 case class AuditEventParams(eventId: String, targetTid: Tid, updatedTid: Tid, json: String)
 
@@ -217,4 +219,37 @@ case class EvidenceFileBookmarkDownloadedEvent(
   remoteAddress: String
 ) extends AuditEvent {
   val eventTypeUuid = "5d0e13a4-40f5-ca11-69d0-2cad1453a9f6"
+}
+
+/**
+  * echo -n com.evidence.data.partner.events.v2.WatermarkSettingsUpdated | md5
+  */
+case class WatermarkSettingsUpdatedEvent(
+  targetTid: Tid,
+  updatedByTid: Tid,
+  remoteAddress: String,
+  position: Int
+) extends AuditEvent {
+  override val eventTypeUuid = "9c300b45-1ec7-f9c9-0683-6142aae00f6e"
+  override val fileTid = Tid(TidEntities.File)
+
+  override def toJsonString: String = {
+    Json
+      .obj(
+        "TargetTID" -> Json.obj(
+          "Entity" -> targetTid.entity.value,
+          "Domain" -> targetTid.domain,
+          "ID"     -> targetTid.id
+        ),
+        "UpdatedByTID" -> Json.obj(
+          "Entity" -> updatedByTid.entity.value,
+          "Domain" -> updatedByTid.domain,
+          "ID"     -> updatedByTid.id
+        ),
+        "Position" -> position,
+        "Ver"             -> ver,
+        "ClientIpAddress" -> remoteAddress
+      )
+      .toString
+  }
 }
