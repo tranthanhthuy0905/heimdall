@@ -31,7 +31,7 @@ class PartnerController  @Inject()(
   def getWatermarkSettings(partnerId: String): Action[AnyContent] = {
     (
       heimdallRequestAction
-        andThen partnerPermValidationActionBuilder.build(PermissionType.PartnerAnyRead)
+        andThen partnerPermValidationActionBuilder.build(partnerId)
     ) async { _ =>
       komrade.getWatermarkSettings(partnerId)
         .map(settings => Ok(watermarkSettingToJson(settings)))
@@ -41,7 +41,7 @@ class PartnerController  @Inject()(
   def updateWatermarkSettings(partnerId: String): Action[AnyContent] = {
     (
       heimdallRequestAction
-        andThen partnerPermValidationActionBuilder.build(PermissionType.PartnerEdit)
+        andThen partnerPermValidationActionBuilder.build(partnerId)
     ) async { request =>
       request.body.asJson
         .map{json => {

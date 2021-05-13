@@ -1,33 +1,38 @@
 package actions
 
-import com.evidence.api.thrift.v1.{EntityDescriptor, TidEntities}
+import com.evidence.service.common.auth.{CachingJOSEComponentFactory, KeyManager}
+import com.evidence.service.common.auth.jwt.{JWTWrapper, VerifyingJWTParser}
 import com.evidence.service.common.logging.LazyLogging
+import com.evidence.service.thrift.v2.ServiceErrorCode.Badrequest
+import com.evidence.service.thrift.v2.ServiceException
+import com.nimbusds.jwt.JWT
+import com.typesafe.config.Config
+
 import javax.inject.Inject
-import models.common.{HeimdallRequest, PermissionType}
+import models.common.HeimdallRequest
 import play.api.mvc.{ActionFilter, Result, Results}
-import services.pdp.PdpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class PartnerPermValidationActionBuilder @Inject()(pdp: PdpClient)(
+case class PartnerPermValidationActionBuilder @Inject()(config: Config)(
   implicit val executionContext: ExecutionContext) {
 
-  def build(permission: PermissionType.Value) = {
-    PartnerPermValidationAction(permission)(pdp)(executionContext)
+  def build(partnerId: String) = {
+    PartnerPermValidationAction(partnerId)(config)(executionContext)
   }
 }
 
-case class PartnerPermValidationAction @Inject()(permission: PermissionType.Value)(pdp: PdpClient)(
+case class PartnerPermValidationAction @Inject()(partnerId: String)(config: Config)(
   implicit val executionContext: ExecutionContext
 ) extends ActionFilter[HeimdallRequest]
   with LazyLogging {
 
-  def filter[A](request: HeimdallRequest[A]): Future[Option[Result]] = {
-    val entities = List(
-      EntityDescriptor(TidEntities.Partner, request.audienceId)
-    )
+  protected val keyManager: KeyManager                        = KeyManager.apply(config)
+  protected val componentFactory: CachingJOSEComponentFactory = new CachingJOSEComponentFactory(keyManager)
+  protected val parser                                        = new VerifyingJWTParser(componentFactory)
 
-    authorize(request.jwt, entities, permission).map {
+  def filter[A](request: HeimdallRequest[A]): Future[Option[Result]] = {
+    authorize(request.jwt, partnerId).map {
       case true =>
         None
       case _ =>
@@ -35,16 +40,30 @@ case class PartnerPermValidationAction @Inject()(permission: PermissionType.Valu
           "path"                  -> request.path,
           "query"                 -> request.queryString,
           "subjectId"                -> request.subjectId,
-          "permission"            -> permission
+          "partnerId"             -> partnerId
         )
         Some(Results.Forbidden)
     }
   }
 
-  private def authorize(
-                         jwt: String,
-                         entities: List[EntityDescriptor],
-                         permission: PermissionType.Value): Future[Boolean] = {
-    pdp.enforceBatch(jwt: String, entities: List[EntityDescriptor], permission.toString)
+  private def authorize(jwt: String, partnerId: String): Future[Boolean] = {
+    val jwtWrapper = parseJwt(jwt)
+    Future.successful(isAudience(jwtWrapper, partnerId))
   }
+
+  private def parseJwt(jwtStr: String): JWTWrapper =
+    parser.parse(jwtStr) match {
+      case Left(err) =>
+        logger.info("auth_error")("error" -> err)
+        throw ServiceException(Badrequest, Some(s"Invalid JWT: $err"))
+      case Right(jwt: JWT) =>
+        val wrapper = JWTWrapper(jwt)
+        wrapper.subjectDomain match {
+          case None         => throw ServiceException(Badrequest, Some("User domain is required"))
+          case Some(domain) => wrapper
+        }
+    }
+
+  private def isAudience(jwtWrapper: JWTWrapper, partnerId: String): Boolean =
+    partnerId.replace("-", "").equalsIgnoreCase(jwtWrapper.audienceId.replace("-", ""))
 }
