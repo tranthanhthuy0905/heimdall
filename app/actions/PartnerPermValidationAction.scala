@@ -1,11 +1,8 @@
 package actions
 
-import com.evidence.service.common.auth.{CachingJOSEComponentFactory, KeyManager}
+import com.evidence.service.common.auth.{AuthErrors, CachingJOSEComponentFactory, KeyManager}
 import com.evidence.service.common.auth.jwt.{JWTWrapper, VerifyingJWTParser}
 import com.evidence.service.common.logging.LazyLogging
-import com.evidence.service.thrift.v2.ServiceErrorCode.Badrequest
-import com.evidence.service.thrift.v2.ServiceException
-import com.nimbusds.jwt.JWT
 import com.typesafe.config.Config
 
 import javax.inject.Inject
@@ -47,23 +44,16 @@ case class PartnerPermValidationAction @Inject()(partnerId: String)(config: Conf
   }
 
   private def authorize(jwt: String, partnerId: String): Future[Boolean] = {
-    val jwtWrapper = parseJwt(jwt)
-    Future.successful(isAudience(jwtWrapper, partnerId))
+    val result = parseJWT(jwt).map(jwtWrapper => jwtWrapper.subjectDomain.map(isAudience(_, partnerId)).getOrElse(false))
+      .fold(_ => false, t => t)
+    Future.successful(result)
   }
 
-  private def parseJwt(jwtStr: String): JWTWrapper =
-    parser.parse(jwtStr) match {
-      case Left(err) =>
-        logger.info("auth_error")("error" -> err)
-        throw ServiceException(Badrequest, Some(s"Invalid JWT: $err"))
-      case Right(jwt: JWT) =>
-        val wrapper = JWTWrapper(jwt)
-        wrapper.subjectDomain match {
-          case None         => throw ServiceException(Badrequest, Some("User domain is required"))
-          case Some(domain) => wrapper
-        }
-    }
+  private def parseJWT(jwtString: String): Either[AuthErrors, JWTWrapper] = {
+    parser.parse(jwtString).map(JWTWrapper(_))
+  }
 
-  private def isAudience(jwtWrapper: JWTWrapper, partnerId: String): Boolean =
-    partnerId.replace("-", "").equalsIgnoreCase(jwtWrapper.audienceId.replace("-", ""))
+  private def isAudience(audienceId: String, partnerId: String): Boolean = {
+    audienceId.replace("-","").equalsIgnoreCase(partnerId.replace("_",""))
+  }
 }
