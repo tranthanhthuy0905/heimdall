@@ -1,4 +1,4 @@
-package controllers.v1
+package controllers
 
 import actions._
 import com.evidence.service.common.monad.FutureEither

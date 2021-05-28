@@ -1,4 +1,4 @@
-package controllers.v1
+package controllers
 
 import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
 import com.evidence.service.common.logging.LazyLogging

@@ -26,18 +26,18 @@ POST /media/xpreport/stalled                controllers.XpReportController.logSt
 # Routing for RTMv1
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GET  /media/streamed                        controllers.AuditController.recordMediaStreamedEvent
-GET  /media/start                           controllers.v1.ProbeController.probe
+GET  /media/start                           controllers.ProbeController.probe
 
-GET  /media/hls/master                      controllers.v1.HlsController.playlist
-GET  /media/hls/variant                     controllers.v1.HlsController.playlist
-GET  /media/hls/segment                     controllers.v1.HlsController.segment
-GET  /media/hls/longsegment                 controllers.v1.HlsController.segment
+GET  /media/hls/master                      controllers.HlsController.playlist
+GET  /media/hls/variant                     controllers.HlsController.playlist
+GET  /media/hls/segment                     controllers.HlsController.segment
+GET  /media/hls/longsegment                 controllers.HlsController.segment
 
-GET  /media/thumbnail                       controllers.v1.ThumbnailController.thumbnail
-GET  /media/downloadthumbnail               controllers.v1.ThumbnailDownloadController.downloadThumbnail
+GET  /media/thumbnail                       controllers.ThumbnailController.thumbnail
+GET  /media/downloadthumbnail               controllers.ThumbnailDownloadController.downloadThumbnail
 
-GET  /media/audio/sample                    controllers.v1.AudioController.sample
-GET  /media/audio/mp3                       controllers.v1.AudioController.mp3
+GET  /media/audio/sample                    controllers.AudioController.sample
+GET  /media/audio/mp3                       controllers.AudioController.mp3
 
 # Routing for DRD (Document Redaction) service
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
