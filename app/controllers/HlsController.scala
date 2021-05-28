@@ -9,6 +9,7 @@ import models.hls.HlsManifestFormatter
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.rtm.{RtmClient, RtmRequest}
+import com.typesafe.config.Config
 import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 import scala.concurrent.ExecutionContext
@@ -20,6 +21,7 @@ class HlsController @Inject()(
   watermarkAction: WatermarkAction,
   rtmRequestAction: RtmRequestAction,
   rtm: RtmClient,
+  config: Config,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
@@ -47,19 +49,15 @@ class HlsController @Inject()(
         watermarkAction andThen
         rtmRequestAction
     ).async { request: RtmRequest[AnyContent] =>
-      executionTime(
-        "HlsController.segment",
         FutureEither(rtm.send(request).map(withOKStatus))
-          .fold(error, streamed(_, "video/MP2T")),
-        s"rtm:v${request.getOverrideRtmApiVersion}"
-      )
+          .fold(error, streamed(_, "video/MP2T"))
     }
 
   private def toManifest(response: WSResponse, request: HeimdallRequest[AnyContent]): String = {
     HlsManifestFormatter(
       response.body,
       request.media,
-      request.apiPathPrefixForBuildingHlsManifest,
+      config.getString("heimdall.api_prefix"),
       Some(request.streamingSessionToken)
     )
   }
