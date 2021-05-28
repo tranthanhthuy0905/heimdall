@@ -1,7 +1,6 @@
 package actions
 
 import java.net.{URL, URLEncoder}
-import java.util.UUID
 
 import akka.http.scaladsl.model.Uri
 import com.evidence.service.common.logging.LazyLogging
@@ -11,7 +10,6 @@ import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
 import services.komrade.KomradeClient
-import services.routesplitter.RouteSplitter
 import services.rtm.{HeimdallRoutes, RtmQueryHelper, RtmRequest}
 import services.zookeeper.HeimdallLoadBalancer
 
@@ -23,7 +21,6 @@ case class RtmRequestAction @Inject()(
   dredd: DreddClient,
   komrade: KomradeClient,
   loadBalancer: HeimdallLoadBalancer,
-  routeSplitter: RouteSplitter
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, RtmRequest]
     with LazyLogging

@@ -10,7 +10,6 @@ import services.global.HeimdallApplicationLifecycle
 import services.komrade.{CachedKomradeClientImpl, KomradeClient}
 import services.pdp.{PdpClient, PdpClientImpl}
 import services.queue.{ProbeNotifier, ProbeNotifierProvider}
-import services.routesplitter.{RouteSplitter, RouteSplitterProvider}
 import services.rti.{RtiClient, RtiClientImpl}
 import services.rtm.{RtmClient, RtmClientImpl}
 import services.sessions.{SessionsClient, SessionsClientImpl}
@@ -35,7 +34,6 @@ class Module extends AbstractModule {
     // Providers
     bind(classOf[CuratorFramework]).toProvider(classOf[ZookeeperClientProvider]).in(classOf[Singleton])
     bind(classOf[HeimdallLoadBalancer]).toProvider(classOf[HeimdallLoadBalancerProvider]).in(classOf[Singleton])
-    bind(classOf[RouteSplitter]).toProvider(classOf[RouteSplitterProvider])
     bind(classOf[ProbeNotifier]).toProvider(classOf[ProbeNotifierProvider]).in(classOf[Singleton])
   }
 }
