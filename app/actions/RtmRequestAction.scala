@@ -1,7 +1,6 @@
 package actions
 
 import java.net.{URL, URLEncoder}
-import java.util.UUID
 
 import akka.http.scaladsl.model.Uri
 import com.evidence.service.common.logging.LazyLogging
@@ -11,7 +10,6 @@ import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
 import services.komrade.KomradeClient
-import services.routesplitter.RouteSplitter
 import services.rtm.{HeimdallRoutes, RtmQueryHelper, RtmRequest}
 import services.zookeeper.HeimdallLoadBalancer
 
@@ -23,7 +21,6 @@ case class RtmRequestAction @Inject()(
   dredd: DreddClient,
   komrade: KomradeClient,
   loadBalancer: HeimdallLoadBalancer,
-  routeSplitter: RouteSplitter
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, RtmRequest]
     with LazyLogging
@@ -33,32 +30,21 @@ case class RtmRequestAction @Inject()(
     RtmQueryHelper(input.path, input.queryString).map { rtmQuery =>
       for {
         presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
-        rtmApiVersion <- Future.successful(routeSplitter.getApiVersion(input.media.fileIds.headOption.getOrElse(UUID.randomUUID), input.rtmApiVersion))
-        endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString, rtmApiVersion)
+        endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString)
         isRequestingMaster <- Future.successful(input.path.startsWith(hlsMaster) || input.path.startsWith(hlsMasterV2))
         queries       <- getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls, isRequestingMaster, input.audienceId)
-        rtmPath       <- Future.successful(getRTMPath(rtmQuery.path, rtmApiVersion, presignedUrls.length > 1))
       } yield {
         val uri = Uri
           .from(
             scheme = "https",
             host = endpoint.host,
             port = endpoint.port,
-            path = rtmPath,
+            path = rtmQuery.path,
             queryString = Some(queries)
           )
-        Right(
-          new RtmRequest(
-            uri,
-            rtmApiVersion,
-            input
-          ))
+        Right(new RtmRequest(uri, input))
       }
     }.getOrElse(Future.successful(Left(Results.BadRequest)))
-  }
-
-  private def getRTMPath(path: String, rtmApiVersion: Int, isMulticam: Boolean): String = {
-    if (rtmApiVersion == 2 && isMulticam) s"/multicam/$path" else path
   }
 
   private def getRTMQueries(

@@ -9,9 +9,7 @@ import models.common.HeimdallRequest
   * @param rtmURI URI path to RTM
   * @return Generated URI as a string.
   */
-class RtmRequest[A](rtmURI: Uri, overrideRtmApiVersion: Int, request: HeimdallRequest[A])
+class RtmRequest[A](rtmURI: Uri, request: HeimdallRequest[A])
     extends HeimdallRequest[A](request, request.authorizationData) {
   override def toString: String = rtmURI.toString
-
-  def getOverrideRtmApiVersion: Int = overrideRtmApiVersion
 }

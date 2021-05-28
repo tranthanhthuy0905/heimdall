@@ -14,38 +14,28 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
   import ZookeeperPackageTestHelper._
 
   private class HeimdallLoadBalancerMockContext(
-    rtmChildrenCount: Int,
-    perftrakChildrenCount: Int,
-    enableRTMv2: Boolean = false,
-    minAgg: Int = 1,
-    maxAgg: Int = 10) {
+                                                 rtmChildrenCount: Int,
+                                                 perftrakChildrenCount: Int,
+                                                 minAgg: Int = 1,
+                                                 maxAgg: Int = 10) {
+    val (rtmCacheMock, rtmListenerContainer)           = newCacheMock
+    val (perftrakCacheMock, perftrakListenerContainer) = newCacheMock
 
-    var nodeAndPerftrackAware: Map[Int, (PathChildrenCacheFacade, PathChildrenCacheFacade)] = Map()
-    var lastKey: Map[Int, String]                                                           = Map()
-
-    private def newCacheMock: PathChildrenCacheFacade = {
+    private def newCacheMock: (PathChildrenCacheFacade, ListenerContainer[PathChildrenCacheListener]) = {
       val cacheMock         = mock[PathChildrenCacheFacade]
       val listenerContainer = new ListenerContainer[PathChildrenCacheListener]
       when(cacheMock.getListenable) thenReturn listenerContainer
-      cacheMock
+      (cacheMock, listenerContainer)
     }
 
-    val numberOfRTMVersion = if (enableRTMv2) 2 else 1
-    for (apiVersion <- 1 to numberOfRTMVersion) {
-      val rtmCacheMock      = newCacheMock
-      val perftrakCacheMock = newCacheMock
+    val lastKey: String                     = someKey
+    val listOfRtmData: util.List[ChildData] = newListOfRtmChildData(rtmChildrenCount)
 
-      val lk: String                          = someKey
-      val listOfRtmData: util.List[ChildData] = newListOfRtmChildData(rtmChildrenCount)
-      val listOfPerftrakData: util.List[ChildData] =
-        newListOfPerftrakChildData(perftrakChildrenCount, minAgg, maxAgg, lk)
+    val listOfPerftrakData: util.List[ChildData] =
+      newListOfPerftrakChildData(perftrakChildrenCount, minAgg, maxAgg, lastKey)
 
-      when(rtmCacheMock.getCurrentData) thenReturn listOfRtmData
-      when(perftrakCacheMock.getCurrentData) thenReturn listOfPerftrakData
-
-      nodeAndPerftrackAware = nodeAndPerftrackAware + (apiVersion -> (rtmCacheMock, perftrakCacheMock))
-      lastKey = lastKey + (apiVersion                             -> lk)
-    }
+    when(rtmCacheMock.getCurrentData) thenReturn listOfRtmData
+    when(perftrakCacheMock.getCurrentData) thenReturn listOfPerftrakData
   }
 
   "HeimdallLoadBalancer" should {
@@ -53,50 +43,48 @@ class HeimdallLoadBalancerSpec extends PlaySpec with MockitoSugar {
     "return None when there is no servers available" in new HeimdallLoadBalancerMockContext(0, 0) {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
-          nodeAndPerftrackAware,
+          rtmCacheMock,
+          perftrakCacheMock,
           HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
-      val result: Option[ServiceEndpoint] = loadBalancer.getInstance(someKey, 1)
+      val result: Option[ServiceEndpoint] = loadBalancer.getInstance(someKey)
       result mustBe None
     }
 
-    "return the single existing endpoint on each api version" in new HeimdallLoadBalancerMockContext(1, 1, true) {
+    "return the single existing endpoint" in new HeimdallLoadBalancerMockContext(1, 1) {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
-          nodeAndPerftrackAware,
+          rtmCacheMock,
+          perftrakCacheMock,
           HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
-      nodeAndPerftrackAware.keySet.foreach(rtmVersion => {
-        val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(someKey, rtmVersion)
-        val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(), 8900))
-        result mustBe expected
-      })
+      val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(someKey)
+      val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(), 8900))
+      result mustBe expected
     }
 
-    "get endpoint from the topContributingKeysMap" in new HeimdallLoadBalancerMockContext(60, 60, true) {
+    "get endpoint from the topContributingKeysMap" in new HeimdallLoadBalancerMockContext(60, 60) {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
-          nodeAndPerftrackAware,
+          rtmCacheMock,
+          perftrakCacheMock,
           HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
-      nodeAndPerftrackAware.keySet.foreach(rtmVersion => {
-        val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(lastKey(rtmVersion), rtmVersion)
-        val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(60), 8900))
-        result mustBe expected
-      })
+      val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(lastKey)
+      val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(60), 8900))
+      result mustBe expected
     }
 
-    "return 002 endpoint from the cache" in new HeimdallLoadBalancerMockContext(2, 2, true, 0, 0) {
+    "return 002 endpoint from the cache" in new HeimdallLoadBalancerMockContext(2, 2, 0, 0) {
       val loadBalancer: HeimdallLoadBalancer =
         new HeimdallLoadBalancer(
-          nodeAndPerftrackAware,
+          rtmCacheMock,
+          perftrakCacheMock,
           HeimdallLoadBalancerConfig(enableCache = true, reloadIntervalMs = 100))
       loadBalancer.start()
-      nodeAndPerftrackAware.keySet.foreach(rtmVersion => {
-        val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(someKey, rtmVersion)
-        val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(2), 8900))
-        result mustBe expected
-      })
+      val result: Option[ServiceEndpoint]   = loadBalancer.getInstance(someKey)
+      val expected: Option[ServiceEndpoint] = Some(ServiceEndpoint(newHostName(2), 8900))
+      result mustBe expected
     }
 
   }

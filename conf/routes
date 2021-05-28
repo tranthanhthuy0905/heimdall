@@ -26,34 +26,18 @@ POST /media/xpreport/stalled                controllers.XpReportController.logSt
 # Routing for RTMv1
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GET  /media/streamed                        controllers.AuditController.recordMediaStreamedEvent
-GET  /media/start                           controllers.v1.ProbeController.probe
+GET  /media/start                           controllers.ProbeController.probe
 
-GET  /media/hls/master                      controllers.v1.HlsController.playlist
-GET  /media/hls/variant                     controllers.v1.HlsController.playlist
-GET  /media/hls/segment                     controllers.v1.HlsController.segment
-GET  /media/hls/longsegment                 controllers.v1.HlsController.segment
+GET  /media/hls/master                      controllers.HlsController.playlist
+GET  /media/hls/variant                     controllers.HlsController.playlist
+GET  /media/hls/segment                     controllers.HlsController.segment
+GET  /media/hls/longsegment                 controllers.HlsController.segment
 
-GET  /media/thumbnail                       controllers.v1.ThumbnailController.thumbnail
-GET  /media/downloadthumbnail               controllers.v1.ThumbnailDownloadController.downloadThumbnail
+GET  /media/thumbnail                       controllers.ThumbnailController.thumbnail
+GET  /media/downloadthumbnail               controllers.ThumbnailDownloadController.downloadThumbnail
 
-GET  /media/audio/sample                    controllers.v1.AudioController.sample
-GET  /media/audio/mp3                       controllers.v1.AudioController.mp3
-
-# Routing for RTMv2
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-GET  /v2/media/streamed                     controllers.AuditController.recordMediaStreamedEvent
-GET  /v2/media/start                        controllers.v2.ProbeController.probe
-
-GET  /v2/media/hls/master                   controllers.v2.HlsController.playlist
-GET  /v2/media/hls/variant                  controllers.v2.HlsController.playlist
-GET  /v2/media/hls/segment                  controllers.v2.HlsController.segment
-GET  /v2/media/hls/longsegment              controllers.v2.HlsController.segment
-
-GET  /v2/media/thumbnail                    controllers.v2.ThumbnailController.thumbnail
-GET  /v2/media/downloadthumbnail            controllers.v2.ThumbnailDownloadController.downloadThumbnail
-
-GET  /v2/media/audio/sample                 controllers.v2.AudioController.sample
-GET  /v2/media/audio/mp3                    controllers.v2.AudioController.mp3
+GET  /media/audio/sample                    controllers.AudioController.sample
+GET  /media/audio/mp3                       controllers.AudioController.mp3
 
 # Routing for DRD (Document Redaction) service
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
