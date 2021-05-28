@@ -39,22 +39,6 @@ GET  /media/downloadthumbnail               controllers.v1.ThumbnailDownloadCont
 GET  /media/audio/sample                    controllers.v1.AudioController.sample
 GET  /media/audio/mp3                       controllers.v1.AudioController.mp3
 
-# Routing for RTMv2
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-GET  /v2/media/streamed                     controllers.AuditController.recordMediaStreamedEvent
-GET  /v2/media/start                        controllers.v2.ProbeController.probe
-
-GET  /v2/media/hls/master                   controllers.v2.HlsController.playlist
-GET  /v2/media/hls/variant                  controllers.v2.HlsController.playlist
-GET  /v2/media/hls/segment                  controllers.v2.HlsController.segment
-GET  /v2/media/hls/longsegment              controllers.v2.HlsController.segment
-
-GET  /v2/media/thumbnail                    controllers.v2.ThumbnailController.thumbnail
-GET  /v2/media/downloadthumbnail            controllers.v2.ThumbnailDownloadController.downloadThumbnail
-
-GET  /v2/media/audio/sample                 controllers.v2.AudioController.sample
-GET  /v2/media/audio/mp3                    controllers.v2.AudioController.mp3
-
 # Routing for DRD (Document Redaction) service
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 POST   /api/v1/redaction/document/evidences/:evidenceId/redactions                            controllers.RedactionController.createDocumentRedaction(evidenceId: String)
