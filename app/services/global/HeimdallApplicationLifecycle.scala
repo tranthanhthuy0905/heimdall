@@ -3,7 +3,7 @@ package services.global
 import com.evidence.service.common.ServiceGlobal
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monitoring.nagios.NagiosConfig
-import com.evidence.service.common.monitoring.statsd.StatsdConfig
+import com.evidence.service.common.monitoring.statsd.{PrometheusConfig, StatsdConfig}
 import com.typesafe.config.Config
 import javax.inject.{Inject, Singleton}
 import play.api.inject.ApplicationLifecycle
@@ -16,7 +16,8 @@ class HeimdallApplicationLifecycle @Inject()(lifecycle: ApplicationLifecycle, co
   ServiceGlobal.initialize(
     new com.evidence.service.common.config.ServiceConfig(config),
     new NagiosConfig(config),
-    new StatsdConfig(config)
+    new StatsdConfig(config),
+    new PrometheusConfig(config)
   )
 
   ServiceGlobal.statsd.increment("startup")
