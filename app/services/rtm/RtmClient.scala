@@ -16,15 +16,14 @@ trait RtmClient {
 @Singleton
 class RtmClientImpl @Inject()(ws: WSClient)(implicit ex: ExecutionContext) extends RtmClient {
   def send[A](rtmRequest: RtmRequest[A]): Future[WSResponse] = {
-    // previous build header from MediaIdent class but now build header here because
-    // rtmv2 need media_id vs client_id which use audienceId
+    // rtm will use these header information for log context and caching
     val header = rtmRequest.media match {
       case EmptyMediaIdent() => Map()
       case media => Map(
-        "File-Id" -> media.fileIds.map(_.toString).mkString(","),
         "Partner-Id" -> media.partnerId.toString,
-        "Media-Id" -> (media.partnerId.toString + "_" +  media.fileIds.map(_.toString).mkString("_")),
-        "Client-Id" -> ( media.partnerId.toString + "_" +  rtmRequest.subjectId)
+        "Evidence-Id" -> media.evidenceIds.map(_.toString).mkString(","),
+        "File-Id" -> media.fileIds.map(_.toString).mkString(","),
+        "Client-Id" -> rtmRequest.subjectId
         )
     }
 
