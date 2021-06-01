@@ -10,7 +10,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait RtmClient {
   def send[A](rtmRequest: RtmRequest[A]): Future[WSResponse]
-  def stream(rtmRequestString: String): Future[WSResponse]
 }
 
 @Singleton
@@ -29,13 +28,6 @@ class RtmClientImpl @Inject()(ws: WSClient)(implicit ex: ExecutionContext) exten
 
     ws.url(rtmRequest.toString)
       .addHttpHeaders(header.toSeq: _*)
-      .get()
-  }
-
-  def stream(rtmRequestString: String): Future[WSResponse] = {
-    ws.url(rtmRequestString)
-      .withMethod("GET")
-      .withRequestTimeout(Duration(2, HOURS)) // FIXME: unify with presigned url TTL
       .get()
   }
 }
