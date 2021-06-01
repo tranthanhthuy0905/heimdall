@@ -22,16 +22,6 @@ trait HeimdallRoutes {
   final val downloadThumbnail = "/media/downloadthumbnail"
   final val mp3               = "/media/audio/mp3"
   final val audioSample       = "/media/audio/sample"
-  // RTMv2
-  final val probeV2             = "/v2/media/start"
-  final val hlsMasterV2         = "/v2/media/hls/master"
-  final val hlsVariantV2        = "/v2/media/hls/variant"
-  final val hlsSegmentV2        = "/v2/media/hls/segment"
-  final val hlsLongSegmentV2    = "/v2/media/hls/longsegment"
-  final val thumbnailV2         = "/v2/media/thumbnail"
-  final val downloadThumbnailV2 = "/v2/media/downloadthumbnail"
-  final val mp3V2               = "/v2/media/audio/mp3"
-  final val audioSampleV2       = "/v2/media/audio/sample"
 }
 
 object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
@@ -100,18 +90,7 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
     //thumbnail and downloadthumbnail process the same way but the second one emits an audit event.
     downloadThumbnail -> MediaRoute("/thumbnail", List.concat(commonParams, thumbnailParams)),
     audioSample -> MediaRoute("/audiosample", List.concat(commonParams, audioSampleParams)),
-    mp3 -> MediaRoute("/mp3", List.empty),
-
-    // RTMv2
-    probeV2     -> MediaRoute("/probe", commonParams),
-    hlsMasterV2 -> MediaRoute("/hls/master", commonParams),
-    hlsVariantV2 -> MediaRoute("/hls/variant", List.concat(commonParams, hlsVariantParams)),
-    hlsSegmentV2 -> MediaRoute("/hls/segment", List.concat(commonParams, hlsSegmentParams)),
-    hlsLongSegmentV2 -> MediaRoute("/hls/longsegment", List.concat(commonParams, hlsSegmentParams)),
-    thumbnailV2 -> MediaRoute("/thumbnail", List.concat(commonParams, thumbnailParams)),
-    downloadThumbnailV2 -> MediaRoute("/thumbnail", List.concat(commonParams, thumbnailParams)),
-    audioSampleV2 -> MediaRoute("/audiosample", List.concat(commonParams, audioSampleParams)),
-    mp3V2 -> MediaRoute("/mp3", List.empty)
+    mp3 -> MediaRoute("/mp3", List.empty)
   )
 
   def apply(route: String, query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
@@ -134,24 +113,6 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
         filterAllowedParams(query, heimdallToRtmRoutes(audioSample))
       case str if str startsWith mp3 =>
         filterAllowedParams(query, heimdallToRtmRoutes(mp3))
-      case str if str startsWith hlsMasterV2 =>
-        filterAllowedParams(query, heimdallToRtmRoutes(hlsMasterV2))
-      case str if str startsWith hlsVariantV2 =>
-        filterAllowedParams(query, heimdallToRtmRoutes(hlsVariantV2))
-      case str if str startsWith hlsSegmentV2 =>
-        filterAllowedParams(query, heimdallToRtmRoutes(hlsSegmentV2))
-      case str if str startsWith hlsLongSegmentV2 =>
-        filterAllowedParams(query, heimdallToRtmRoutes(hlsLongSegmentV2))
-      case str if str startsWith probeV2 =>
-        filterAllowedParams(query, heimdallToRtmRoutes(probeV2))
-      case str if str startsWith thumbnailV2 =>
-        filterAllowedParams(query, heimdallToRtmRoutes(thumbnailV2))
-      case str if str startsWith downloadThumbnailV2 =>
-        filterAllowedParams(query, heimdallToRtmRoutes(downloadThumbnailV2))
-      case str if str startsWith audioSampleV2 =>
-        filterAllowedParams(query, heimdallToRtmRoutes(audioSampleV2))
-      case str if str startsWith mp3V2 =>
-        filterAllowedParams(query, heimdallToRtmRoutes(mp3V2))
       case _ =>
         logger.error("unexpectedRtmQueryRoute")(
           "route" -> route,
