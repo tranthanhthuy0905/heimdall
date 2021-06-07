@@ -45,6 +45,7 @@ POST   /api/v1/redaction/document/evidences/:evidenceId/redactions              
 
 GET    /api/v1/redaction/document/evidences/:evidenceId/redactions                            controllers.RedactionController.getDocumentRedactions(evidenceId: String)
 DELETE /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId               controllers.RedactionController.deleteDocumentRedaction(evidenceId: String, redactionId: String)
+POST   /api/v1/redaction/document/evidences/:evidenceId/redactions/extractions                controllers.RedactionController.createExtraction(evidenceId: String, redactionId: String)
 # xfdf apis
 GET    /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/xfdf          controllers.RedactionController.getXfdf(evidenceId: String, redactionId: String)
 POST   /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/xfdf_commands controllers.RedactionController.postXfdfCommands(evidenceId: String, redactionId: String)

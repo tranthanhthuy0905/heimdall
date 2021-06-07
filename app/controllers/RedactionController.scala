@@ -61,6 +61,9 @@ class RedactionController @Inject()(
   def postXfdfCommands(evidenceId: String, redactionId: String): Action[AnyContent] =
     callDocumentRedactionAPI(evidenceId)
 
+  def createExtraction(evidenceId: String, redactionId: String): Action[AnyContent] =
+    callDocumentRedactionAPI(evidenceId)
+
   private def callDocumentRedactionAPI(evidenceId: String): Action[AnyContent] =
     (
       heimdallRequestAction
