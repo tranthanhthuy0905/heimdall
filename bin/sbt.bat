@@ -18,11 +18,13 @@ set _JAVACMD=
 set _SBT_OPTS=
 set _JAVA_OPTS=
 
-set init_sbt_version=1.3.10
+set init_sbt_version=1.5.2
 set sbt_default_mem=1024
 set default_sbt_opts=
 set default_java_opts=-Dfile.encoding=UTF-8
 set sbt_jar=
+set build_props_sbt_version=
+set run_native_client=
 
 set sbt_args_print_version=
 set sbt_args_print_sbt_version=
@@ -44,15 +46,19 @@ set sbt_args_sbt_create=
 set sbt_args_sbt_dir=
 set sbt_args_sbt_version=
 set sbt_args_mem=
+set sbt_args_client=
 
 rem users can set SBT_OPTS via .sbtopts
 if exist .sbtopts for /F %%A in (.sbtopts) do (
   set _sbtopts_line=%%A
   if not "!_sbtopts_line:~0,1!" == "#" (
+    if "!_sbtopts_line:~0,2!" == "-J" (
+      set _sbtopts_line=!_sbtopts_line:~2,1000!
+    )
     if defined _SBT_OPTS (
-      set _SBT_OPTS=!_SBT_OPTS! %%A
+      set _SBT_OPTS=!_SBT_OPTS! !_sbtopts_line!
     ) else (
-      set _SBT_OPTS=%%A
+      set _SBT_OPTS=!_sbtopts_line!
     )
   )
 )
@@ -74,6 +80,14 @@ if defined JAVA_HOMES (
   if exist .java-version for /F %%A in (.java-version) do (
     set JAVA_HOME=%JAVA_HOMES%\%%A
     set JDK_HOME=%JAVA_HOMES%\%%A
+  )
+)
+
+if exist "project\build.properties" (
+  for /F "eol=# delims== tokens=1*" %%a in (project\build.properties) do (
+    if "%%a" == "sbt.version" if not "%%b" == "" (
+      set build_props_sbt_version=%%b
+    )
   )
 )
 
@@ -115,6 +129,12 @@ if not defined _SBT_OPTS if defined SBT_OPTS set _SBT_OPTS=%SBT_OPTS%
 if not defined _SBT_OPTS if defined SBT_CFG_OPTS set _SBT_OPTS=!SBT_CFG_OPTS!
 if not defined _SBT_OPTS if defined default_sbt_opts set _SBT_OPTS=!default_sbt_opts!
 
+if defined SBT_NATIVE_CLIENT (
+  if "%SBT_NATIVE_CLIENT%" == "true" (
+    set sbt_args_client=1
+  )
+)
+
 :args_loop
 shift
 
@@ -153,6 +173,14 @@ if "%~0" == "--version" set _version_arg=true
 if defined _version_arg (
   set _version_arg=
   set sbt_args_print_version=1
+  goto args_loop
+)
+
+if "%~0" == "--client" set _client_arg=true
+
+if defined _client_arg (
+  set _client_arg=
+  set sbt_args_client=1
   goto args_loop
 )
 
@@ -466,7 +494,7 @@ rem top-level directory and the "new" command was not given.
 if not defined sbt_args_sbt_create if not defined sbt_args_print_version if not defined sbt_args_print_sbt_version if not defined sbt_args_print_sbt_script_version if not exist build.sbt (
   if not exist project\ (
     if not defined sbt_new (
-      echo [warn] Neither build.sbt nor a 'project' directory in the current directory: %CD%
+      echo [warn] Neither build.sbt nor a 'project' directory in the current directory: "%CD%"
       setlocal
 :confirm
       echo c^) continue
@@ -495,7 +523,20 @@ if !sbt_args_print_sbt_script_version! equ 1 (
   goto :eof
 )
 
+if !run_native_client! equ 1 (
+  goto :runnative !SBT_ARGS!
+  goto :eof
+)
+
 call :checkjava
+
+if defined sbt_args_sbt_jar (
+  set "sbt_jar=!sbt_args_sbt_jar!"
+) else (
+  set "sbt_jar=!SBT_HOME!\bin\sbt-launch.jar"
+)
+
+set sbt_jar=!sbt_jar:"=!
 
 call :copyrt
 
@@ -568,14 +609,6 @@ if defined sbt_args_traces (
   set _SBT_OPTS=-Dsbt.traces=true !_SBT_OPTS!
 )
 
-if defined sbt_args_sbt_jar (
-  set "sbt_jar=!sbt_args_sbt_jar!"
-) else (
-  set "sbt_jar=!SBT_HOME!\bin\sbt-launch.jar"
-)
-
-set sbt_jar=!sbt_jar:"=!
-
 rem TODO: _SBT_OPTS needs to be processed as args and diffed against SBT_ARGS
 
 if !sbt_args_print_sbt_version! equ 1 (
@@ -604,6 +637,25 @@ if defined sbt_args_verbose (
 )
 
 "!_JAVACMD!" !_JAVA_OPTS! !_SBT_OPTS! -cp "!sbt_jar!" xsbt.boot.Boot %*
+
+goto :eof
+
+:runnative
+
+set "_SBTNCMD=!SBT_BIN_DIR!sbtn-x86_64-pc-win32.exe"
+
+if defined sbt_args_verbose (
+  echo # running native client
+  if not "%~1" == "" ( call :echolist %* )
+  set "SBT_ARGS=-v !SBT_ARGS!"
+)
+
+set "SBT_SCRIPT=!SBT_BIN_DIR: =%%20!sbt.bat"
+set "SBT_ARGS=--sbt-script=!SBT_SCRIPT! %SBT_ARGS%"
+
+rem Microsoft Visual C++ 2010 SP1 Redistributable Package (x64) is required
+rem https://www.microsoft.com/en-us/download/details.aspx?id=13523
+"!_SBTNCMD!" %SBT_ARGS%
 
 goto :eof
 
@@ -674,7 +726,7 @@ exit /B 0
   if "!_old_java_opts!" == "" goto :done_java_opt
   for /F "tokens=1,*" %%g in ("!_old_java_opts!") do (
     set "p=%%g"
-    if not "!p:~0,4!" == "-Xmx" if not "!p:~0,4!" == "-Xms" if not "!p:~0,15!" == "-XX:MaxPermSize" if not "!p:~0,20!" == "-XX:MaxMetaspaceSize" if not "!p:~0,25!" == "-XX:ReservedCodeCacheSize" (
+    if not "!p:~0,4!" == "-Xmx" if not "!p:~0,4!" == "-Xms" if not "!p:~0,4!" == "-Xss" if not "!p:~0,15!" == "-XX:MaxPermSize" if not "!p:~0,20!" == "-XX:MaxMetaspaceSize" if not "!p:~0,25!" == "-XX:ReservedCodeCacheSize" (
       set _new_java_opts=!_new_java_opts! %%g
     )
     set "_old_java_opts=%%h"
@@ -689,7 +741,7 @@ exit /B 0
   if "!_old_sbt_opts!" == "" goto :done_sbt_opt
   for /F "tokens=1,*" %%g in ("!_old_sbt_opts!") do (
     set "p=%%g"
-    if not "!p:~0,4!" == "-Xmx" if not "!p:~0,4!" == "-Xms" if not "!p:~0,15!" == "-XX:MaxPermSize" if not "!p:~0,20!" == "-XX:MaxMetaspaceSize" if not "!p:~0,25!" == "-XX:ReservedCodeCacheSize" (
+    if not "!p:~0,4!" == "-Xmx" if not "!p:~0,4!" == "-Xms" if not "!p:~0,4!" == "-Xss" if not "!p:~0,15!" == "-XX:MaxPermSize" if not "!p:~0,20!" == "-XX:MaxMetaspaceSize" if not "!p:~0,25!" == "-XX:ReservedCodeCacheSize" (
       set _new_sbt_opts=!_new_sbt_opts! %%g
     )
     set "_old_sbt_opts=%%h"
@@ -727,18 +779,21 @@ exit /B 0
     set "p=%%g"
     if "!p:~0,4!" == "-Xmx" set _has_memory_args=1
     if "!p:~0,4!" == "-Xms" set _has_memory_args=1
+    if "!p:~0,4!" == "-Xss" set _has_memory_args=1
   )
 
   if defined JAVA_TOOL_OPTIONS for /F %%g in ("%JAVA_TOOL_OPTIONS%") do (
     set "p=%%g"
     if "!p:~0,4!" == "-Xmx" set _has_memory_args=1
     if "!p:~0,4!" == "-Xms" set _has_memory_args=1
+    if "!p:~0,4!" == "-Xss" set _has_memory_args=1
   )
 
   if defined _SBT_OPTS for /F %%g in ("!_SBT_OPTS!") do (
     set "p=%%g"
     if "!p:~0,4!" == "-Xmx" set _has_memory_args=1
     if "!p:~0,4!" == "-Xms" set _has_memory_args=1
+    if "!p:~0,4!" == "-Xss" set _has_memory_args=1
   )
 
   if not defined _has_memory_args (
@@ -772,6 +827,32 @@ for /f "delims=.-_ tokens=1-2" %%v in ("!JAVA_VERSION!") do (
   )
 )
 
+rem parse the first two segments of sbt.version and set run_native_client to
+rem 1 if the user has also indicated they want to use native client.
+set sbtV=!build_props_sbt_version!
+set sbtBinaryV_1=
+set sbtBinaryV_2=
+for /F "delims=.-_ tokens=1-2" %%v in ("!sbtV!") do (
+  set sbtBinaryV_1=%%v
+  set sbtBinaryV_2=%%w
+)
+set native_client_ready=
+if !sbtBinaryV_1! geq 2 (
+  set native_client_ready=1
+) else (
+  if !sbtBinaryV_1! geq 1 (
+    if !sbtBinaryV_2! geq 4 (
+      set native_client_ready=1
+    )
+  )
+)
+if !native_client_ready! equ 1 (
+  if !sbt_args_client! equ 1 (
+    set run_native_client=1
+  )
+)
+set native_client_ready=
+
 exit /B 0
 
 :checkjava
@@ -791,15 +872,13 @@ exit /B 1
 
 :copyrt
 if /I !JAVA_VERSION! GEQ 9 (
-  set "rtexport=!SBT_BIN_DIR!java9-rt-export.jar"
-
-  "!_JAVACMD!" !_JAVA_OPTS! !_SBT_OPTS! -jar "!rtexport!" --rt-ext-dir > "%TEMP%.\rtext.txt"
+  "!_JAVACMD!" !_JAVA_OPTS! !_SBT_OPTS! -jar "!sbt_jar!" --rt-ext-dir > "%TEMP%.\rtext.txt"
   set /p java9_ext= < "%TEMP%.\rtext.txt"
   set "java9_rt=!java9_ext!\rt.jar"
 
   if not exist "!java9_rt!" (
     mkdir "!java9_ext!"
-    "!_JAVACMD!" !_JAVA_OPTS! !_SBT_OPTS! -jar "!rtexport!" "!java9_rt!"
+    "!_JAVACMD!" !_JAVA_OPTS! !_SBT_OPTS! -jar "!sbt_jar!" --export-rt "!java9_rt!"
   )
   set _JAVA_OPTS=!_JAVA_OPTS! -Dscala.ext.dirs="!java9_ext!"
 )
@@ -819,7 +898,7 @@ if /I !JAVA_VERSION! GEQ 8 (
   if %ERRORLEVEL% EQU 0 (
     if not exist !PRELOAD_SBT_JAR! (
       if exist "!SBT_HOME!\lib\local-preloaded\" (
-        robocopy "!SBT_HOME!\lib\local-preloaded" "%UserProfile%\.sbt\preloaded" /E
+        robocopy "!SBT_HOME!\lib\local-preloaded" "%UserProfile%\.sbt\preloaded" /E >nul 2>nul
       )
     )
   )
