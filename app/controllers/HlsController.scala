@@ -18,6 +18,7 @@ class HlsController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
+  playbackSettingAction: PlaybackSettingAction,
   watermarkAction: WatermarkAction,
   rtmRequestAction: RtmRequestAction,
   rtm: RtmClient,
@@ -34,6 +35,7 @@ class HlsController @Inject()(
       heimdallRequestAction andThen
         tokenValidationAction andThen
         permValidation.build(PermissionType.Stream) andThen
+        playbackSettingAction andThen
         rtmRequestAction
     ).async { request =>
       FutureEither(rtm.send(request).map(withOKStatus))

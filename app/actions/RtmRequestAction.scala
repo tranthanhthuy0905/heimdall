@@ -9,7 +9,7 @@ import javax.inject.Inject
 import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
-import services.komrade.KomradeClient
+import services.komrade.{KomradeClient, PlaybackSettings}
 import services.rtm.{HeimdallRoutes, RtmQueryHelper, RtmRequest}
 import services.zookeeper.HeimdallLoadBalancer
 
@@ -31,8 +31,7 @@ case class RtmRequestAction @Inject()(
       for {
         presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
         endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString)
-        isRequestingMaster <- Future.successful(input.path.startsWith(hlsMaster) || input.path.startsWith(hlsMasterV2))
-        queries       <- getRTMQueries(rtmQuery.params, Some(input.watermark), presignedUrls, isRequestingMaster, input.audienceId)
+        queries       <- getRTMQueries(rtmQuery.params, Some(input.watermark), input.playbackSetting, presignedUrls, input.audienceId)
       } yield {
         val uri = Uri
           .from(
@@ -50,19 +49,13 @@ case class RtmRequestAction @Inject()(
   private def getRTMQueries(
                              queries: Map[String, String],
                              watermark: Option[String],
+                             playbackSettings: Option[PlaybackSettings],
                              presignedUrls: Seq[URL],
-                             isRequestingMaster: Boolean,
                              partnerId: String): Future[String] = {
     val presignedUrlsMap = Map("source" -> presignedUrls.mkString(","))
-    var watermarkMap = watermark
-      .map(watermark => queries + ("label" -> watermark))
-      .getOrElse(queries)
-    if (isRequestingMaster){
-      komrade.getWatermarkSettings(partnerId).map(watermarkSettings => {
-        watermarkMap = watermarkMap + ("lp" -> watermarkSettings.position.value.toString)
-        buildQueryParams(presignedUrlsMap ++ watermarkMap)
-      })
-    } else Future.successful(buildQueryParams(presignedUrlsMap ++ watermarkMap))
+    val watermarkMap = watermark.map(watermark => queries + ("label" -> watermark)).getOrElse(Map.empty)
+    val playbackSettingsMap = playbackSettings.map(_.toMap).getOrElse(Map.empty)
+    Future(buildQueryParams(queries ++ presignedUrlsMap ++ watermarkMap ++ playbackSettingsMap))
   }
 
   private def buildQueryParams(map: Map[String, String]): String = {
