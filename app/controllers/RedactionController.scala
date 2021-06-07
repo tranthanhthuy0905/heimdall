@@ -27,28 +27,7 @@ class RedactionController @Inject()(
     with HdlResponseHelpers {
 
   def createDocumentRedaction(evidenceId: String): Action[AnyContent] =
-    (
-      heimdallRequestAction
-        andThen redactionRequestActionBuilder.build(evidenceId)
-        andThen drdPermValidation
-    ).async { implicit request =>
-      // TODO: validate evidence type
-      // TODO: Using sage/dredd to get Evidence Title from (evidenceId, partnerId)
-      FutureEither(
-        drdClient
-          .call(
-            request.path,
-            request.method,
-            request.partnerId,
-            request.userId,
-            Some(
-              Json.obj(
-                "EvidenceTitle" -> "a test title",
-              ))
-          )
-          .map(withOKStatus))
-        .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
-    }
+    callDocumentRedactionAPI(evidenceId)
 
   def getDocumentRedactions(evidenceId: String): Action[AnyContent] = callDocumentRedactionAPI(evidenceId)
 
