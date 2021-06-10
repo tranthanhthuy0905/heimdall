@@ -24,7 +24,12 @@ trait HdlResponseHelpers extends BaseController with LazyLogging {
       .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
   }
 
-  def error(errorStatus: Int): Result = Result(ResponseHeader(errorStatus), HttpEntity.NoEntity)
+  def error(errorStatus: Int): Result = {
+    logger.warn("http request return error")(
+      "statusCode" -> errorStatus
+    )
+    Result(ResponseHeader(errorStatus), HttpEntity.NoEntity)
+  }
 
   def errorWithLog(errorStatus: Int)(name: String, logVars: Seq[(String, Any)]): Result = {
     logger.error(name)(logVars: _*)
