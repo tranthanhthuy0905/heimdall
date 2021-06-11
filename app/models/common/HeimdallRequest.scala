@@ -3,8 +3,9 @@ package models.common
 import com.evidence.service.common.logging.LazyLogging
 import models.auth.{AuthorizationData, JWTWrapper}
 import play.api.mvc.{Request, WrappedRequest}
+import services.komrade.PlaybackSettings
 
-case class HeimdallRequest[A](request: Request[A], authorizationData: AuthorizationData, watermark: String = "")
+case class HeimdallRequest[A](request: Request[A], authorizationData: AuthorizationData, watermark: String = "", playbackSettings: Option[PlaybackSettings] = None)
     extends WrappedRequest[A](request)
     with LazyLogging {
 

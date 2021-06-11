@@ -18,6 +18,7 @@ class HlsController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
+  playbackSettingAction: PlaybackSettingAction,
   watermarkAction: WatermarkAction,
   rtmRequestAction: RtmRequestAction,
   rtm: RtmClient,
@@ -28,6 +29,19 @@ class HlsController @Inject()(
     with WSResponseHelpers
     with HdlResponseHelpers
     with StrictStatsD {
+
+  def master: Action[AnyContent] =
+    (
+      heimdallRequestAction andThen
+        tokenValidationAction andThen
+        permValidation.build(PermissionType.Stream) andThen
+        playbackSettingAction andThen
+        rtmRequestAction
+      ).async { request =>
+      FutureEither(rtm.send(request).map(withOKStatus))
+        .map(toManifest(_, request))
+        .fold(error, Ok(_).as("application/x-mpegURL"))
+    }
 
   def playlist: Action[AnyContent] =
     (
