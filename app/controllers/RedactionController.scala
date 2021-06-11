@@ -31,6 +31,9 @@ class RedactionController @Inject()(
 
   def getDocumentRedactions(evidenceId: String): Action[AnyContent] = callDocumentRedactionAPI(evidenceId)
 
+  def getRedactionData(evidenceId: String, redactionId: String): Action[AnyContent] =
+    callDocumentRedactionAPI(evidenceId)
+
   def deleteDocumentRedaction(evidenceId: String, redactionId: String): Action[AnyContent] =
     callDocumentRedactionAPI(evidenceId)
 

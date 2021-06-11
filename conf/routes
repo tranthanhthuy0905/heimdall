@@ -44,6 +44,7 @@ GET  /media/audio/mp3                       controllers.AudioController.mp3
 POST   /api/v1/redaction/document/evidences/:evidenceId/redactions                            controllers.RedactionController.createDocumentRedaction(evidenceId: String)
 
 GET    /api/v1/redaction/document/evidences/:evidenceId/redactions                            controllers.RedactionController.getDocumentRedactions(evidenceId: String)
+GET    /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId               controllers.RedactionController.getRedactionData(evidenceId: String, redactionId: String)
 DELETE /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId               controllers.RedactionController.deleteDocumentRedaction(evidenceId: String, redactionId: String)
 POST   /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/extractions   controllers.RedactionController.createExtraction(evidenceId: String, redactionId: String)
 # xfdf apis
