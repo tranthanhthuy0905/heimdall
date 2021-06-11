@@ -41,11 +41,6 @@ class ImageController @Inject()(
         andThen watermarkAction
         andThen rtiRequestAction
     ).async { implicit request =>
-      logger.warn("image view start")(
-        "fileId" -> request.file.fileId,
-        "evidenceId" -> request.file.evidenceId,
-        "partnerId" -> request.file.partnerId
-      )
       val authHandler = request.attrs(AuthorizationAttr.Key)
       val viewAuditEvent = EvidenceReviewEvent(
         evidenceTid(request.file.evidenceId, request.file.partnerId),
@@ -53,11 +48,7 @@ class ImageController @Inject()(
         fileTid(request.file.fileId, request.file.partnerId),
         request.request.clientIpAddress
       )
-      logger.warn("image view begin call rti")(
-        "fileId" -> request.file.fileId,
-        "evidenceId" -> request.file.evidenceId,
-        "partnerId" -> request.file.partnerId
-      )
+
       (for {
         response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
         _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
