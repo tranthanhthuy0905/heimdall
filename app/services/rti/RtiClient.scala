@@ -1,14 +1,16 @@
 package services.rti
 
+import java.net.URL
+import java.util.UUID
+
 import com.evidence.service.common.logging.LazyLogging
 import com.google.inject.Inject
 import com.typesafe.config.Config
+import javax.inject.Singleton
 import models.common.FileIdent
 import play.api.libs.ws.{WSClient, WSResponse}
-import services.rti.Quality.HighQuality
+import services.rti.Quality.{HighQuality, MediumQuality}
 
-import java.net.URL
-import javax.inject.Singleton
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RtiClient {
@@ -47,7 +49,7 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
   private def buildTranscodeRequest(
     presignedURL: URL,
     watermark: String)(size: SizeImage, quality: QualityImage, file: FileIdent) = {
-    val req = buildRTIEndpoint("/v1/images/image")
+    buildRTIEndpoint("/v1/images/image")
       .addQueryStringParameters("sizeID" -> size.value)
       .addQueryStringParameters("presignedURL" -> presignedURL.toString)
       .addQueryStringParameters("watermark" -> watermark)
@@ -59,13 +61,6 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
         "fileId"     -> file.fileId.toString,
       )
       .withMethod("GET")
-
-    logger.warn("rti request")(
-      "url" -> req.url,
-      "method" -> req.method
-    )
-
-    req
   }
 
   private def buildThumbnailRequest(presignedURL: URL, width: Int, height: Int, file: FileIdent) = {
