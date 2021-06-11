@@ -28,7 +28,7 @@ POST /media/xpreport/stalled                controllers.XpReportController.logSt
 GET  /media/streamed                        controllers.AuditController.recordMediaStreamedEvent
 GET  /media/start                           controllers.ProbeController.probe
 
-GET  /media/hls/master                      controllers.HlsController.playlist
+GET  /media/hls/master                      controllers.HlsController.master
 GET  /media/hls/variant                     controllers.HlsController.playlist
 GET  /media/hls/segment                     controllers.HlsController.segment
 GET  /media/hls/longsegment                 controllers.HlsController.segment
