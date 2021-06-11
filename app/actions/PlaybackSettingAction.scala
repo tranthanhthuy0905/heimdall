@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class PlaybackSettingAction @Inject()(komrade: KomradeClient)(implicit val executionContext: ExecutionContext) extends ActionRefiner[HeimdallRequest, HeimdallRequest] {
   override def refine[A](input: HeimdallRequest[A]): Future[Either[Result, HeimdallRequest[A]]] = {
     for {
-      watermarkSetting <- FutureEither(komrade.getWatermarkSettings(partnerId  = input.audienceId).map(setting => withSomeValue(Some(setting), "failed to retrieve partner domain")))
+      watermarkSetting <- FutureEither(komrade.getWatermarkSettings(partnerId  = input.audienceId).map(setting => withSomeValue(Some(setting), "failed to retrieve playback settings")))
     } yield HeimdallRequest(
       request = input,
       authorizationData = input.authorizationData,
@@ -20,6 +20,6 @@ case class PlaybackSettingAction @Inject()(komrade: KomradeClient)(implicit val 
   }.future
 
   private def withSomeValue[T](optionValue: Option[T], errorMessage: String): Either[Result, T] =
-    optionValue.toRight(Results.BadRequest(errorMessage))
+    optionValue.toRight(Results.InternalServerError(errorMessage))
 
 }
