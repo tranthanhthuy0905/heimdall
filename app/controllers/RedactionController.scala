@@ -59,7 +59,8 @@ class RedactionController @Inject()(
             request.method,
             request.partnerId,
             request.userId,
-            request.body.asJson
+            request.body.asJson,
+            request.remoteAddress
           )
           .map(withOKStatus))
         .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
