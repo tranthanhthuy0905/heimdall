@@ -12,7 +12,14 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
 
 trait DrdClient {
-  def call(endpoint: String, method: String, partnerId: UUID, userId: UUID, body: Option[JsValue]): Future[WSResponse]
+
+  def call(
+    endpoint: String,
+    method: String,
+    partnerId: UUID,
+    userId: UUID,
+    body: Option[JsValue],
+    clientIpAddress: String): Future[WSResponse]
 }
 
 @Singleton
@@ -20,11 +27,18 @@ class DrdClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
     extends DrdClient
     with LazyLogging {
 
-  def call(endpoint: String, method: String, partnerId: UUID, userId: UUID, body: Option[JsValue]) = {
+  def call(
+    endpoint: String,
+    method: String,
+    partnerId: UUID,
+    userId: UUID,
+    body: Option[JsValue],
+    clientIpAddress: String) = {
     ws.url(config.getString("edc.service.drd.host") + endpoint)
       .addHttpHeaders(
         "Partner-Id"            -> partnerId.toString,
         "Authenticated-User-Id" -> userId.toString,
+        "Client-Ip"             -> clientIpAddress,
         "Accept"                -> "application/json",
       )
       .withMethod(method)
