@@ -34,7 +34,7 @@ class HeimdallRequestFilter @Inject()(implicit val mat: Materializer, ec: Execut
     * nginx must deny access to Heimdall's endpoints listed as Internals.
     * See the `deny` access directive of nginx.
     */
-  final val internalRoutes       = List("/media/alive")
+  final val internalRoutes       = List("/media/alive", "/debug/hls/master")
   final val redactionRoutePrefix = "/api/v1/redaction/"
   final val agenciesSettingsPrefix = "/media/settings/agencies"
 
