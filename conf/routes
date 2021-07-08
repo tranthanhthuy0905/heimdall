@@ -39,6 +39,12 @@ GET  /media/downloadthumbnail               controllers.ThumbnailDownloadControl
 GET  /media/audio/sample                    controllers.AudioController.sample
 GET  /media/audio/mp3                       controllers.AudioController.mp3
 
+
+# For Debugging purpose
+
+GET /debug/hls/master                       controllers.HlsDebugController.master
+
+
 # Routing for DRD (Document Redaction) service
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 POST   /api/v1/redaction/document/evidences/:evidenceId/redactions                            controllers.RedactionController.createDocumentRedaction(evidenceId: String)
