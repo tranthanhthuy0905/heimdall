@@ -103,7 +103,7 @@ class CachedDreddClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(impl
       } yield url
 
     if (ttl >= HdlTtl.urlExpired) {
-      val key = s"hdl-v1-$partnerId-$evidenceId-$fileId"
+      val key = s"$partnerId-$evidenceId-$fileId"
       cache.getOrElseUpdate[URL](key, HdlTtl.urlMemTTL) {
         HdlCache.PresignedUrl
           .get(key)

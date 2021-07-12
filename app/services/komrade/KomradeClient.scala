@@ -44,7 +44,7 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
   // Streaming use komrade to get username and agency name for watermark string only
   // it is safe to cached results for those calls since Komrade call is expensive (query DB)
   override def getUser(partnerId: String, userId: String): Future[Option[String]] = {
-    val key = s"hdl-$partnerId-$userId"
+    val key = s"$partnerId-$userId"
     cache.getOrElseUpdate[Option[String]](key, HdlTtl.usernameMemTTL) {
       HdlCache.Username
         .get(key)
@@ -65,7 +65,7 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
   }
 
   override def getPartner(partnerId: String): Future[Option[String]] = {
-    val key = s"hdl-$partnerId"
+    val key = partnerId
     cache.getOrElseUpdate[Option[String]](key, HdlTtl.domainMemTTL) {
       HdlCache.AgencyDomain
         .get(key)
@@ -105,15 +105,18 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
 
   override def updateWatermarkSettings(partnerId: String, watermarkSetting: WatermarkSetting): Future[Unit] = {
     val key = getWatermarkSettingsRedisKey(partnerId)
-    client.createOrUpdateWatermarkSetting(auth, watermarkSetting).toScalaFuture
-      .map( _ => HdlCache.WatermarkSettings.set(key, watermarkSetting))
+    client
+      .createOrUpdateWatermarkSetting(auth, watermarkSetting)
+      .toScalaFuture
+      .map(_ => HdlCache.WatermarkSettings.set(key, watermarkSetting))
   }
 
   // If watermark settings have new setting, increase the version in the key
   // so we don't have to care about the outdated values in cache
   private def getWatermarkSettingsRedisKey(partnerId: String): String = {
-    Convert.tryToUuid(partnerId)
-      .map(normalizedPartnerId => s"hdl-v1-${normalizedPartnerId.toString}")
-      .getOrElse(s"hdl-v1-$partnerId")
+    Convert
+      .tryToUuid(partnerId)
+      .map(normalizedPartnerId => normalizedPartnerId.toString)
+      .getOrElse(partnerId)
   }
 }
