@@ -1,5 +1,7 @@
 package utils
 
+import com.evidence.service.common.ServiceGlobal
+
 import java.net.URL
 import java.util.concurrent.TimeUnit
 import com.evidence.service.common.cache.{Cache, CacheConfig}
@@ -58,60 +60,67 @@ case object HdlTtl {
 
 case object HdlCache {
   private def hdlKey(key: String) = "hdl-v1-" + key
-  private def getValue[K](someValue: Option[cacheValue[K]]): Option[K] = {
+  private def getValue[K](someValue: Option[cacheValue[K]], cacheKey: String): Option[K] = {
     someValue.flatMap(
       value =>
         if (Instant.now().isBefore(value.expired)) {
           Some(value.value)
-        } else None
+        } else {
+          ServiceGlobal.statsd.increment("cache.expired", s"cache_key:$cacheKey")
+          None
+      }
     )
   }
 
   case object Username extends HdlCache[String, String] {
-    private val cache = new Cache[cacheValue[String]](CacheConfig(ttl = Some(HdlTtl.usernameRedisTTL)))
+    private val cacheKey = "Username"
+    private val cache    = new Cache[cacheValue[String]](CacheConfig(ttl = Some(HdlTtl.usernameRedisTTL)))
 
     override def get(key: String): Option[String] =
-      getValue(cache.getSync(hdlKey(key), "Username", refreshTTL = false))
+      getValue(cache.getSync(hdlKey(key), cacheKey, refreshTTL = false), cacheKey)
 
     override def set(key: String, value: String): Unit =
-      cache.setSync(hdlKey(key), "Username", cacheValue(value, HdlTtl.usernameRedisTTL))
+      cache.setSync(hdlKey(key), cacheKey, cacheValue(value, HdlTtl.usernameRedisTTL))
 
     override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
   }
 
   case object AgencyDomain extends HdlCache[String, String] {
-    private val cache = new Cache[cacheValue[String]](CacheConfig(ttl = Some(HdlTtl.domainRedisTTL)))
+    private val cacheKey = "AgencyDomain"
+    private val cache    = new Cache[cacheValue[String]](CacheConfig(ttl = Some(HdlTtl.domainRedisTTL)))
 
     override def get(key: String): Option[String] =
-      getValue(cache.getSync(hdlKey(key), "AgencyDomain", refreshTTL = false))
+      getValue(cache.getSync(hdlKey(key), cacheKey, refreshTTL = false), cacheKey)
 
     override def set(key: String, value: String): Unit =
-      cache.setSync(hdlKey(key), "AgencyDomain", cacheValue(value, HdlTtl.domainRedisTTL))
+      cache.setSync(hdlKey(key), cacheKey, cacheValue(value, HdlTtl.domainRedisTTL))
 
     override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
   }
 
   case object PresignedUrl extends HdlCache[String, URL] {
-    private val cache = new Cache[cacheValue[String]](CacheConfig(ttl = Some(HdlTtl.urlRedisTTL)))
+    private val cacheKey = "PresignedUrl"
+    private val cache    = new Cache[cacheValue[String]](CacheConfig(ttl = Some(HdlTtl.urlRedisTTL)))
 
     override def get(key: String): Option[URL] =
-      getValue(cache.getSync(hdlKey(key), "PresignedUrl", refreshTTL = false)).map(url => new URL(url))
+      getValue(cache.getSync(hdlKey(key), cacheKey, refreshTTL = false), cacheKey).map(url => new URL(url))
 
     override def set(key: String, value: URL): Unit =
-      cache.setSync(hdlKey(key), "PresignedUrl", cacheValue(value.toString, HdlTtl.urlRedisTTL))
+      cache.setSync(hdlKey(key), cacheKey, cacheValue(value.toString, HdlTtl.urlRedisTTL))
 
     override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
   }
 
   case object WatermarkSettings extends HdlCache[String, WatermarkSetting] {
+    private val cacheKey = "WatermarkSettings"
     private val cache =
       new Cache[cacheValue[WatermarkSetting]](CacheConfig(ttl = Some(HdlTtl.watermarkSettingsRedisTTL)))
 
     override def get(key: String): Option[WatermarkSetting] =
-      getValue(cache.getSync(hdlKey(key), "WatermarkSettings", refreshTTL = false))
+      getValue(cache.getSync(hdlKey(key), cacheKey, refreshTTL = false), cacheKey)
 
     override def set(key: String, value: WatermarkSetting): Unit =
-      cache.setSync(hdlKey(key), "WatermarkSettings", cacheValue(value, HdlTtl.watermarkSettingsRedisTTL))
+      cache.setSync(hdlKey(key), cacheKey, cacheValue(value, HdlTtl.watermarkSettingsRedisTTL))
 
     override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
   }
