@@ -48,6 +48,7 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
     "streamingSessionToken",
     "streamToken",
     "lp",
+    "ver", // support non-backward change in backend
   )
 
   final val hlsVariantParams = List("level")
