@@ -2,10 +2,8 @@ package controllers
 
 import actions.{HeimdallRequestAction, RedactionPermValidationAction, RedactionRequestActionBuilder}
 import com.evidence.service.common.logging.LazyLogging
-import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import play.api.http.ContentTypes
-import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.audit.AuditConversions
 import services.drd.DrdClient
@@ -61,6 +59,17 @@ class RedactionController @Inject()(
           request.body.asJson,
           request.remoteAddress
         )
-        .map(streamed(_, ContentTypes.JSON))
+        .map(streamedWithHttpStatus(_, ContentTypes.JSON))
+        .recoverWith {
+          case e: Exception =>
+            logger.error(e, "Unexpected Exception in callDocumentRedactionAPI")(
+              "path"       -> request.path,
+              "method"     -> request.method,
+              "evidenceId" -> request.evidenceId,
+              "userId"     -> request.userId,
+              "partnerId"  -> request.partnerId,
+            )
+            Future.successful(InternalServerError)
+        }
     }
 }
