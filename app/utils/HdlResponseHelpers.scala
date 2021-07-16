@@ -15,15 +15,15 @@ trait HdlResponseHelpers extends BaseController with LazyLogging {
       .getOrElse(defaultContentType)
   }
 
-  def streamed(response: WSResponse, defaultContentType: String): Result = {
+  def streamedSuccessResponse(response: WSResponse, defaultContentType: String): Result = {
     streamed(response, 200, defaultContentType)
   }
 
-  def streamedWithHttpStatus(response: WSResponse, defaultContentType: String): Result = {
+  def streamedResponse(response: WSResponse, defaultContentType: String): Result = {
     streamed(response, response.status, defaultContentType)
   }
 
-  def streamed(response: WSResponse, status: Int, defaultContentType: String): Result = {
+  private def streamed(response: WSResponse, status: Int, defaultContentType: String): Result = {
     val contentType = getContentType(response, defaultContentType)
     response.headers
       .get("Content-Length")

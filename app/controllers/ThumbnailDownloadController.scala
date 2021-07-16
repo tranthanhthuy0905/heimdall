@@ -49,6 +49,6 @@ class ThumbnailDownloadController @Inject()(
           _ <- FutureEither(audit.recordEndSuccess(auditEvents))
             .mapLeft(toHttpStatus("failedToSendMediaViewedAuditEvent")(_, Some(request.media)))
         } yield response
-      ).fold(error, streamed(_, "image/jpeg"))
+      ).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 }

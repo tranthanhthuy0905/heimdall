@@ -53,7 +53,7 @@ class ImageController @Inject()(
         response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
         _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
           .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
-      } yield response).fold(error, streamed(_, "image/jpeg"))
+      } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 
   def extractThumbnail: Action[AnyContent] =
@@ -66,7 +66,7 @@ class ImageController @Inject()(
         rti
           .thumbnail(request.presignedUrl, request.width, request.height, request.file)
           .map(withOKStatus))
-        .fold(error, streamed(_, "image/jpeg"))
+        .fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 
   def zoom: Action[AnyContent] =
@@ -90,7 +90,7 @@ class ImageController @Inject()(
           _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
             .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
         } yield response
-      ).fold(error, streamed(_, "image/jpeg"))
+      ).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 
   def metadata: Action[AnyContent] =

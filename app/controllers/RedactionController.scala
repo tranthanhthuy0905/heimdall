@@ -59,7 +59,7 @@ class RedactionController @Inject()(
           request.body.asJson,
           request.remoteAddress
         )
-        .map(streamedWithHttpStatus(_, ContentTypes.JSON))
+        .map(streamedResponse(_, ContentTypes.JSON))
         .recoverWith {
           case e: Exception =>
             logger.error(e, "Unexpected Exception in callDocumentRedactionAPI")(
