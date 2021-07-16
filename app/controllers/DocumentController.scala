@@ -43,6 +43,6 @@ class DocumentController @Inject()(
           _ <- FutureEither(audit.recordEndSuccess(viewEvent))
             .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
         } yield response
-      ).fold(error, streamed(_, "application/pdf"))
+      ).fold(error, streamedSuccessResponse(_, "application/pdf"))
     }
 }

@@ -32,6 +32,6 @@ class ThumbnailController @Inject()(
         rtmRequestAction
     ).async { request =>
       FutureEither(rtm.send(request).map(withOKStatus))
-        .fold(error, streamed(_, "image/jpeg"))
+        .fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 }

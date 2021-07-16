@@ -37,7 +37,7 @@ class HlsController @Inject()(
         permValidation.build(PermissionType.Stream) andThen
         playbackSettingAction andThen
         rtmRequestAction
-      ).async { request =>
+    ).async { request =>
       FutureEither(rtm.send(request).map(withOKStatus))
         .map(toManifest(_, request))
         .fold(error, Ok(_).as("application/x-mpegURL"))
@@ -63,8 +63,8 @@ class HlsController @Inject()(
         watermarkAction andThen
         rtmRequestAction
     ).async { request: RtmRequest[AnyContent] =>
-        FutureEither(rtm.send(request).map(withOKStatus))
-          .fold(error, streamed(_, "video/MP2T"))
+      FutureEither(rtm.send(request).map(withOKStatus))
+        .fold(error, streamedSuccessResponse(_, "video/MP2T"))
     }
 
   private def toManifest(response: WSResponse, request: HeimdallRequest[AnyContent]): String = {

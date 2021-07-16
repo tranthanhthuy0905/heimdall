@@ -2,16 +2,14 @@ package controllers
 
 import actions.{HeimdallRequestAction, RedactionPermValidationAction, RedactionRequestActionBuilder}
 import com.evidence.service.common.logging.LazyLogging
-import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
 import play.api.http.ContentTypes
-import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.audit.AuditConversions
 import services.drd.DrdClient
 import utils.{HdlResponseHelpers, WSResponseHelpers}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class RedactionController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -52,17 +50,26 @@ class RedactionController @Inject()(
         andThen redactionRequestActionBuilder.build(evidenceId)
         andThen drdPermValidation
     ).async { implicit request =>
-      FutureEither(
-        drdClient
-          .call(
-            request.path,
-            request.method,
-            request.partnerId,
-            request.userId,
-            request.body.asJson,
-            request.remoteAddress
-          )
-          .map(withOKStatus))
-        .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
+      drdClient
+        .call(
+          request.path,
+          request.method,
+          request.partnerId,
+          request.userId,
+          request.body.asJson,
+          request.remoteAddress
+        )
+        .map(streamedResponse(_, ContentTypes.JSON))
+        .recoverWith {
+          case e: Exception =>
+            logger.error(e, "Unexpected Exception in callDocumentRedactionAPI")(
+              "path"       -> request.path,
+              "method"     -> request.method,
+              "evidenceId" -> request.evidenceId,
+              "userId"     -> request.userId,
+              "partnerId"  -> request.partnerId,
+            )
+            Future.successful(InternalServerError)
+        }
     }
 }

@@ -15,13 +15,22 @@ trait HdlResponseHelpers extends BaseController with LazyLogging {
       .getOrElse(defaultContentType)
   }
 
-  def streamed(response: WSResponse, defaultContentType: String): Result = {
+  def streamedSuccessResponse(response: WSResponse, defaultContentType: String): Result = {
+    streamed(response, 200, defaultContentType)
+  }
+
+  def streamedResponse(response: WSResponse, defaultContentType: String): Result = {
+    streamed(response, response.status, defaultContentType)
+  }
+
+  private def streamed(response: WSResponse, status: Int, defaultContentType: String): Result = {
     val contentType = getContentType(response, defaultContentType)
     response.headers
       .get("Content-Length")
       .map(length =>
-        Ok.sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
-      .getOrElse(Ok.chunked(response.bodyAsSource).as(contentType))
+        new Status(status)
+          .sendEntity(HttpEntity.Streamed(response.bodyAsSource, Some(length.mkString.toLong), Some(contentType))))
+      .getOrElse(new Status(status).chunked(response.bodyAsSource).as(contentType))
   }
 
   def error(errorStatus: Int): Result = Result(ResponseHeader(errorStatus), HttpEntity.NoEntity)

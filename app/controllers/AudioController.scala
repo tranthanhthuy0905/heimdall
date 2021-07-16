@@ -41,6 +41,6 @@ class AudioController @Inject()(
         rtmRequestAction
     ).async { implicit request =>
       FutureEither(rtm.send(request).map(withOKStatus))
-        .fold(error, streamed(_, "audio/mpeg"))
+        .fold(error, streamedSuccessResponse(_, "audio/mpeg"))
     }
 }
