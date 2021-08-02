@@ -33,7 +33,6 @@ class HlsController @Inject()(
   def master: Action[AnyContent] =
     (
       heimdallRequestAction andThen
-        tokenValidationAction andThen
         permValidation.build(PermissionType.Stream) andThen
         playbackSettingAction andThen
         rtmRequestAction
@@ -46,7 +45,6 @@ class HlsController @Inject()(
   def playlist: Action[AnyContent] =
     (
       heimdallRequestAction andThen
-        tokenValidationAction andThen
         permValidation.build(PermissionType.Stream) andThen
         rtmRequestAction
     ).async { request =>
@@ -58,7 +56,6 @@ class HlsController @Inject()(
   def segment: Action[AnyContent] =
     (
       heimdallRequestAction andThen
-        tokenValidationAction andThen
         permValidation.build(PermissionType.Stream) andThen
         watermarkAction andThen
         rtmRequestAction

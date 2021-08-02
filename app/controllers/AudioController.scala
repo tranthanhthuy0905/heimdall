@@ -26,7 +26,6 @@ class AudioController @Inject()(
   def sample: Action[AnyContent] =
     (
       heimdallRequestAction andThen
-        tokenValidationAction andThen
         permValidation.build(PermissionType.View) andThen
         rtmRequestAction
     ).async { request =>

@@ -3,7 +3,6 @@ package controllers
 import actions._
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
-import com.typesafe.config.Config
 import javax.inject.Inject
 import models.common.{AuthorizationAttr, PermissionType}
 import play.api.http.ContentTypes
@@ -17,14 +16,12 @@ import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 class MediaConvertController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
-  tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
   featureValidationAction: FeatureValidationActionBuilder,
   apidaeRequestAction: ApidaeRequestAction,
   mediaConvertValidation: MediaConvertValidation,
   apidae: ApidaeClient,
   audit: AuditClient,
-  config: Config,
   components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
