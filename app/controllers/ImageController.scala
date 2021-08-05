@@ -11,10 +11,14 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
-import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
+import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent, ZipFileAccessedEvent, AuditEvent}
 import services.rti.metadata.MetadataJsonConversions
 import services.rti.RtiClient
+import services.apidae.ApidaeClient
 import utils.{HdlResponseHelpers, JsonFormat, WSResponseHelpers}
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -25,6 +29,7 @@ class ImageController @Inject()(
   rtiThumbnailRequestAction: ThumbnailRequestAction,
   rti: RtiClient,
   audit: AuditClient,
+  apidae: ApidaeClient,
   components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
@@ -42,16 +47,36 @@ class ImageController @Inject()(
         andThen rtiRequestAction
     ).async { implicit request =>
       val authHandler = request.attrs(AuthorizationAttr.Key)
-      val viewAuditEvent = EvidenceReviewEvent(
-        evidenceTid(request.file.evidenceId, request.file.partnerId),
-        updatedByTid(authHandler.parsedJwt),
-        fileTid(request.file.fileId, request.file.partnerId),
-        request.request.clientIpAddress
-      )
+      val zipFileResponseFuture = apidae.getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
+      val zipFileResponse = Await.result(zipFileResponseFuture, Duration.Inf)
+
+      var auditEvent : AuditEvent = null 
+      val status = (zipFileResponse.json \ "status").as[String]
+      // if this is a zip file then use zip audit message
+      if (status == "success") {
+        val evidenceTitle = (zipFileResponse.json \ "data" \ "file_name").as[String]
+        val filePath = (zipFileResponse.json \ "data" \ "file_path").as[String]
+        auditEvent = ZipFileAccessedEvent(
+          evidenceTid(request.file.evidenceId, request.file.partnerId),
+          updatedByTid(authHandler.parsedJwt),
+          fileTid(request.file.fileId, request.file.partnerId),
+          request.request.clientIpAddress,
+          evidenceTitle,
+          filePath
+        )
+      } 
+      else {
+        auditEvent = EvidenceReviewEvent(
+          evidenceTid(request.file.evidenceId, request.file.partnerId),
+          updatedByTid(authHandler.parsedJwt),
+          fileTid(request.file.fileId, request.file.partnerId),
+          request.request.clientIpAddress
+        )
+      }
 
       (for {
         response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-        _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
+        _ <- FutureEither(audit.recordEndSuccess(auditEvent))
           .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
       } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
