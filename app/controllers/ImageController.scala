@@ -17,7 +17,7 @@ import services.rti.RtiClient
 import services.apidae.ApidaeClient
 import utils.{HdlResponseHelpers, JsonFormat, WSResponseHelpers}
 
-import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 class ImageController @Inject()(
@@ -46,39 +46,51 @@ class ImageController @Inject()(
         andThen watermarkAction
         andThen rtiRequestAction
     ).async { implicit request =>
+
       val authHandler = request.attrs(AuthorizationAttr.Key)
-      val zipFileResponseFuture = apidae.getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
-      val zipFileResponse = Await.result(zipFileResponseFuture, Duration.Inf)
-
-      var auditEvent : AuditEvent = null 
-      val status = (zipFileResponse.json \ "status").as[String]
-      // if this is a zip file then use zip audit message
-      if (status == "success") {
-        val evidenceTitle = (zipFileResponse.json \ "data" \ "file_name").as[String]
-        val filePath = (zipFileResponse.json \ "data" \ "file_path").as[String]
-        auditEvent = ZipFileAccessedEvent(
-          evidenceTid(request.file.evidenceId, request.file.partnerId),
-          updatedByTid(authHandler.parsedJwt),
-          fileTid(request.file.fileId, request.file.partnerId),
-          request.request.clientIpAddress,
-          evidenceTitle,
-          filePath
-        )
-      } 
-      else {
-        auditEvent = EvidenceReviewEvent(
-          evidenceTid(request.file.evidenceId, request.file.partnerId),
-          updatedByTid(authHandler.parsedJwt),
-          fileTid(request.file.fileId, request.file.partnerId),
-          request.request.clientIpAddress
-        )
+      apidae.getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId).map(
+        response => {
+          val status = (response.json \ "status").asOpt[String].getOrElse("")
+          // if this is a zip file then use zip audit event
+          if (status == "success") {
+            val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
+            val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
+            ZipFileAccessedEvent(
+              evidenceTid(request.file.evidenceId, request.file.partnerId),
+              updatedByTid(authHandler.parsedJwt),
+              fileTid(request.file.fileId, request.file.partnerId),
+              request.request.clientIpAddress,
+              evidenceTitle,
+              filePath
+            )
+          }
+          else {
+            EvidenceReviewEvent(
+              evidenceTid(request.file.evidenceId, request.file.partnerId),
+              updatedByTid(authHandler.parsedJwt),
+              fileTid(request.file.fileId, request.file.partnerId),
+              request.request.clientIpAddress
+            )
+          }  
+        }
+      ).flatMap(auditEvent => {
+        (for {
+          response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
+          _ <- FutureEither(audit.recordEndSuccess(auditEvent))
+            .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
+        } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
+      }).recoverWith {
+        case e: Exception => {
+          logger.error(e, "Unexpected exception")(
+            "path"       -> request.path,
+            "method"     -> request.method,
+            "evidenceId" -> request.file.evidenceId,
+            "userId"     -> authHandler.parsedJwt.audienceId,
+            "partnerId"  -> request.file.partnerId,
+          )
+          Future(error(INTERNAL_SERVER_ERROR))
+        }
       }
-
-      (for {
-        response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-        _ <- FutureEither(audit.recordEndSuccess(auditEvent))
-          .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
-      } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 
   def extractThumbnail: Action[AnyContent] =
