@@ -19,6 +19,8 @@ import utils.{HdlResponseHelpers, JsonFormat, WSResponseHelpers}
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import java.util.UUID
+import models.auth.JWTWrapper
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -48,32 +50,12 @@ class ImageController @Inject()(
     ).async { implicit request =>
 
       val authHandler = request.attrs(AuthorizationAttr.Key)
-      apidae
-      .getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
-      .map(response => {
-          val status = (response.json \ "status").asOpt[String].getOrElse("")
-          // if this is a zip file then use zip audit event
-          if (status == "success") {
-            val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
-            val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
-            ZipFileAccessedEvent(
-              evidenceTid(request.file.evidenceId, request.file.partnerId),
-              updatedByTid(authHandler.parsedJwt),
-              fileTid(request.file.fileId, request.file.partnerId),
-              request.request.clientIpAddress,
-              evidenceTitle,
-              filePath
-            )
-          }
-          else {
-            EvidenceReviewEvent(
-              evidenceTid(request.file.evidenceId, request.file.partnerId),
-              updatedByTid(authHandler.parsedJwt),
-              fileTid(request.file.fileId, request.file.partnerId),
-              request.request.clientIpAddress
-            )
-          }  
-        }
+      getEvidenceReviewEvent(
+        request.file.partnerId, 
+        request.file.evidenceId, 
+        request.file.fileId, 
+        authHandler.parsedJwt, 
+        request.request.clientIpAddress
       ).flatMap(auditEvent => {
         (for {
           response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
@@ -145,5 +127,35 @@ class ImageController @Inject()(
   private def toMetadataEntity(response: WSResponse): JsObject = {
     val metadata = metadataFromJson(response.json)
     removeNullValues(Json.toJson(metadata))
+  }
+
+  private def getEvidenceReviewEvent(partnerId: UUID, evidenceId: UUID, fileId: UUID, parsedJwt: JWTWrapper, clientIpAddress: String) : Future[AuditEvent] = {
+    apidae
+    .getZipFileInfo(partnerId, evidenceId, fileId)
+    .map(response => {
+        val status = (response.json \ "status").asOpt[String].getOrElse("")
+        // if this is a zip file then use zip audit event
+        if (status == "success") {
+          val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
+          val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
+          ZipFileAccessedEvent(
+            evidenceTid(evidenceId, partnerId),
+            updatedByTid(parsedJwt),
+            fileTid(fileId, partnerId),
+            clientIpAddress,
+            evidenceTitle,
+            filePath
+          )
+        }
+        else {
+          EvidenceReviewEvent(
+            evidenceTid(evidenceId, partnerId),
+            updatedByTid(parsedJwt),
+            fileTid(fileId, partnerId),
+            clientIpAddress
+          )
+        }  
+      }
+    )
   }
 }
