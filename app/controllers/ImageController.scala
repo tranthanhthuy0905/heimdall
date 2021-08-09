@@ -48,8 +48,9 @@ class ImageController @Inject()(
     ).async { implicit request =>
 
       val authHandler = request.attrs(AuthorizationAttr.Key)
-      apidae.getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId).map(
-        response => {
+      apidae
+      .getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
+      .map(response => {
           val status = (response.json \ "status").asOpt[String].getOrElse("")
           // if this is a zip file then use zip audit event
           if (status == "success") {
