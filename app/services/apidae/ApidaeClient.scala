@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ApidaeClient {
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
-  def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] 
+  def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
 }
 
 @Singleton
@@ -19,9 +19,10 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
 
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
     buildApidaeEndpoint(s"/files/${fileId.toString}/convert")
-      .addQueryStringParameters("partner_id" -> partnerId.toString)
-      .addQueryStringParameters("evidence_id" -> evidenceId.toString)
-      .addQueryStringParameters("user_id" -> userId.toString)
+      .addQueryStringParameters(
+        "partner_id"  -> partnerId.toString,
+        "evidence_id" -> evidenceId.toString,
+        "user_id"     -> userId.toString)
       .withMethod("PUT")
       .withBody(
         Json.obj(
@@ -34,17 +35,19 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
 
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
     buildApidaeEndpoint(s"/files/${fileId.toString}/status")
-      .addQueryStringParameters("partner_id" -> partnerId.toString)
-      .addQueryStringParameters("evidence_id" -> evidenceId.toString)
-      .addQueryStringParameters("user_id" -> userId.toString)
+      .addQueryStringParameters(
+        "partner_id"  -> partnerId.toString,
+        "evidence_id" -> evidenceId.toString,
+        "user_id"     -> userId.toString)
       .withMethod("GET")
       .execute()
 
   def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
     buildApidaeEndpoint(s"/v1/zip/file")
-      .addQueryStringParameters("partner_id" -> partnerId.toString)
-      .addQueryStringParameters("evidence_id" -> evidenceId.toString)
-      .addQueryStringParameters("file_id" -> fileId.toString)
+      .addQueryStringParameters(
+        "partner_id"  -> partnerId.toString,
+        "evidence_id" -> evidenceId.toString,
+        "file_id"     -> fileId.toString)
       .withMethod("GET")
       .execute()
 
