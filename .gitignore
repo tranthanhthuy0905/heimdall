@@ -8,3 +8,5 @@
 **/.idea/
 conf/envs/dev.conf
 .bsp
+.metals
+.vscode

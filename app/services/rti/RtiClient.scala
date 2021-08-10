@@ -50,11 +50,13 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
     presignedURL: URL,
     watermark: String)(size: SizeImage, quality: QualityImage, file: FileIdent) = {
     buildRTIEndpoint("/v1/images/image")
-      .addQueryStringParameters("sizeID" -> size.value)
-      .addQueryStringParameters("presignedURL" -> presignedURL.toString)
-      .addQueryStringParameters("watermark" -> watermark)
-      .addQueryStringParameters("quality" -> quality.value)
-      .addQueryStringParameters("identifier" -> file.fileId.toString)
+      .addQueryStringParameters(
+        "sizeID"       -> size.value,
+        "presignedURL" -> presignedURL.toString,
+        "watermark"    -> watermark,
+        "quality"      -> quality.value,
+        "identifier"   -> file.fileId.toString,
+      )
       .addHttpHeaders(
         "evidenceId" -> file.evidenceId.toString,
         "partnerId"  -> file.partnerId.toString,
@@ -65,9 +67,11 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
 
   private def buildThumbnailRequest(presignedURL: URL, width: Int, height: Int, file: FileIdent) = {
     buildRTIEndpoint("/v1/images/thumbnail")
-      .addQueryStringParameters("presignedURL" -> presignedURL.toString)
-      .addQueryStringParameters("width" -> width.toString)
-      .addQueryStringParameters("height" -> height.toString)
+      .addQueryStringParameters(
+        "presignedURL" -> presignedURL.toString,
+        "width"        -> width.toString,
+        "height"       -> height.toString,
+      )
       .addHttpHeaders(
         "evidenceId" -> file.evidenceId.toString,
         "partnerId"  -> file.partnerId.toString,
@@ -78,10 +82,12 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
 
   private def buildMetadataRequest(presignedURL: URL, file: FileIdent) = {
     buildRTIEndpoint("/v1/images/metadata")
-      .addQueryStringParameters("presignedURL" -> presignedURL.toString)
-      .addQueryStringParameters("evidenceId" -> file.evidenceId.toString)
-      .addQueryStringParameters("partnerId" -> file.partnerId.toString)
-      .addQueryStringParameters("fileId" -> file.fileId.toString)
+      .addQueryStringParameters(
+        "presignedURL" -> presignedURL.toString,
+        "evidenceId"   -> file.evidenceId.toString,
+        "partnerId"    -> file.partnerId.toString,
+        "fileId"       -> file.fileId.toString,
+      )
       .withMethod("GET")
   }
 }
