@@ -22,7 +22,8 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
       .addQueryStringParameters(
         "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
-        "user_id"     -> userId.toString)
+        "user_id"     -> userId.toString,
+      )
       .withMethod("PUT")
       .withBody(
         Json.obj(
@@ -38,7 +39,8 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
       .addQueryStringParameters(
         "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
-        "user_id"     -> userId.toString)
+        "user_id"     -> userId.toString,
+      )
       .withMethod("GET")
       .execute()
 
@@ -47,7 +49,8 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
       .addQueryStringParameters(
         "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
-        "file_id"     -> fileId.toString)
+        "file_id"     -> fileId.toString,
+      )
       .withMethod("GET")
       .execute()
 
