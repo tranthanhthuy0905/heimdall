@@ -11,6 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ApidaeClient {
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
+  def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] 
 }
 
 @Singleton
@@ -36,6 +37,14 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
       .addQueryStringParameters("partner_id" -> partnerId.toString)
       .addQueryStringParameters("evidence_id" -> evidenceId.toString)
       .addQueryStringParameters("user_id" -> userId.toString)
+      .withMethod("GET")
+      .execute()
+
+  def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
+    buildApidaeEndpoint(s"/v1/zip/file")
+      .addQueryStringParameters("partner_id" -> partnerId.toString)
+      .addQueryStringParameters("evidence_id" -> evidenceId.toString)
+      .addQueryStringParameters("file_id" -> fileId.toString)
       .withMethod("GET")
       .execute()
 
