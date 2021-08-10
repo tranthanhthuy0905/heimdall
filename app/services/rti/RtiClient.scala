@@ -55,7 +55,7 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
         "presignedURL" -> presignedURL.toString,
         "watermark"    -> watermark,
         "quality"      -> quality.value,
-        "identifier"   -> file.fileId.toString
+        "identifier"   -> file.fileId.toString,
       )
       .addHttpHeaders(
         "evidenceId" -> file.evidenceId.toString,
@@ -70,7 +70,7 @@ class RtiClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Executi
       .addQueryStringParameters(
         "presignedURL" -> presignedURL.toString,
         "width"        -> width.toString,
-        "height"       -> height.toString
+        "height"       -> height.toString,
       )
       .addHttpHeaders(
         "evidenceId" -> file.evidenceId.toString,
