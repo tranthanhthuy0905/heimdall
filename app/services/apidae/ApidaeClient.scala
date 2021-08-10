@@ -39,6 +39,14 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
       .withMethod("GET")
       .execute()
 
+  def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
+    buildApidaeEndpoint(s"/v1/zip/file")
+      .addQueryStringParameters("partner_id" -> partnerId.toString)
+      .addQueryStringParameters("evidence_id" -> evidenceId.toString)
+      .addQueryStringParameters("file_id" -> fileId.toString)
+      .withMethod("GET")
+      .execute()
+
   private def buildApidaeEndpoint(endpoint: String) =
     ws.url(config.getString("edc.service.apidae.host") + endpoint).withHttpHeaders("Content-type" -> "application/json")
 
