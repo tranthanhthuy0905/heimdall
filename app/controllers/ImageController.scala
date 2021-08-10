@@ -61,7 +61,6 @@ class ImageController @Inject()(
       .getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
       .map(response => decideReviewEvent(response, viewAuditEvent))
       .flatMap(auditEvent => {
-          println("Audit event:", auditEvent)
           (for {                            
             response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
             _ <- FutureEither(audit.recordEndSuccess(auditEvent))
@@ -102,7 +101,6 @@ class ImageController @Inject()(
       .getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
       .map(response => decideReviewEvent(response, viewAuditEvent))
       .flatMap(auditEvent => { 
-        println("Audit event:", auditEvent)
         (for {
           response <- FutureEither(rti.zoom(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
           _ <- FutureEither(audit.recordEndSuccess(auditEvent))
