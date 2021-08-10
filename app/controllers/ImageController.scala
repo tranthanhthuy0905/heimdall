@@ -50,30 +50,24 @@ class ImageController @Inject()(
     ).async { implicit request =>
 
       val authHandler = request.attrs(AuthorizationAttr.Key)
-      getEvidenceReviewEvent(
-        request.file.partnerId, 
-        request.file.evidenceId, 
-        request.file.fileId, 
-        authHandler.parsedJwt, 
+      val viewAuditEvent : AuditEvent = EvidenceReviewEvent(
+        evidenceTid(request.file.evidenceId, request.file.partnerId),
+        updatedByTid(authHandler.parsedJwt),
+        fileTid(request.file.fileId, request.file.partnerId),
         request.request.clientIpAddress
-      ).flatMap(auditEvent => {
-        (for {
-          response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-          _ <- FutureEither(audit.recordEndSuccess(auditEvent))
-            .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
-        } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
-      }).recoverWith {
-        case e: Exception => {
-          logger.error(e, "Unexpected exception")(
-            "path"       -> request.path,
-            "method"     -> request.method,
-            "evidenceId" -> request.file.evidenceId,
-            "userId"     -> authHandler.parsedJwt.audienceId,
-            "partnerId"  -> request.file.partnerId,
-          )
-          Future(error(INTERNAL_SERVER_ERROR))
-        }
-      }
+      )
+
+      apidae
+      .getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
+      .map(response => decideReviewEvent(response, viewAuditEvent))
+      .flatMap(auditEvent => {
+          println("Audit event:", auditEvent)
+          (for {                            
+            response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
+            _ <- FutureEither(audit.recordEndSuccess(auditEvent))
+              .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
+          } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
+      })
     }
 
   def extractThumbnail: Action[AnyContent] =
@@ -104,13 +98,17 @@ class ImageController @Inject()(
         request.request.clientIpAddress
       )
 
-      (
-        for {
+      apidae
+      .getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
+      .map(response => decideReviewEvent(response, viewAuditEvent))
+      .flatMap(auditEvent => { 
+        println("Audit event:", auditEvent)
+        (for {
           response <- FutureEither(rti.zoom(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-          _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
+          _ <- FutureEither(audit.recordEndSuccess(auditEvent))
             .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
-        } yield response
-      ).fold(error, streamedSuccessResponse(_, "image/jpeg"))
+        } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
+      })
     }
 
   def metadata: Action[AnyContent] =
@@ -129,33 +127,23 @@ class ImageController @Inject()(
     removeNullValues(Json.toJson(metadata))
   }
 
-  private def getEvidenceReviewEvent(partnerId: UUID, evidenceId: UUID, fileId: UUID, parsedJwt: JWTWrapper, clientIpAddress: String) : Future[AuditEvent] = {
-    apidae
-    .getZipFileInfo(partnerId, evidenceId, fileId)
-    .map(response => {
-        val status = (response.json \ "status").asOpt[String].getOrElse("")
-        // if this is a zip file then use zip audit event
-        if (status == "success") {
-          val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
-          val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
-          ZipFileAccessedEvent(
-            evidenceTid(evidenceId, partnerId),
-            updatedByTid(parsedJwt),
-            fileTid(fileId, partnerId),
-            clientIpAddress,
-            evidenceTitle,
-            filePath
-          )
-        }
-        else {
-          EvidenceReviewEvent(
-            evidenceTid(evidenceId, partnerId),
-            updatedByTid(parsedJwt),
-            fileTid(fileId, partnerId),
-            clientIpAddress
-          )
-        }  
-      }
-    )
+  private def decideReviewEvent(response: WSResponse, baseEvidenceReviewEvent: AuditEvent) : AuditEvent = {
+    val status = (response.json \ "status").asOpt[String].getOrElse("")
+    // if this is a zip file then use zip audit event
+    if (status == "success") {
+      val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
+      val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
+      ZipFileAccessedEvent(
+        baseEvidenceReviewEvent.targetTid,
+        baseEvidenceReviewEvent.updatedByTid,
+        baseEvidenceReviewEvent.fileTid,
+        baseEvidenceReviewEvent.remoteAddress,
+        evidenceTitle,
+        filePath
+      )
+    }
+    else {
+      baseEvidenceReviewEvent
+    }
   }
 }
