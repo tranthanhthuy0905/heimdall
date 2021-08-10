@@ -23,10 +23,16 @@ case class cacheValue[K](
 )
 
 case object cacheValue {
+  // jitter is time tolerance between local time and redis server time due to
+  // - network
+  // - operation overhead
+  // - internal implementation of redis TTL: might not sub-seconds precise (e.g. drop values in batch)
+  // use to filter-out false positive cache expired stats
+  private val jitter = Duration(3, TimeUnit.SECONDS).toNanos
 
   def apply[K](value: K, ttl: Duration): cacheValue[K] = cacheValue(
     value = value,
-    expired = Instant.now().plusNanos(ttl.toNanos),
+    expired = Instant.now().plusNanos(ttl.toNanos + jitter),
   )
 }
 
