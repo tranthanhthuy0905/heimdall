@@ -4,7 +4,7 @@ import services.audit.{AuditEvent, ZipFileAccessedEvent}
 
 trait AuditEventHelpers {
     // decide zip/not zip review event to be audited based on reponse from apidae
-    def decideReviewEvent(response: WSResponse, baseEvidenceReviewEvent: AuditEvent) : AuditEvent = {
+    def decideReviewEvent(baseEvidenceReviewEvent: AuditEvent)(response: WSResponse) : AuditEvent = {
         val status = (response.json \ "status").asOpt[String].getOrElse("")
         // if this is a zip file then use zip audit event
         if (status == "success") {

@@ -59,8 +59,8 @@ class ImageController @Inject()(
         response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
         auditEvent <- FutureEither(
               apidae.getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId).map(withOKStatus) // apidae still returns statusOk with status == not_found
-            ).map(response => decideReviewEvent(response, viewAuditEvent))
-        _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
+            ).map(decideReviewEvent(viewAuditEvent))
+        _ <- FutureEither(audit.recordEndSuccess(auditEvent))
             .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
       } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
@@ -96,7 +96,7 @@ class ImageController @Inject()(
         response <- FutureEither(rti.zoom(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
         auditEvent <- FutureEither(
             apidae.getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId).map(withOKStatus)
-          ).map(response => decideReviewEvent(response, viewAuditEvent))
+          ).map(decideReviewEvent(viewAuditEvent))
         _ <- FutureEither(audit.recordEndSuccess(auditEvent))
           .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
       } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
