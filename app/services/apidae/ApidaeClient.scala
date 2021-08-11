@@ -11,7 +11,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ApidaeClient {
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
-  def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
+  def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] 
 }
 
 @Singleton
