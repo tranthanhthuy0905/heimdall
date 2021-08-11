@@ -16,7 +16,6 @@ import scala.concurrent.ExecutionContext
 
 class HlsController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
-  tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
   playbackSettingAction: PlaybackSettingAction,
   watermarkAction: WatermarkAction,

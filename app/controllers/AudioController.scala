@@ -13,7 +13,6 @@ import scala.concurrent.ExecutionContext
 
 class AudioController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
-  tokenValidationAction: TokenValidationAction,
   permValidation: PermValidationActionBuilder,
   rtmRequestAction: RtmRequestAction,
   rtm: RtmClient,
