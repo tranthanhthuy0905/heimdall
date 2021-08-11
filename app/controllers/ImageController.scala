@@ -15,12 +15,10 @@ import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent, ZipFi
 import services.rti.metadata.MetadataJsonConversions
 import services.rti.RtiClient
 import services.apidae.ApidaeClient
-import utils.{HdlResponseHelpers, JsonFormat, WSResponseHelpers}
+import utils.{HdlResponseHelpers, JsonFormat, WSResponseHelpers, AuditEventHelpers}
 
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import java.util.UUID
-import models.auth.JWTWrapper
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -39,7 +37,8 @@ class ImageController @Inject()(
     with MetadataJsonConversions
     with JsonFormat
     with WSResponseHelpers
-    with HdlResponseHelpers {
+    with HdlResponseHelpers 
+    with AuditEventHelpers {
 
   def view: Action[AnyContent] =
     (
@@ -56,17 +55,14 @@ class ImageController @Inject()(
         fileTid(request.file.fileId, request.file.partnerId),
         request.request.clientIpAddress
       )
-
-      apidae
-      .getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
-      .map(response => decideReviewEvent(response, viewAuditEvent))
-      .flatMap(auditEvent => {
-          (for {                            
-            response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-            _ <- FutureEither(audit.recordEndSuccess(auditEvent))
-              .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
-          } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
-      })
+      (for {
+        response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
+        auditEvent <- FutureEither(
+              apidae.getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId).map(withOKStatus) // apidae still returns statusOk with status == not_found
+            ).map(response => decideReviewEvent(response, viewAuditEvent))
+        _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
+            .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
+      } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 
   def extractThumbnail: Action[AnyContent] =
@@ -96,17 +92,14 @@ class ImageController @Inject()(
         fileTid(request.file.fileId, request.file.partnerId),
         request.request.clientIpAddress
       )
-
-      apidae
-      .getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId)
-      .map(response => decideReviewEvent(response, viewAuditEvent))
-      .flatMap(auditEvent => { 
-        (for {
-          response <- FutureEither(rti.zoom(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-          _ <- FutureEither(audit.recordEndSuccess(auditEvent))
-            .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
-        } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
-      })
+      (for {
+        response <- FutureEither(rti.zoom(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
+        auditEvent <- FutureEither(
+            apidae.getZipFileInfo(request.file.partnerId, request.file.evidenceId, request.file.fileId).map(withOKStatus)
+          ).map(response => decideReviewEvent(response, viewAuditEvent))
+        _ <- FutureEither(audit.recordEndSuccess(auditEvent))
+          .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
+      } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 
   def metadata: Action[AnyContent] =
@@ -123,25 +116,5 @@ class ImageController @Inject()(
   private def toMetadataEntity(response: WSResponse): JsObject = {
     val metadata = metadataFromJson(response.json)
     removeNullValues(Json.toJson(metadata))
-  }
-
-  private def decideReviewEvent(response: WSResponse, baseEvidenceReviewEvent: AuditEvent) : AuditEvent = {
-    val status = (response.json \ "status").asOpt[String].getOrElse("")
-    // if this is a zip file then use zip audit event
-    if (status == "success") {
-      val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
-      val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
-      ZipFileAccessedEvent(
-        baseEvidenceReviewEvent.targetTid,
-        baseEvidenceReviewEvent.updatedByTid,
-        baseEvidenceReviewEvent.fileTid,
-        baseEvidenceReviewEvent.remoteAddress,
-        evidenceTitle,
-        filePath
-      )
-    }
-    else {
-      baseEvidenceReviewEvent
-    }
   }
 }
