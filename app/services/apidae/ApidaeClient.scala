@@ -1,6 +1,9 @@
 package services.apidae
 
 import com.typesafe.config.Config
+import play.api.libs.json.{JsValue, Json}
+import play.api.libs.ws.{WSClient, WSResponse}
+
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
@@ -12,6 +15,7 @@ trait ApidaeClient {
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
+  def requestConcatenate(body: JsValue): Future[WSResponse]
 }
 
 @Singleton
@@ -52,6 +56,12 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
         "file_id"     -> fileId.toString,
       )
       .withMethod("GET")
+      .execute()
+
+  def requestConcatenate(body: JsValue): Future[WSResponse] =
+    buildApidaeEndpoint("/v1/media/video/concatenate")
+      .withMethod("POST")
+      .withBody(body)
       .execute()
 
   private def buildApidaeEndpoint(endpoint: String) =
