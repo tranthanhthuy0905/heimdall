@@ -11,10 +11,11 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
-import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
+import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent, ZipFileAccessedEvent, AuditEvent}
 import services.rti.metadata.MetadataJsonConversions
 import services.rti.RtiClient
-import utils.{HdlResponseHelpers, JsonFormat, WSResponseHelpers}
+import utils.{HdlResponseHelpers, JsonFormat, WSResponseHelpers, AuditEventHelpers}
+import services.apidae.ApidaeClient
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -25,6 +26,7 @@ class ImageController @Inject()(
   rtiThumbnailRequestAction: ThumbnailRequestAction,
   rti: RtiClient,
   audit: AuditClient,
+  apidae: ApidaeClient,
   components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
@@ -32,7 +34,8 @@ class ImageController @Inject()(
     with MetadataJsonConversions
     with JsonFormat
     with WSResponseHelpers
-    with HdlResponseHelpers {
+    with HdlResponseHelpers 
+    with AuditEventHelpers {
 
   def view: Action[AnyContent] =
     (
@@ -41,18 +44,18 @@ class ImageController @Inject()(
         andThen watermarkAction
         andThen rtiRequestAction
     ).async { implicit request =>
+
       val authHandler = request.attrs(AuthorizationAttr.Key)
-      val viewAuditEvent = EvidenceReviewEvent(
+      val viewAuditEvent : AuditEvent = EvidenceReviewEvent(
         evidenceTid(request.file.evidenceId, request.file.partnerId),
         updatedByTid(authHandler.parsedJwt),
         fileTid(request.file.fileId, request.file.partnerId),
         request.request.clientIpAddress
       )
-
       (for {
         response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-        _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
-          .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
+        auditEvent <- getZipInfoAndDecideReviewEvent(apidae, request.file, viewAuditEvent)
+        _ <- FutureEither(audit.recordEndSuccess(auditEvent)).mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
       } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 
@@ -83,14 +86,12 @@ class ImageController @Inject()(
         fileTid(request.file.fileId, request.file.partnerId),
         request.request.clientIpAddress
       )
-
-      (
-        for {
-          response <- FutureEither(rti.zoom(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-          _ <- FutureEither(audit.recordEndSuccess(viewAuditEvent))
-            .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
-        } yield response
-      ).fold(error, streamedSuccessResponse(_, "image/jpeg"))
+      (for {
+        response <- FutureEither(rti.zoom(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
+        auditEvent <- getZipInfoAndDecideReviewEvent(apidae, request.file, viewAuditEvent)
+        _ <- FutureEither(audit.recordEndSuccess(auditEvent))
+          .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
+      } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
 
   def metadata: Action[AnyContent] =
