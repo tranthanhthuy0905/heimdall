@@ -20,9 +20,14 @@ class PoisonedEvidenceFilter @Inject()(implicit val mat: Materializer, ec: Execu
              nextFilter: RequestHeader => Future[Result]
            )(requestHeader: RequestHeader): Future[Result] = {
 
-    getUuidListByKey("evidence_id", requestHeader.queryString).filterNot(filterPoisonedEvidence) match {
-      case Some(evidences) => nextFilter(requestHeader)
-      case _ => Future.successful(Results.BadRequest)
+    getUuidListByKey("evidence_id", requestHeader.queryString) match {
+      case Some(evidenceIds) =>
+        if (filterPoisonedEvidence(evidenceIds)) {
+          Future.successful(Results.BadRequest)
+        } else {
+          nextFilter(requestHeader)
+        }
+      case _ => nextFilter(requestHeader)
     }
   }
 
