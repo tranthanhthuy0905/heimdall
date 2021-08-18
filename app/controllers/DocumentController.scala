@@ -10,7 +10,8 @@ import play.api.mvc._
 import scala.concurrent.ExecutionContext
 import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.document.DocumentClient
-import utils.{HdlResponseHelpers, WSResponseHelpers}
+import utils.{HdlResponseHelpers, WSResponseHelpers, AuditEventHelpers}
+import services.apidae.ApidaeClient
 
 class DocumentController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -18,13 +19,15 @@ class DocumentController @Inject()(
   rtiRequestAction: RtiRequestAction,
   audit: AuditClient,
   documentClient: DocumentClient,
+  apidae: ApidaeClient,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
     with AuditConversions
     with WSResponseHelpers
-    with HdlResponseHelpers {
+    with HdlResponseHelpers
+    with AuditEventHelpers {
 
   def view: Action[AnyContent] =
     (
@@ -40,7 +43,8 @@ class DocumentController @Inject()(
       (
         for {
           response <- FutureEither(documentClient.view(request.presignedUrl).map(withOKStatus))
-          _ <- FutureEither(audit.recordEndSuccess(viewEvent))
+          auditEvent <- getZipInfoAndDecideReviewEvent(apidae, request.file, viewEvent)
+          _ <- FutureEither(audit.recordEndSuccess(auditEvent))
             .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
         } yield response
       ).fold(error, streamedSuccessResponse(_, "application/pdf"))
