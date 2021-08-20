@@ -37,11 +37,9 @@ class ConcatenationController @Inject()(
         andThen concatenationPermValidation
     ).async { request =>
       val authHandler = request.attrs(AuthorizationAttr.Key)
-      val emptyUUID  = new UUID(0, 0)
+      val requesterTid = updatedByTid(authHandler.parsedJwt)
       val auditEvent = VideoConcatenationRequestedEvent(
-          evidenceTid(emptyUUID, emptyUUID),
-          updatedByTid(authHandler.parsedJwt),
-          fileTid(emptyUUID, emptyUUID),
+          requesterTid, requesterTid, requesterTid,
           request.request.clientIpAddress,
           request.title
       )
