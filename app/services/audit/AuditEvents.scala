@@ -266,3 +266,17 @@ case class WatermarkSettingsUpdatedEvent(
       .toString
   }
 }
+
+/*
+ * echo -n com.evidence.data.subscriber.events.v2.VideoConcatenationRequested | md5
+ * ced5588a173a85e0876cb45d35b2afce
+ */
+case class VideoConcatenationRequestedEvent (
+  targetTid: Tid,
+  updatedByTid: Tid,
+  fileTid: Tid,
+  remoteAddress: String,
+  combinedVideoTitle: String,
+) extends AuditEvent {
+  val eventTypeUuid = "ced5588a-173a-85e0-876c-b45d35b2afce"
+}
