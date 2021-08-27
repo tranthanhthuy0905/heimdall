@@ -12,6 +12,7 @@ import services.rti.RtiClient
 import services.rtm.RtmClient
 import services.sessions.SessionsClient
 import services.zookeeper.HeimdallLoadBalancer
+import services.sage.{SageClient, SageClientImpl}
 
 class MockModule extends Module with MockitoSugar {
   override def configure() = {
@@ -27,6 +28,7 @@ class MockModule extends Module with MockitoSugar {
     bind(classOf[SessionsClient]).toInstance(mock[SessionsClient])
     bind(classOf[StreamingSessionData]).toInstance(mock[StreamingSessionData])
     bind(classOf[DocumentClient]).toInstance(mock[DocumentClientImpl])
+    bind(classOf[SageClient]).toInstance(mock[SageClientImpl])
 
     bind(classOf[CuratorFramework]).toInstance(mock[CuratorFramework])
     bind(classOf[HeimdallLoadBalancer]).toInstance(mock[HeimdallLoadBalancer])

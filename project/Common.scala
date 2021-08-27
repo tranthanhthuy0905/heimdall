@@ -9,6 +9,7 @@ object Common {
   val json4sTestVersion = "3.5.3"
   val serviceThriftVersion = "25.1.4638"
   val pdpProtoVersion = "0.2.195"
+  val sageProtoVersion = "0.6.1951"
 
   val resolvers = Seq("Nexus" at "https://nexus.taservs.net/content/groups/public")
 

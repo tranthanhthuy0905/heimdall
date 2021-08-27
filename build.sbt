@@ -47,6 +47,7 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Common.protoDependencies
 libraryDependencies ++= Seq(
   "com.evidence" %% "pdp-proto" % Common.pdpProtoVersion,
+  "com.evidence" %% "sage-proto" % Common.sageProtoVersion,
 )
 
 // Test

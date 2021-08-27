@@ -11,6 +11,7 @@ import services.komrade.{CachedKomradeClientImpl, KomradeClient}
 import services.pdp.{PdpClient, PdpClientImpl}
 import services.rti.{RtiClient, RtiClientImpl}
 import services.rtm.{RtmClient, RtmClientImpl}
+import services.sage.{SageClient, SageClientImpl}
 import services.sessions.{SessionsClient, SessionsClientImpl}
 import services.zookeeper.{HeimdallLoadBalancer, HeimdallLoadBalancerProvider, ZookeeperClientProvider}
 
@@ -30,6 +31,7 @@ class Module extends AbstractModule {
     bind(classOf[DocumentClient]).to(classOf[DocumentClientImpl])
     bind(classOf[SessionsClient]).to(classOf[SessionsClientImpl])
     bind(classOf[StreamingSessionData]).to(classOf[StreamingSessionDataImpl])
+    bind(classOf[SageClient]).to(classOf[SageClientImpl])
     // Providers
     bind(classOf[CuratorFramework]).toProvider(classOf[ZookeeperClientProvider]).in(classOf[Singleton])
     bind(classOf[HeimdallLoadBalancer]).toProvider(classOf[HeimdallLoadBalancerProvider]).in(classOf[Singleton])
