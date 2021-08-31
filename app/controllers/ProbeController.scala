@@ -1,6 +1,6 @@
 package controllers
 
-import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
+import actions.{GroupRtmRequestAction, HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
@@ -14,12 +14,13 @@ import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEven
 import services.rtm.{RtmClient, RtmRequest}
 import utils.{HdlResponseHelpers, RequestUtils, WSResponseHelpers}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ProbeController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   permValidation: PermValidationActionBuilder,
   rtmRequestAction: RtmRequestAction,
+  groupRtmRequestAction: GroupRtmRequestAction,
   rtm: RtmClient,
   sessionData: StreamingSessionData,
   audit: AuditClient,
@@ -55,6 +56,17 @@ class ProbeController @Inject()(
         ).fold(error, Ok(_).as(ContentTypes.JSON))
     }
 
+  def probeAll: Action[AnyContent] =
+    (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen groupRtmRequestAction).async {
+      request =>
+
+        val results = for {
+            responses <- Future.traverse(request.rtmRequests)(rtm.send(_).map(withOKStatus))
+          } yield toEitherOfList(responses.toList).map(toListMediaData)
+
+        FutureEither(results).fold(error, Ok(_).as(ContentTypes.JSON))
+    }
+
   private def generateStreamingToken(request: RtmRequest[AnyContent]): String = {
     val authHandler           = request.attrs(AuthorizationAttr.Key)
     val streamingSessionToken = sessionData.createToken(authHandler.token, request.media.getSortedFileIds)
@@ -70,4 +82,17 @@ class ProbeController @Inject()(
     responseWithToken
   }
 
+  private def toListMediaData(responses: List[WSResponse]): JsObject = {
+    Json.obj(("data", responses.map(_.json)))
+  }
+
+  def toEitherOfList[L,R](eithers: List[Either[L, R]]) : Either[L, List[R]] = {
+    val acc: Either[L, List[R]] = Right(Nil)
+    eithers.foldLeft(acc) { (acc, elem) =>
+      for {
+        successAcc <- acc
+        successElem <- elem
+      } yield successAcc :+ successElem
+    }
+  }
 }
