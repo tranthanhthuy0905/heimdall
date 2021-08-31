@@ -59,14 +59,25 @@ class ProbeController @Inject()(
     }
 
   def probeAll: Action[AnyContent] =
-    (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen groupRtmRequestAction andThen groupRtmRequestFilterAction).async {
+    (heimdallRequestAction
+      andThen permValidation.build(PermissionType.View)
+      andThen groupRtmRequestAction
+      andThen groupRtmRequestFilterAction
+    ).async {
       request =>
-
-        val results = for {
-            responses <- Future.traverse(request.rtmRequests)(rtm.send(_).map(withOKStatus))
-          } yield toEitherOfList(responses.toList).map(toListMediaData)
-
-        FutureEither(results).fold(error, Ok(_).as(ContentTypes.JSON))
+        Future.traverse(request.toList) {rtmRequest =>
+          for {
+            response <- rtm.send(rtmRequest).map(withOKStatus)
+          } yield response.map(toProbeResult(_, rtmRequest))
+        }.map { res =>
+          toEitherOfList(res.toList)
+            .fold(
+              error,
+              res => Ok(
+                Json.obj(("data", Json.arr(res)))
+              )
+            )
+        }
     }
 
   private def generateStreamingToken(request: RtmRequest[AnyContent]): String = {
@@ -79,12 +90,7 @@ class ProbeController @Inject()(
     val streamingToken = generateStreamingToken(request)
 
     val responseWithToken = response.json
-      .as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingToken))
-
+      .as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingToken)) + ("fileIds" -> Json.toJson(request.media.fileIds))
     responseWithToken
-  }
-
-  private def toListMediaData(responses: List[WSResponse]): JsObject = {
-    Json.obj(("data", responses.map(_.json)))
   }
 }

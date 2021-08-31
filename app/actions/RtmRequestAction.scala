@@ -38,7 +38,7 @@ case class RtmRequestAction @Inject()(
             path = rtmQuery.path,
             queryString = Some(queries)
           )
-        Right(new RtmRequest(uri, input))
+        Right(new RtmRequest(uri, input.media, input))
       }
     }.getOrElse(Future.successful(Left(Results.BadRequest)))
   }

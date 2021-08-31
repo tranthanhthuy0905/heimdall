@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.Uri
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import javax.inject.Inject
-import models.common.HeimdallRequest
+import models.common.{HeimdallRequest, MediaIdent}
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
 import services.komrade.KomradeClient
@@ -40,10 +40,15 @@ case class GroupRtmRequestAction @Inject()(
             path = rtmQuery.path,
             queryString = Some(queries)
           )
-          new RtmRequest(uri, input)
+          val newMedia = new MediaIdent(
+            fileIds = List(fileIdent.fileId),
+            evidenceIds = List(fileIdent.evidenceId),
+            partnerId = fileIdent.partnerId
+          )
+          new RtmRequest(uri, newMedia, input)
         }
       })
-        .map(GroupRtmRequest(_))
+        .map(new GroupRtmRequest(_, input))
     }
     foldEitherOfFuture(res)
   }
