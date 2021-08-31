@@ -11,7 +11,7 @@ import play.api.mvc._
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-case class ConcatenationRequestAction @Inject()(implicit val executionContext: ExecutionContext)
+case class ConcatenationRequestAction @Inject()()(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, ConcatenationRequest]
     with LazyLogging
     with UUIDHelper {
