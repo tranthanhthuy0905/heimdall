@@ -20,6 +20,8 @@ import play.api.mvc._
 import play.api.test.Helpers._
 import play.api.test._
 import services.audit.{AuditClient, AuditEvent}
+import services.sage.{SageClient, Evidence}
+import services.apidae.ApidaeClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -68,11 +70,15 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
     )
 
     val mockAuditClient = mock[AuditClient]
+    var mockSageClient  = mock[SageClient]
+    var mockApidaeClient= mock[ApidaeClient]
 
     val controller = new AuditController(
       heimdallRequestAction,
       tokenValidationAction,
       mockAuditClient,
+      mockApidaeClient,
+      mockSageClient,
       controllerComponents
     )
   }
@@ -81,9 +87,14 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
 
     "return 200 status" in new MockContext {
       when(
+        mockSageClient.getEvidence(ArgumentMatchers.any(), ArgumentMatchers.any())
+      ).thenReturn(Future.successful(Right(Evidence(evidenceId, partnerId, "application/video"))))
+
+      when(
         mockAuditClient
           .recordEndSuccess(List[AuditEvent](ArgumentMatchers.any()))
       ).thenReturn(Future.successful(Right(List(randomUUID.toString))))
+      
       val fakeRequest = FakeRequest(GET, happyUri)
         .addAttr(AuthorizationAttr.Key, authData)
         .addAttr(MediaIdentAttr.Key, media)
@@ -94,6 +105,10 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
     }
 
     "return 403 when media identifiers are missing" in new MockContext {
+      when(
+        mockSageClient.getEvidence(ArgumentMatchers.any(), ArgumentMatchers.any())
+      ).thenReturn(Future.successful(Right(Evidence(evidenceId, partnerId, "application/video"))))
+
       val fakeRequest =
         FakeRequest(GET, happyUri).addAttr(AuthorizationAttr.Key, authData)
       val res = controller.recordMediaStreamedEvent(fakeRequest)
@@ -103,6 +118,10 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
     }
 
     "return InternalServerError on failed recordEndSuccess" in new MockContext {
+      when(
+        mockSageClient.getEvidence(ArgumentMatchers.any(), ArgumentMatchers.any())
+      ).thenReturn(Future.successful(Right(Evidence(evidenceId, partnerId, "application/video"))))
+
       when(
         mockAuditClient
           .recordEndSuccess(List[AuditEvent](ArgumentMatchers.any()))

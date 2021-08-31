@@ -202,6 +202,20 @@ case class ZipFileAccessedEvent(
 }
 
 /**
+  * echo -n com.evidence.data.evidence.events.v2.ZipFileStreamed | md5
+  * f4adeeea7dfecf94f7ef43abd6929933
+  */
+case class ZipFileStreamedEvent(
+  targetTid: Tid,
+  updatedByTid: Tid,
+  fileTid: Tid,
+  remoteAddress: String,
+  evidenceTitle: String,
+  filePath: String
+) extends AuditEvent {
+  final val eventTypeUuid = "f4adeeea-7dfe-cf94-f7ef-43abd6929933"
+}
+/**
   *
   * echo -n com.evidence.data.evidence.events.v2.EvidencePlaybackRequested | md5
   */
