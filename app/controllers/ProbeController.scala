@@ -12,7 +12,7 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
 import services.rtm.{RtmClient, RtmRequest}
-import utils.{HdlResponseHelpers, RequestUtils, WSResponseHelpers}
+import utils.{EitherHelpers, HdlResponseHelpers, RequestUtils, WSResponseHelpers}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -31,7 +31,8 @@ class ProbeController @Inject()(
     with LazyLogging
     with AuditConversions
     with WSResponseHelpers
-    with HdlResponseHelpers {
+    with HdlResponseHelpers
+    with EitherHelpers {
 
   def probe: Action[AnyContent] =
     (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen rtmRequestAction).async {
@@ -85,15 +86,5 @@ class ProbeController @Inject()(
 
   private def toListMediaData(responses: List[WSResponse]): JsObject = {
     Json.obj(("data", responses.map(_.json)))
-  }
-
-  def toEitherOfList[L,R](eithers: List[Either[L, R]]) : Either[L, List[R]] = {
-    val acc: Either[L, List[R]] = Right(Nil)
-    eithers.foldLeft(acc) { (acc, elem) =>
-      for {
-        successAcc <- acc
-        successElem <- elem
-      } yield successAcc :+ successElem
-    }
   }
 }
