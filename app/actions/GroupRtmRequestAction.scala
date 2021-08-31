@@ -10,6 +10,7 @@ import services.dredd.DreddClient
 import services.komrade.KomradeClient
 import services.rtm.{GroupRtmRequest, HeimdallRoutes, RtmQueryHelper, RtmRequest}
 import services.zookeeper.HeimdallLoadBalancer
+import utils.EitherHelpers
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,29 +22,29 @@ case class GroupRtmRequestAction @Inject()(
                                      )(implicit val executionContext: ExecutionContext)
   extends ActionRefiner[HeimdallRequest, GroupRtmRequest]
     with LazyLogging
-    with HeimdallRoutes {
+    with HeimdallRoutes
+    with EitherHelpers {
 
   def refine[A](input: HeimdallRequest[A]) = {
-    RtmQueryHelper(input.path, input.queryString).map { rtmQuery =>
-      for {
-        presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
-        endpoints      <- Future.traverse(input.media.toList)(media => loadBalancer.getInstanceAsFuture(media.fileId.toString))
-        queries       <- Future(RtmQueryHelper.getRTMQueries(rtmQuery.params, None, None, presignedUrls, input.audienceId))
-      } yield {
-        val reqs = endpoints.map { endpoint =>
-          Uri.from(
+    val res = RtmQueryHelper(input.path, input.queryString).toRight(Results.BadRequest).map { rtmQuery =>
+      Future.traverse(input.media.toList)(fileIdent => {
+        for {
+          presignedUrl <- dredd.getUrl(fileIdent, input)
+          endpoint <- loadBalancer.getInstanceAsFuture(fileIdent.fileId.toString)
+          queries <- Future(RtmQueryHelper.getRTMQueries(rtmQuery.params, None, None, Seq(presignedUrl), input.audienceId))
+        } yield {
+          val uri = Uri.from(
             scheme = "https",
             host = endpoint.host,
             port = endpoint.port,
             path = rtmQuery.path,
             queryString = Some(queries)
           )
+          new RtmRequest(uri, input)
         }
-          .map { uri => new RtmRequest(uri, input)}
-         Right(new GroupRtmRequest(reqs))
-      }
-    }.getOrElse(Future.successful(Left(Results.BadRequest)))
+      })
+        .map(GroupRtmRequest(_))
+    }
+    foldEitherOfFuture(res)
   }
-
-
 }

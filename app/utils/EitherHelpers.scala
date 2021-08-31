@@ -1,5 +1,7 @@
 package utils
 
+import scala.concurrent.{ExecutionContext, Future}
+
 trait EitherHelpers {
   // Behavior:
   // Convert l = List[Either[L, R]] to Either[L, List[R]] in such a way that:
@@ -14,4 +16,10 @@ trait EitherHelpers {
       } yield successAcc :+ successElem
     }
   }
+
+  def foldEitherOfFuture[A, B](e: Either[A, Future[B]])(implicit ex: ExecutionContext): Future[Either[A, B]] =
+    e match {
+      case Left(s) => Future.successful(Left(s))
+      case Right(f) => f.map(Right(_))
+    }
 }
