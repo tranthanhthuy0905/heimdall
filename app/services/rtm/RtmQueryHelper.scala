@@ -7,7 +7,6 @@ import services.komrade.PlaybackSettings
 import utils.UUIDHelper
 
 import scala.collection.immutable.Map
-import scala.concurrent.Future
 
 /**
   * RtmQueryParams is a query extended with file identifier.
@@ -26,6 +25,8 @@ trait HeimdallRoutes {
   final val downloadThumbnail = "/media/downloadthumbnail"
   final val mp3               = "/media/audio/mp3"
   final val audioSample       = "/media/audio/sample"
+
+  final val probeAll          ="/media/group/start"
 }
 
 object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
@@ -118,6 +119,8 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
         filterAllowedParams(query, heimdallToRtmRoutes(audioSample))
       case str if str startsWith mp3 =>
         filterAllowedParams(query, heimdallToRtmRoutes(mp3))
+      case str if str startsWith probeAll =>
+        filterAllowedParams(query, heimdallToRtmRoutes(probe))
       case _ =>
         logger.error("unexpectedRtmQueryRoute")(
           "route" -> route,
