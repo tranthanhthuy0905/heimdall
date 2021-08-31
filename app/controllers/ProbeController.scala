@@ -1,6 +1,6 @@
 package controllers
 
-import actions.{GroupRtmRequestAction, HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
+import actions.{GroupRtmRequestAction, GroupRtmRequestFilterAction, HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
@@ -21,6 +21,7 @@ class ProbeController @Inject()(
   permValidation: PermValidationActionBuilder,
   rtmRequestAction: RtmRequestAction,
   groupRtmRequestAction: GroupRtmRequestAction,
+  groupRtmRequestFilterAction: GroupRtmRequestFilterAction,
   rtm: RtmClient,
   sessionData: StreamingSessionData,
   audit: AuditClient,
@@ -57,7 +58,7 @@ class ProbeController @Inject()(
     }
 
   def probeAll: Action[AnyContent] =
-    (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen groupRtmRequestAction).async {
+    (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen groupRtmRequestAction andThen groupRtmRequestFilterAction).async {
       request =>
 
         val results = for {
