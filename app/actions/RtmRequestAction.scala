@@ -28,7 +28,7 @@ case class RtmRequestAction @Inject()(
       for {
         presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
         endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString)
-        queries       <- Future(RtmQueryHelper.getRTMQueries(rtmQuery.params, Some(input.watermark), input.playbackSettings, presignedUrls, input.audienceId))
+        queries       <- Future.successful(RtmQueryHelper.getRTMQueries(rtmQuery.params, Some(input.watermark), input.playbackSettings, presignedUrls, input.audienceId))
       } yield {
         val uri = Uri
           .from(

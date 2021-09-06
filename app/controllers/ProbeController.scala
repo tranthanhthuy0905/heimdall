@@ -66,9 +66,8 @@ class ProbeController @Inject()(
     ).async {
       request =>
         Future.traverse(request.toList) {rtmRequest =>
-          for {
-            response <- rtm.send(rtmRequest).map(withOKStatus)
-          } yield response.map(toProbeResult(_, rtmRequest))
+          rtm.send(rtmRequest).map(withOKStatus)
+            .map(response => response.map(toProbeResult(_, rtmRequest)))
         }.map { res =>
           toEitherOfList(res.toList)
             .fold(
