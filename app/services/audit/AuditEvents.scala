@@ -293,4 +293,23 @@ case class VideoConcatenationRequestedEvent (
   combinedVideoTitle: String,
 ) extends AuditEvent {
   val eventTypeUuid = "ced5588a-173a-85e0-876c-b45d35b2afce"
+  override def toJsonString: String = {
+    Json
+      .obj(
+        "TargetTID" -> Json.obj(
+          "Entity" -> targetTid.entity.value,
+          "Domain" -> targetTid.domain,
+          "ID"     -> targetTid.id
+        ),
+        "UpdatedByTID" -> Json.obj(
+          "Entity" -> updatedByTid.entity.value,
+          "Domain" -> updatedByTid.domain,
+          "ID"     -> updatedByTid.id
+        ),
+        "CombinedVideoTitle" -> combinedVideoTitle,
+        "Ver"                -> ver,
+        "ClientIpAddress"    -> remoteAddress
+      )
+      .toString
+  }
 }
