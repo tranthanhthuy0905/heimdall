@@ -8,6 +8,7 @@ import services.drd.{DrdClient, DrdClientImpl}
 import services.dredd.{CachedDreddClientImpl, DreddClient}
 import services.global.HeimdallApplicationLifecycle
 import services.komrade.{CachedKomradeClientImpl, KomradeClient}
+import services.metadata.{MetadataClient, MetadataClientImpl}
 import services.pdp.{PdpClient, PdpClientImpl}
 import services.rti.{RtiClient, RtiClientImpl}
 import services.rtm.{RtmClient, RtmClientImpl}
@@ -29,6 +30,7 @@ class Module extends AbstractModule {
     bind(classOf[ApidaeClient]).to(classOf[ApidaeClientImpl])
     bind(classOf[DrdClient]).to(classOf[DrdClientImpl])
     bind(classOf[DocumentClient]).to(classOf[DocumentClientImpl])
+    bind(classOf[MetadataClient]).to(classOf[MetadataClientImpl])
     bind(classOf[SessionsClient]).to(classOf[SessionsClientImpl])
     bind(classOf[StreamingSessionData]).to(classOf[StreamingSessionDataImpl])
     bind(classOf[SageClient]).to(classOf[SageClientImpl])

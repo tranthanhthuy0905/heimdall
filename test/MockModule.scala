@@ -7,6 +7,7 @@ import services.document.{DocumentClient, DocumentClientImpl}
 import services.drd.{DrdClient, DrdClientImpl}
 import services.dredd.DreddClient
 import services.komrade.KomradeClient
+import services.metadata.{MetadataClient, MetadataClientImpl}
 import services.pdp.{PdpClient, PdpClientImpl}
 import services.rti.RtiClient
 import services.rtm.RtmClient
@@ -24,6 +25,7 @@ class MockModule extends Module with MockitoSugar {
     bind(classOf[RtiClient]).toInstance(mock[RtiClient])
     bind(classOf[ApidaeClient]).to(classOf[ApidaeClientImpl])
     bind(classOf[DrdClient]).to(classOf[DrdClientImpl])
+    bind(classOf[MetadataClient]).to(classOf[MetadataClientImpl])
     bind(classOf[RtmClient]).toInstance(mock[RtmClient])
     bind(classOf[SessionsClient]).toInstance(mock[SessionsClient])
     bind(classOf[StreamingSessionData]).toInstance(mock[StreamingSessionData])
