@@ -28,10 +28,11 @@ GET /media/metadata                         controllers.MetadataController.metad
 POST /media/video/concatenate               controllers.ConcatenationController.requestConcat
 
 
-# Routing for RTMv1
+# Routing for RTM
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GET  /media/streamed                        controllers.AuditController.recordMediaStreamedEvent
 GET  /media/start                           controllers.ProbeController.probe
+GET  /media/group/start                     controllers.ProbeController.probeAll
 
 GET  /media/hls/master                      controllers.HlsController.master
 GET  /media/hls/variant                     controllers.HlsController.playlist

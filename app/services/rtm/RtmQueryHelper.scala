@@ -1,6 +1,9 @@
 package services.rtm
 
+import java.net.{URL, URLEncoder}
+
 import com.evidence.service.common.logging.LazyLogging
+import services.komrade.PlaybackSettings
 import utils.UUIDHelper
 
 import scala.collection.immutable.Map
@@ -22,6 +25,8 @@ trait HeimdallRoutes {
   final val downloadThumbnail = "/media/downloadthumbnail"
   final val mp3               = "/media/audio/mp3"
   final val audioSample       = "/media/audio/sample"
+
+  final val probeAll          ="/media/group/start"
 }
 
 object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
@@ -114,6 +119,8 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
         filterAllowedParams(query, heimdallToRtmRoutes(audioSample))
       case str if str startsWith mp3 =>
         filterAllowedParams(query, heimdallToRtmRoutes(mp3))
+      case str if str startsWith probeAll =>
+        filterAllowedParams(query, heimdallToRtmRoutes(probe))
       case _ =>
         logger.error("unexpectedRtmQueryRoute")(
           "route" -> route,
@@ -141,6 +148,28 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
     )
 
     Some(result)
+  }
+
+  def getRTMQueries(
+                             queries: Map[String, String],
+                             watermark: Option[String],
+                             playbackSettings: Option[PlaybackSettings],
+                             presignedUrls: Seq[URL],
+                             partnerId: String): String = {
+    val presignedUrlsMap = Map("source" -> presignedUrls.mkString(","))
+    val watermarkMap = watermark.map(watermark => queries + ("label" -> watermark)).getOrElse(Map.empty)
+    val playbackSettingsMap = playbackSettings.map(_.toMap).getOrElse(Map.empty)
+    buildQueryParams(queries ++ presignedUrlsMap ++ watermarkMap ++ playbackSettingsMap)
+  }
+
+  private def buildQueryParams(map: Map[String, String]): String = {
+    map.toSeq.map {
+      case (key, value) =>
+        URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(
+          value,
+          "UTF-8"
+        )
+    }.reduceLeft(_ + "&" + _)
   }
 
   case class MediaRoute(rtmPath: String, whitelistedParams: List[String])

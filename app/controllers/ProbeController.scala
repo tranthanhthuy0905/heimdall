@@ -1,6 +1,6 @@
 package controllers
 
-import actions.{HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
+import actions.{GroupRtmRequestAction, GroupRtmRequestFilterAction, HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 import javax.inject.Inject
@@ -12,14 +12,16 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
 import services.rtm.{RtmClient, RtmRequest}
-import utils.{HdlResponseHelpers, RequestUtils, WSResponseHelpers}
+import utils.{EitherHelpers, HdlResponseHelpers, RequestUtils, WSResponseHelpers}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class ProbeController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   permValidation: PermValidationActionBuilder,
   rtmRequestAction: RtmRequestAction,
+  groupRtmRequestAction: GroupRtmRequestAction,
+  groupRtmRequestFilterAction: GroupRtmRequestFilterAction,
   rtm: RtmClient,
   sessionData: StreamingSessionData,
   audit: AuditClient,
@@ -29,7 +31,8 @@ class ProbeController @Inject()(
     with LazyLogging
     with AuditConversions
     with WSResponseHelpers
-    with HdlResponseHelpers {
+    with HdlResponseHelpers
+    with EitherHelpers {
 
   def probe: Action[AnyContent] =
     (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen rtmRequestAction).async {
@@ -55,6 +58,27 @@ class ProbeController @Inject()(
         ).fold(error, Ok(_).as(ContentTypes.JSON))
     }
 
+  def probeAll: Action[AnyContent] =
+    (heimdallRequestAction
+      andThen permValidation.build(PermissionType.View)
+      andThen groupRtmRequestAction
+      andThen groupRtmRequestFilterAction
+    ).async {
+      request =>
+        Future.traverse(request.toList) {rtmRequest =>
+          rtm.send(rtmRequest).map(withOKStatus)
+            .map(response => response.map(toProbeResult(_, rtmRequest)))
+        }.map { res =>
+          toEitherOfList(res.toList)
+            .fold(
+              error,
+              res => Ok(
+                Json.obj(("data", Json.arr(res)))
+              )
+            )
+        }
+    }
+
   private def generateStreamingToken(request: RtmRequest[AnyContent]): String = {
     val authHandler           = request.attrs(AuthorizationAttr.Key)
     val streamingSessionToken = sessionData.createToken(authHandler.token, request.media.getSortedFileIds)
@@ -65,9 +89,7 @@ class ProbeController @Inject()(
     val streamingToken = generateStreamingToken(request)
 
     val responseWithToken = response.json
-      .as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingToken))
-
+      .as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingToken)) + ("fileIds" -> Json.toJson(request.media.fileIds))
     responseWithToken
   }
-
 }
