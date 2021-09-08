@@ -49,9 +49,9 @@ trait AuditEvent {
   val eventTypeUuid: String
 
   /**
-    * toJsonString serializes data into JSON formatted message converted to a string.
+    * buildJson() builds json object for audit event, any future audit event can override this to add/remove fields
     */
-  def toJsonString: String = {
+  def buildJson() : JsValue = {
     Json
       .obj(
         "TargetTID" -> Json.obj(
@@ -72,9 +72,13 @@ trait AuditEvent {
         "Ver"             -> ver,
         "ClientIpAddress" -> remoteAddress
       )
-      .toString
   }
-
+  /**
+    * toJsonString serializes data into JSON formatted message converted to a string.
+    */
+  def toJsonString: String = {
+    buildJson().toString
+  }
 }
 
 /**
@@ -199,6 +203,9 @@ case class ZipFileAccessedEvent(
   filePath: String
 ) extends AuditEvent {
   final val eventTypeUuid = "932be422-15e7-c578-6b0c-5265569c61f5"
+  super.buildJson().as[JsObject] + 
+    ("EvidenceTitle" -> Json.toJson(evidenceTitle)) + 
+    ("FilePath" -> Json.toJson(filePath))
 }
 
 /**
@@ -214,6 +221,11 @@ case class ZipFileStreamedEvent(
   filePath: String
 ) extends AuditEvent {
   final val eventTypeUuid = "f4adeeea-7dfe-cf94-f7ef-43abd6929933"
+  override def buildJson() : JsValue = {
+    super.buildJson().as[JsObject] + 
+    ("EvidenceTitle" -> Json.toJson(evidenceTitle)) + 
+    ("FilePath" -> Json.toJson(filePath))
+  }
 }
 /**
   *
