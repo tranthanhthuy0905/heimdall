@@ -20,15 +20,16 @@ case class ConcatenationRequestAction @Inject()()(implicit val executionContext:
     Future.successful(
       bodyJson(request.body)
         .flatMap(json => {
-          val groupId = (json \ "group_id").asOpt[String].flatMap(Convert.tryToUuid)
-          val caseIds = (json \ "case_ids").asOpt[Seq[String]].map(seq => seq.flatMap(s => Convert.tryToUuid(s)))
+          val groupId    = (json \ "group_id").asOpt[String].flatMap(Convert.tryToUuid)
+          val caseIds    = (json \ "case_ids").asOpt[Seq[String]].map(seq => seq.flatMap(s => Convert.tryToUuid(s)))
+          val categories = (json \ "categories").asOpt[Seq[String]]
 
           for {
             userUUID    <- Convert.tryToUuid(request.subjectId)
             partnerUUID <- Convert.tryToUuid(request.audienceId)
             title       <- (json \ "title").asOpt[String]
             files       <- (json \ "files").asOpt[Seq[ConcatenationFile]]
-          } yield ConcatenationRequest(partnerUUID, userUUID, title, files, groupId, caseIds, request)
+          } yield ConcatenationRequest(partnerUUID, userUUID, title, files, groupId, caseIds, categories, request)
         })
         .toRight(Results.BadRequest))
   }

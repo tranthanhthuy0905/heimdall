@@ -38,6 +38,7 @@ case class ConcatenationRequest[A](
   files: Seq[ConcatenationFile],
   groupId: Option[UUID],
   caseIds: Option[Seq[UUID]],
+  categories: Option[Seq[String]],
   request: HeimdallRequest[A],
 ) extends WrappedRequest[A](request)
 
@@ -48,6 +49,7 @@ object ConcatenationRequest {
       (__ \ "title").write[String] and
       (__ \ "files").write[Seq[ConcatenationFile]] and
       (__ \ "group_id").writeOptionWithNull[UUID] and
-      (__ \ "case_ids").writeOptionWithNull[Seq[UUID]]
-  )(r => (r.partnerId.toString, r.userId.toString, r.title, r.files, r.groupId, r.caseIds))
+      (__ \ "case_ids").writeOptionWithNull[Seq[UUID]] and
+      (__ \ "categories").writeOptionWithNull[Seq[String]]
+  )(r => (r.partnerId.toString, r.userId.toString, r.title, r.files, r.groupId, r.caseIds, r.categories))
 }
