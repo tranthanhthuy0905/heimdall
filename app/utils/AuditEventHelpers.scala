@@ -51,11 +51,8 @@ trait AuditEventHelpers extends BaseController
         ).namePaths().map(_.toProtoPath)
 
         (for {
-            evidence <- FutureEither(sage.getEvidence(
-                id    = EvidenceId(file.evidenceId, file.partnerId),
-                query = QueryRequest(selection)
-            ))
-            event <- decideZipEvent(apidae, file, evidence, baseEvent, zipEventBuilder)
+            evidenceContentType <- FutureEither(sage.getEvidenceContentType(EvidenceId(file.evidenceId, file.partnerId)))
+            event <- decideZipEvent(apidae, file, evidenceContentType, baseEvent, zipEventBuilder)
         } yield event).mapLeft(anyError(file))
     }
 
@@ -76,11 +73,11 @@ trait AuditEventHelpers extends BaseController
     private def decideZipEvent(
         apidae: ApidaeClient, 
         file: FileIdent, 
-        evidence: Evidence, 
+        evidenceContentType: String, 
         baseEvent: AuditEvent, 
         zipEventBuilder: (WSResponse, AuditEvent) => AuditEvent)(implicit ex: ExecutionContext) = {
         // if evidence content type is application/zip then query for file's path
-        if (evidence.contentType == "application/zip") {
+        if (evidenceContentType == "application/zip") {
             FutureEither(apidae.getZipFileInfo(file.partnerId, file.evidenceId, file.fileId).map(withOKStatus)).map(response => zipEventBuilder(response, baseEvent))
         }
         else {

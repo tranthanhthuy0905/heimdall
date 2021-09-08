@@ -1,7 +1,7 @@
 package services.sage
 
 import com.axon.sage.protos.common.common.{RequestContext, Tid}
-import com.axon.sage.protos.query.evidence_message.{Evidence => SageEvidenceProto}
+import com.axon.sage.protos.query.evidence_message.{Evidence => SageEvidenceProto, EvidenceFieldSelect}
 import com.axon.sage.protos.common.common.Tid.EntityType.{EVIDENCE}
 import com.axon.sage.protos.v1.query_service.{ReadRequest, ReadResponse, QueryServiceGrpc}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
@@ -15,14 +15,17 @@ import io.grpc.{Metadata, CallCredentials}
 import scala.concurrent.{Future, ExecutionContext}
 import scala.util.Try
 import scala.util.control.NonFatal
+import play.api.cache.AsyncCacheApi
+import utils.{HdlCache, HdlTtl}
 
 trait SageClient {
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[Throwable, Evidence]]
   def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[Throwable, Seq[Evidence]]]
+  def getEvidenceContentType(id: EvidenceId) : Future[Either[Throwable, String]]
 }
 
 @Singleton
-class SageClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) extends SageClient
+class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex: ExecutionContext) extends SageClient
   with SageClientHelper
   with StrictStatsD
   with LoggingHelper {
@@ -76,6 +79,41 @@ class SageClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) ex
       case NonFatal(ex) => Left(ex)
     }
   }
+
+  def getEvidenceContentType(id: EvidenceId) : Future[Either[Throwable, String]] = {
+    def evidenceWithContentType = {
+      val selection = EvidenceFieldSelect(
+          partnerId = true,
+          id = true,
+          contentType = true
+      ).namePaths().map(_.toProtoPath)
+
+      getEvidence(id, QueryRequest(selection))
+    }
+    // use prefix to prevent somewhere there is somewhere using same entityId (fileId)
+    val key = s"ect-${id.entityId}"
+
+    // from play cache first
+    cache.getOrElseUpdate[String](key, HdlTtl.evidenceContentTypeMemTTL) {
+      // if not found then get from redis
+      HdlCache.EvidenceContentType.get(key)
+      .map(Future.successful)
+      .getOrElse(
+        // if not found then get from sage
+        evidenceWithContentType.flatMap(
+          either => either.fold(
+            err => Future.failed(err),
+            evidence => Future.successful(evidence.contentType)
+          )
+        )
+      )
+    }
+    .map(Right(_))
+    .recover {
+      case someError: Throwable => Left(someError)
+    }
+  }
+
 
   private def requestContext = RequestContext(
     correlationId = UUID.randomUUID.toString,

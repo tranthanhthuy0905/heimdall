@@ -87,8 +87,8 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
 
     "return 200 status" in new MockContext {
       when(
-        mockSageClient.getEvidence(ArgumentMatchers.any(), ArgumentMatchers.any())
-      ).thenReturn(Future.successful(Right(Evidence(evidenceId, partnerId, "application/video"))))
+        mockSageClient.getEvidenceContentType(ArgumentMatchers.any())
+      ).thenReturn(Future.successful(Right("application/video")))
 
       when(
         mockAuditClient
@@ -106,8 +106,8 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
 
     "return 403 when media identifiers are missing" in new MockContext {
       when(
-        mockSageClient.getEvidence(ArgumentMatchers.any(), ArgumentMatchers.any())
-      ).thenReturn(Future.successful(Right(Evidence(evidenceId, partnerId, "application/video"))))
+        mockSageClient.getEvidenceContentType(ArgumentMatchers.any())
+      ).thenReturn(Future.successful(Right("application/video")))
 
       val fakeRequest =
         FakeRequest(GET, happyUri).addAttr(AuthorizationAttr.Key, authData)
@@ -119,8 +119,8 @@ class AuditControllerSpec extends PlaySpec with MockitoSugar with ScalaFutures {
 
     "return InternalServerError on failed recordEndSuccess" in new MockContext {
       when(
-        mockSageClient.getEvidence(ArgumentMatchers.any(), ArgumentMatchers.any())
-      ).thenReturn(Future.successful(Right(Evidence(evidenceId, partnerId, "application/video"))))
+        mockSageClient.getEvidenceContentType(ArgumentMatchers.any())
+      ).thenReturn(Future.successful(Right("application/video")))
 
       when(
         mockAuditClient

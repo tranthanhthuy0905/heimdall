@@ -62,6 +62,12 @@ case object HdlTtl {
 
   val watermarkSettingsRedisTTL: FiniteDuration =
     Duration(config.getDuration("service.cache.watermark-settings.redis-ttl", TimeUnit.HOURS), TimeUnit.HOURS)
+  
+  val evidenceContentTypeRedisTTL: FiniteDuration =
+    Duration(config.getDuration("service.cache.evidence-contenttype.redis-ttl", TimeUnit.HOURS), TimeUnit.HOURS)
+
+  val evidenceContentTypeMemTTL: FiniteDuration =
+    Duration(config.getDuration("service.cache.evidence-contenttype.mem-ttl", TimeUnit.MINUTES), TimeUnit.MINUTES)
 }
 
 case object HdlCache {
@@ -127,6 +133,19 @@ case object HdlCache {
 
     override def set(key: String, value: WatermarkSetting): Unit =
       cache.setSync(hdlKey(key), cacheKey, cacheValue(value, HdlTtl.watermarkSettingsRedisTTL))
+
+    override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
+  }
+  case object EvidenceContentType extends HdlCache[String, String] {
+    private val cacheKey = "EvidenceContentType"
+    private val cache =
+      new Cache[cacheValue[String]](CacheConfig(ttl = Some(HdlTtl.evidenceContentTypeRedisTTL)))
+
+    override def get(key: String): Option[String] =
+      getValue(cache.getSync(hdlKey(key), cacheKey, refreshTTL = false), cacheKey)
+
+    override def set(key: String, value: String): Unit =
+      cache.setSync(hdlKey(key), cacheKey, cacheValue(value, HdlTtl.evidenceContentTypeRedisTTL))
 
     override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
   }
