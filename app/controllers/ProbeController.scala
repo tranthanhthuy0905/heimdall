@@ -73,7 +73,7 @@ class ProbeController @Inject()(
             .fold(
               error,
               res => Ok(
-                Json.obj(("data", Json.arr(res)))
+                Json.obj(("data", res))
               )
             )
         }
