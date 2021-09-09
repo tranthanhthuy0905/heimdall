@@ -2,7 +2,7 @@ package utils
 import com.evidence.service.common.monad.FutureEither
 import com.axon.sage.protos.query.evidence_message.EvidenceFieldSelect
 import play.api.libs.ws.WSResponse
-import services.audit.{AuditEvent, ZipFileAccessedEvent, ZipFileStreamedEvent}
+import services.audit.{AuditEvent, ZipFileAccessedEvent, ZipFileStreamedEvent, ZipFileBufferedEvent}
 import models.common.FileIdent
 import services.apidae.ApidaeClient
 import scala.concurrent.Future
@@ -48,6 +48,20 @@ trait AuditEventHelpers extends BaseController
         val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
         val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
         ZipFileStreamedEvent(
+            baseEvent.targetTid,
+            baseEvent.updatedByTid,
+            baseEvent.fileTid,
+            baseEvent.remoteAddress,
+            evidenceTitle,
+            filePath
+        )
+    }
+
+    def buildZipFileBufferedEvent(response: WSResponse, baseEvent: AuditEvent) : AuditEvent = {   
+        // if this is a zip file then use zip audit event
+        val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
+        val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
+        ZipFileBufferedEvent(
             baseEvent.targetTid,
             baseEvent.updatedByTid,
             baseEvent.fileTid,

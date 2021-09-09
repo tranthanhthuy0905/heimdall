@@ -12,7 +12,9 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc._
 import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
 import services.rtm.{RtmClient, RtmRequest}
-import utils.{EitherHelpers, HdlResponseHelpers, RequestUtils, WSResponseHelpers}
+import services.sage.SageClient
+import services.apidae.ApidaeClient
+import utils.{HdlResponseHelpers, RequestUtils, WSResponseHelpers, AuditEventHelpers, EitherHelpers}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,6 +27,8 @@ class ProbeController @Inject()(
   rtm: RtmClient,
   sessionData: StreamingSessionData,
   audit: AuditClient,
+  apidae: ApidaeClient,
+  sage: SageClient,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
@@ -32,26 +36,27 @@ class ProbeController @Inject()(
     with AuditConversions
     with WSResponseHelpers
     with HdlResponseHelpers
+    with AuditEventHelpers
     with EitherHelpers {
 
   def probe: Action[AnyContent] =
     (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen rtmRequestAction).async {
       request =>
         val authHandler = request.authorizationData
-        val auditEvents: List[EvidenceRecordBufferedEvent] =
-          request.media.toList.map(
-            file =>
-              EvidenceRecordBufferedEvent(
-                evidenceTid(file.evidenceId, file.partnerId),
-                updatedByTid(authHandler.parsedJwt),
-                fileTid(file.fileId, file.partnerId),
-                RequestUtils.getClientIpAddress(request)
-            )
-          )
-
         (
           for {
             response <- FutureEither(rtm.send(request).map(withOKStatus))
+            auditEvents <- FutureEither(Future.traverse(request.media.toList)( 
+                    file => {
+                      val bufferedEvent = EvidenceRecordBufferedEvent(
+                          evidenceTid(file.evidenceId, file.partnerId),
+                          updatedByTid(authHandler.parsedJwt),
+                          fileTid(file.fileId, file.partnerId),
+                          RequestUtils.getClientIpAddress(request)
+                      )
+                      getZipInfoAndDecideEvent(sage, apidae, file, bufferedEvent, buildZipFileBufferedEvent).future
+                    }
+                ).map(toEitherOfList))
             _ <- FutureEither(audit.recordEndSuccess(auditEvents))
               .mapLeft(toHttpStatus("failedToSendMediaViewedAuditEvent")(_, Some(request.media)))
           } yield toProbeResult(response, request)

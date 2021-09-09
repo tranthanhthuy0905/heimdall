@@ -229,6 +229,27 @@ case class ZipFileStreamedEvent(
     ("FilePath" -> Json.toJson(filePath))
   }
 }
+
+/**
+  * echo -n com.evidence.data.evidence.events.v2.ZipFileStreamed | md5
+  * f4adeeea7dfecf94f7ef43abd6929933
+  */
+case class ZipFileBufferedEvent(
+  targetTid: Tid,
+  updatedByTid: Tid,
+  fileTid: Tid,
+  remoteAddress: String,
+  evidenceTitle: String,
+  filePath: String
+) extends AuditEvent {
+  final val eventTypeUuid = "77f9f84d-6e13-ef63-1298-ef3a0c9499da"
+  override def buildJson() : JsValue = {
+    super.buildJson().as[JsObject] + 
+    ("EvidenceTitle" -> Json.toJson(evidenceTitle)) + 
+    ("FilePath" -> Json.toJson(filePath))
+  }
+}
+
 /**
   *
   * echo -n com.evidence.data.evidence.events.v2.EvidencePlaybackRequested | md5
