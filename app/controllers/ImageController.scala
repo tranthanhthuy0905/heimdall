@@ -11,11 +11,12 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext
-import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent, ZipFileAccessedEvent, AuditEvent}
+import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent, AuditEvent}
 import services.rti.metadata.MetadataJsonConversions
 import services.rti.RtiClient
 import utils.{HdlResponseHelpers, JsonFormat, WSResponseHelpers, AuditEventHelpers}
 import services.apidae.ApidaeClient
+import services.sage.SageClient
 
 class ImageController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -26,6 +27,7 @@ class ImageController @Inject()(
   rtiThumbnailRequestAction: ThumbnailRequestAction,
   rti: RtiClient,
   audit: AuditClient,
+  sage: SageClient,
   apidae: ApidaeClient,
   components: ControllerComponents)(implicit ex: ExecutionContext)
     extends AbstractController(components)
@@ -54,7 +56,7 @@ class ImageController @Inject()(
       )
       (for {
         response <- FutureEither(rti.transcode(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-        auditEvent <- getZipInfoAndDecideReviewEvent(apidae, request.file, viewAuditEvent)
+        auditEvent <- getZipInfoAndDecideEvent(sage, apidae, request.file, viewAuditEvent, buildZipFileAccessedEvent)
         _ <- FutureEither(audit.recordEndSuccess(auditEvent)).mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
       } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))
     }
@@ -88,7 +90,7 @@ class ImageController @Inject()(
       )
       (for {
         response <- FutureEither(rti.zoom(request.presignedUrl, request.watermark, request.file).map(withOKStatus))
-        auditEvent <- getZipInfoAndDecideReviewEvent(apidae, request.file, viewAuditEvent)
+        auditEvent <- getZipInfoAndDecideEvent(sage, apidae, request.file, viewAuditEvent, buildZipFileAccessedEvent)
         _ <- FutureEither(audit.recordEndSuccess(auditEvent))
           .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
       } yield response).fold(error, streamedSuccessResponse(_, "image/jpeg"))

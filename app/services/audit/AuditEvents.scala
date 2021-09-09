@@ -203,9 +203,11 @@ case class ZipFileAccessedEvent(
   filePath: String
 ) extends AuditEvent {
   final val eventTypeUuid = "932be422-15e7-c578-6b0c-5265569c61f5"
-  super.buildJson().as[JsObject] + 
-    ("EvidenceTitle" -> Json.toJson(evidenceTitle)) + 
-    ("FilePath" -> Json.toJson(filePath))
+  override def buildJson() : JsValue = {
+    super.buildJson().as[JsObject] + 
+      ("EvidenceTitle" -> Json.toJson(evidenceTitle)) + 
+      ("FilePath" -> Json.toJson(filePath))
+  }
 }
 
 /**

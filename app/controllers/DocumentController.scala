@@ -12,6 +12,7 @@ import services.audit.{AuditClient, AuditConversions, EvidenceReviewEvent}
 import services.document.DocumentClient
 import utils.{HdlResponseHelpers, WSResponseHelpers, AuditEventHelpers}
 import services.apidae.ApidaeClient
+import services.sage.SageClient
 
 class DocumentController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
@@ -20,6 +21,7 @@ class DocumentController @Inject()(
   audit: AuditClient,
   documentClient: DocumentClient,
   apidae: ApidaeClient,
+  sage: SageClient,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
@@ -43,7 +45,7 @@ class DocumentController @Inject()(
       (
         for {
           response <- FutureEither(documentClient.view(request.presignedUrl).map(withOKStatus))
-          auditEvent <- getZipInfoAndDecideReviewEvent(apidae, request.file, viewEvent)
+          auditEvent <- getZipInfoAndDecideEvent(sage, apidae, request.file, viewEvent, buildZipFileAccessedEvent)
           _ <- FutureEither(audit.recordEndSuccess(auditEvent))
             .mapLeft(toHttpStatus("failedToSendEvidenceViewedAuditEvent")(_))
         } yield response

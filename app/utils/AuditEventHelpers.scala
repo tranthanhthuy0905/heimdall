@@ -16,33 +16,6 @@ trait AuditEventHelpers extends BaseController
     with EitherHelpers
     with LazyLogging {
 
-    // zip/not zip review event: request apidae > decide event base on apidae's response
-    def getZipInfoAndDecideReviewEvent(apidae: ApidaeClient, file: FileIdent, defaultReviewEvent: AuditEvent)(implicit ex: ExecutionContext) : FutureEither[Int, AuditEvent] = {
-        FutureEither(apidae.getZipFileInfo(file.partnerId, file.evidenceId, file.fileId).map(withOKStatus)) // apidae still returns statusOk (i.e 200) when reponse.status == not_found
-        .map(decideReviewEvent(defaultReviewEvent))
-    }
-
-    // decide zip/not zip review event 
-    private def decideReviewEvent(baseEvidenceReviewEvent: AuditEvent)(response: WSResponse) : AuditEvent = {
-        val status = (response.json \ "status").asOpt[String].getOrElse("")
-        if (status == "success") {
-            // if this is a zip file then use zip audit event
-            val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
-            val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
-            ZipFileAccessedEvent(
-                baseEvidenceReviewEvent.targetTid,
-                baseEvidenceReviewEvent.updatedByTid,
-                baseEvidenceReviewEvent.fileTid,
-                baseEvidenceReviewEvent.remoteAddress,
-                evidenceTitle,
-                filePath
-            )
-        }
-        else {
-            baseEvidenceReviewEvent
-        }
-    }
-
     def getZipInfoAndDecideEvent(sage: SageClient, apidae: ApidaeClient, file: FileIdent, baseEvent: AuditEvent, zipEventBuilder: (WSResponse, AuditEvent) => AuditEvent)(implicit ex: ExecutionContext) = {
         val selection = EvidenceFieldSelect(
             partnerId = true,
@@ -54,6 +27,20 @@ trait AuditEventHelpers extends BaseController
             evidenceContentType <- FutureEither(sage.getEvidenceContentType(EvidenceId(file.evidenceId, file.partnerId)))
             event <- decideZipEvent(apidae, file, evidenceContentType, baseEvent, zipEventBuilder)
         } yield event).mapLeft(anyError(file))
+    }
+
+    def buildZipFileAccessedEvent(response: WSResponse, baseEvent: AuditEvent) : AuditEvent = {   
+        // if this is a zip file then use zip audit event
+        val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
+        val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
+        ZipFileAccessedEvent(
+            baseEvent.targetTid,
+            baseEvent.updatedByTid,
+            baseEvent.fileTid,
+            baseEvent.remoteAddress,
+            evidenceTitle,
+            filePath
+        )
     }
 
     def buildZipFileStreamedEvent(response: WSResponse, baseEvent: AuditEvent) : AuditEvent = {   
