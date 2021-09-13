@@ -44,6 +44,12 @@ class RedactionController @Inject()(
   def createExtraction(evidenceId: String, redactionId: String): Action[AnyContent] =
     callDocumentRedactionAPI(evidenceId)
 
+  def createOCRTask(evidenceId: String): Action[AnyContent] =
+    callDocumentRedactionAPI(evidenceId)
+
+  def getOCRTaskStatus(evidenceId: String): Action[AnyContent] =
+    callDocumentRedactionAPI(evidenceId)
+
   private def callDocumentRedactionAPI(evidenceId: String): Action[AnyContent] =
     (
       heimdallRequestAction
