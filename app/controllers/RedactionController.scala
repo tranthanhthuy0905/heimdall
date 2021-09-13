@@ -58,7 +58,7 @@ class RedactionController @Inject()(
     ).async { implicit request =>
       drdClient
         .call(
-          request.path,
+          request.uri,
           request.method,
           request.partnerId,
           request.userId,
