@@ -38,10 +38,13 @@ class ConcatenationController @Inject()(
     ).async { request =>
       val authHandler = request.attrs(AuthorizationAttr.Key)
       val requesterTid = updatedByTid(authHandler.parsedJwt)
+      val targetTid = evidenceTid(request.files.head.evidenceId, request.partnerId) // currently, we only support concatenation of files in zip, so there is only one evidence
       val auditEvent = VideoConcatenationRequestedEvent(
-          requesterTid, requesterTid, requesterTid,
-          request.request.clientIpAddress,
-          request.title
+        targetTid, 
+        requesterTid, 
+        targetTid,
+        request.request.clientIpAddress,
+        request.title
       )
       (for {
         response <- FutureEither(apidae.requestConcatenate(Json.toJson(request)).map(withOKStatus))

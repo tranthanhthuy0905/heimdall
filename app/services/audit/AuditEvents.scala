@@ -327,24 +327,9 @@ case class VideoConcatenationRequestedEvent (
   remoteAddress: String,
   combinedVideoTitle: String,
 ) extends AuditEvent {
-  val eventTypeUuid = "ced5588a-173a-85e0-876c-b45d35b2afce"
-  override def toJsonString: String = {
-    Json
-      .obj(
-        "TargetTID" -> Json.obj(
-          "Entity" -> targetTid.entity.value,
-          "Domain" -> targetTid.domain,
-          "ID"     -> targetTid.id
-        ),
-        "UpdatedByTID" -> Json.obj(
-          "Entity" -> updatedByTid.entity.value,
-          "Domain" -> updatedByTid.domain,
-          "ID"     -> updatedByTid.id
-        ),
-        "CombinedVideoTitle" -> combinedVideoTitle,
-        "Ver"                -> ver,
-        "ClientIpAddress"    -> remoteAddress
-      )
-      .toString
+  val eventTypeUuid = "dd62129c-b510-b4f4-091c-437d7e1c386a"
+  override def buildJson() : JsValue = {
+    super.buildJson().as[JsObject] + 
+    ("CombinedVideoTitle" -> Json.toJson(combinedVideoTitle))
   }
 }
