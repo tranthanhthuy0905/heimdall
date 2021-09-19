@@ -2,7 +2,7 @@ package services.drd
 
 import java.util.UUID
 
-import models.common.{FileIdent, HeimdallRequest}
+import models.common.HeimdallRequest
 import play.api.mvc.WrappedRequest
 
 /**
@@ -10,5 +10,10 @@ import play.api.mvc.WrappedRequest
   *
   * @return Generated URI as a string.
   */
-case class DrdEvidenceRequest[A](userId: UUID, partnerId: UUID, evidenceId: UUID, request: HeimdallRequest[A])
+case class DrdEvidenceRequest[A](
+  userId: UUID,
+  userPartnerId: UUID,
+  evidenceId: UUID,
+  evidencePartnerId: UUID,
+  request: HeimdallRequest[A])
     extends WrappedRequest[A](request)

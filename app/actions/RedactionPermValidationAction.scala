@@ -20,6 +20,7 @@ case class RedactionPermValidationAction @Inject()(pdp: PdpClient)(
       EntityDescriptor(
         TidEntities.Evidence,
         request.evidenceId.toString,
+        Option(request.evidencePartnerId.toString)
       )
     )
 
