@@ -94,23 +94,35 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     val key = s"ect-${id.entityId}"
 
     // from play cache first
-    cache.getOrElseUpdate[String](key, HdlTtl.evidenceContentTypeMemTTL) {
-      // if not found then get from redis
-      HdlCache.EvidenceContentType.get(key)
-      .map(Future.successful)
-      .getOrElse(
-        // if not found then get from sage
-        evidenceWithContentType.flatMap(
-          either => either.fold(
-            err => Future.failed(err),
-            evidence => Future.successful(evidence.contentType)
+    cache.get[String](key)
+    .flatMap { // Option[String]
+      _.map {
+        value =>
+          logger.debug("sageClientMemCacheHit")("value" -> value)
+          Future.successful(Right(value))
+      }
+      .getOrElse {
+        HdlCache.EvidenceContentType.get(key)
+        .map {
+          value =>
+            logger.debug("sageClientRedisCacheHit")("value" -> value)
+            cache.set(key, value, HdlTtl.evidenceContentTypeMemTTL)
+            Future.successful(Right(value))
+        }
+        .getOrElse {
+          evidenceWithContentType.map(
+            _.fold(
+              err => Left(err),
+              evidence => {
+                logger.debug("sageClientContentTypeFromSage")("value" -> evidence.contentType)
+                HdlCache.EvidenceContentType.set(key, evidence.contentType)
+                cache.set(key, evidence.contentType, HdlTtl.evidenceContentTypeMemTTL)
+                Right(evidence.contentType)
+              }
+            )
           )
-        )
-      )
-    }
-    .map(Right(_))
-    .recover {
-      case someError: Throwable => Left(someError)
+        }
+      }
     }
   }
 
