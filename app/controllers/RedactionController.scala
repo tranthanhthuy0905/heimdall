@@ -44,18 +44,26 @@ class RedactionController @Inject()(
   def createExtraction(evidenceId: String, redactionId: String): Action[AnyContent] =
     callDocumentRedactionAPI(evidenceId)
 
-  private def callDocumentRedactionAPI(evidenceId: String): Action[AnyContent] =
+  def createOCRTask(evidenceId: String, evidencePartnerId: String): Action[AnyContent] =
+    callDocumentRedactionAPI(evidenceId, Option(evidencePartnerId))
+
+  def getOCRTaskStatus(evidenceId: String, evidencePartnerId: String): Action[AnyContent] =
+    callDocumentRedactionAPI(evidenceId, Option(evidencePartnerId))
+
+  private def callDocumentRedactionAPI(
+    evidenceId: String,
+    evidencePartnerId: Option[String] = None): Action[AnyContent] =
     (
       heimdallRequestAction
-        andThen redactionRequestActionBuilder.build(evidenceId)
+        andThen redactionRequestActionBuilder.build(evidenceId, evidencePartnerId)
         andThen drdPermValidation
     ).async { implicit request =>
       drdClient
         .call(
-          request.path,
+          request.uri,
           request.method,
-          request.partnerId,
           request.userId,
+          request.userPartnerId,
           request.body.asJson,
           request.remoteAddress
         )
@@ -63,11 +71,12 @@ class RedactionController @Inject()(
         .recoverWith {
           case e: Exception =>
             logger.error(e, "Unexpected Exception in callDocumentRedactionAPI")(
-              "path"       -> request.path,
-              "method"     -> request.method,
-              "evidenceId" -> request.evidenceId,
-              "userId"     -> request.userId,
-              "partnerId"  -> request.partnerId,
+              "path"              -> request.path,
+              "method"            -> request.method,
+              "evidenceId"        -> request.evidenceId,
+              "evidencePartnerId" -> request.evidencePartnerId,
+              "userId"            -> request.userId,
+              "userPartnerId"     -> request.userPartnerId,
             )
             Future.successful(InternalServerError)
         }

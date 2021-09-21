@@ -63,6 +63,10 @@ POST   /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/
 GET    /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/xfdf          controllers.RedactionController.getXfdf(evidenceId: String, redactionId: String)
 POST   /api/v1/redaction/document/evidences/:evidenceId/redactions/:redactionId/xfdf_commands controllers.RedactionController.postXfdfCommands(evidenceId: String, redactionId: String)
 
+# ocr apis
+POST   /api/v1/redaction/document/agencies/:evidencePartnerId/evidences/:evidenceId/ocr/trigger controllers.RedactionController.createOCRTask(evidenceId: String, evidencePartnerId: String)
+GET    /api/v1/redaction/document/agencies/:evidencePartnerId/evidences/:evidenceId/ocr/status  controllers.RedactionController.getOCRTaskStatus(evidenceId: String, evidencePartnerId: String)
+
 # APIs for evidence playback settings
 GET    /media/settings/agencies/:agencyId/evidencePlaybackSettings/watermark     controllers.PartnerController.getWatermarkSettings(agencyId)
 POST   /media/settings/agencies/:agencyId/evidencePlaybackSettings/watermark     controllers.PartnerController.updateWatermarkSettings(agencyId)
