@@ -3,6 +3,7 @@ package controllers
 import actions.{GroupRtmRequestAction, GroupRtmRequestFilterAction, HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
+
 import javax.inject.Inject
 import models.auth.StreamingSessionData
 import models.common.{AuthorizationAttr, PermissionType}
@@ -10,12 +11,12 @@ import play.api.http.ContentTypes
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
-import services.audit.{AuditClient, AuditConversions, EvidenceRecordBufferedEvent}
+import services.audit.{AuditClient, AuditConversions}
 import services.rtm.{RtmClient, RtmRequest}
 import services.sage.SageClient
 import services.apidae.ApidaeClient
-import utils.{HdlResponseHelpers, RequestUtils, WSResponseHelpers, AuditEventHelpers, EitherHelpers}
-
+import utils.{AuditEventHelpers, EitherHelpers, HdlResponseHelpers, RequestUtils, WSResponseHelpers}
+import models.common.FileIdent
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProbeController @Inject()(
@@ -43,22 +44,21 @@ class ProbeController @Inject()(
     (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen rtmRequestAction).async {
       request =>
         val authHandler = request.authorizationData
+        val updatedBy = updatedByTid(authHandler.parsedJwt)
+        val remoteAddress = RequestUtils.getClientIpAddress(request)
+        val media = request.media
         (
           for {
+            // audit zip file accessed event
+            zipAccessEvents <- FutureEither(Future.traverse(media.toList)(
+              file => getZipInfoAndBuildZipAccessEvent(sage, apidae, audit, file, updatedBy, remoteAddress).future
+            ).map(toEitherOfList)).map(list => list.flatten)
+            _ <- FutureEither(audit.recordEndSuccess(zipAccessEvents))
+              .mapLeft(toHttpStatus("failedToSendZipFileAccessedAuditEvent")(_, Some(request.media)))
+
             response <- FutureEither(rtm.send(request).map(withOKStatus))
-            auditEvents <- FutureEither(Future.traverse(request.media.toList)( 
-                    file => {
-                      val bufferedEvent = EvidenceRecordBufferedEvent(
-                          evidenceTid(file.evidenceId, file.partnerId),
-                          updatedByTid(authHandler.parsedJwt),
-                          fileTid(file.fileId, file.partnerId),
-                          RequestUtils.getClientIpAddress(request)
-                      )
-                      getZipInfoAndDecideEvent(sage, apidae, file, bufferedEvent, buildZipFileBufferedEvent).future
-                    }
-                ).map(toEitherOfList))
-            _ <- FutureEither(audit.recordEndSuccess(auditEvents))
-              .mapLeft(toHttpStatus("failedToSendMediaViewedAuditEvent")(_, Some(request.media)))
+            _ <- FutureEither(audit.recordEndSuccess(zipAccessedToBufferEvents(media.toList, zipAccessEvents, updatedBy, remoteAddress)))
+              .mapLeft(toHttpStatus("failedToSendMedaBufferEvent")(_, Some(request.media)))
           } yield toProbeResult(response, request)
         ).fold(error, Ok(_).as(ContentTypes.JSON))
     }
