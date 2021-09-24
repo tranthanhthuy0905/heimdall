@@ -1,10 +1,15 @@
 package services.sage
 
-import com.axon.sage.protos.v1.evidence_service._
 import com.typesafe.config.Config
-import io.grpc.{Channel, CallCredentials, ManagedChannel, ManagedChannelBuilder}
+import io.grpc.{Channel, ManagedChannelBuilder, Metadata}
 import java.util
-import java.util.concurrent.{Executor, TimeUnit}
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+
+import com.axon.sage.protos.common.common.{Error, RequestContext}
+import com.axon.sage.protos.v1.query_service.{Entity, ReadResponse}
+import models.common.HeimdallError
+
 import scala.collection.JavaConverters._
 
 trait SageClientHelper extends Retry {
@@ -35,6 +40,30 @@ trait SageClientHelper extends Retry {
       builder
     }
   }
+
+  def requestContext = RequestContext(
+    correlationId = UUID.randomUUID.toString,
+    callingService = "heimdall"
+  )
+
+  def credential(secret: String): Metadata = {
+    val header = new Metadata()
+    header.put(Metadata.Key.of("secret", Metadata.ASCII_STRING_MARSHALLER), secret)
+    header
+  }
+
+  def toEither(readResponse: ReadResponse): Either[HeimdallError, Seq[Entity]] = {
+    readResponse match {
+      case ReadResponse(Some(err), _, _) => Left(toHeimdallError(err))
+      case resp => Right(resp.entities)
+    }
+  }
+
+  def toHeimdallError(error: Error): HeimdallError =
+    error.errorCode match {
+      case Error.ErrorCode.VALIDATION_ERROR => HeimdallError(error.message, HeimdallError.ErrorCode.VALIDATION_ERROR)
+      case _ => HeimdallError(error.message, HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR)
+    }
 }
 
 trait Retry {

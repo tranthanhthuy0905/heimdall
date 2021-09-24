@@ -22,7 +22,6 @@ trait AuditEventHelpers extends BaseController
     def getZipInfoAndBuildZipAccessEvent(
           sage: SageClient,
           apidae: ApidaeClient,
-          auditClient: AuditClient,
           file: FileIdent,
           updatedByTid: Tid,
           remoteAddress: String,

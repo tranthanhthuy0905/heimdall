@@ -1,27 +1,28 @@
 package services.sage
 
-import com.axon.sage.protos.common.common.{RequestContext, Tid}
-import com.axon.sage.protos.query.evidence_message.{Evidence => SageEvidenceProto, EvidenceFieldSelect}
-import com.axon.sage.protos.common.common.Tid.EntityType.{EVIDENCE}
-import com.axon.sage.protos.v1.query_service.{ReadRequest, ReadResponse, QueryServiceGrpc}
+import com.axon.sage.protos.common.common.Tid
+import com.axon.sage.protos.query.evidence_message.{EvidenceFieldSelect, Evidence => SageEvidenceProto}
+import com.axon.sage.protos.common.common.Tid.EntityType.EVIDENCE
+import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
 import com.typesafe.config.Config
-import java.util.UUID
 import java.util.concurrent.{Executor, TimeUnit}
+
 import javax.inject.{Inject, Singleton}
-import io.grpc.{Metadata, CallCredentials}
-import scala.concurrent.{Future, ExecutionContext}
+import io.grpc.{CallCredentials, Metadata}
+import models.common.HeimdallError
+
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.util.control.NonFatal
 import play.api.cache.AsyncCacheApi
 import utils.{HdlCache, HdlTtl}
 
 trait SageClient {
-  def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[Throwable, Evidence]]
-  def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[Throwable, Seq[Evidence]]]
-  def getEvidenceContentType(id: EvidenceId) : Future[Either[Throwable, String]]
+  def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
+  def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]]
+  def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]]
 }
 
 @Singleton
@@ -52,15 +53,14 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   val queryService = QueryServiceGrpc.stub(channel).withCallCredentials(callerSecret(credential(secret)))
   def queryServiceFn = queryService.withDeadlineAfter(queryDeadline, TimeUnit.SECONDS)
 
-  override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[Throwable, Evidence]] = {
-    getEvidences(Seq(id), query).map {
-      case Left(err) => Left(err)
-      case Right(evidenceSeq) =>
-        if (evidenceSeq.length == 0) Left(new Exception("Evidence not found")) else Right(evidenceSeq(0))
-    }
+  override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
+    for {
+      res <- getEvidences(Seq(id), query)
+      evidence <- Future.successful(res.map(evidences => evidences.find(evidence => evidence.evidenceId equals id.entityId)))
+    } yield evidence.fold(l => Left(l), r => r.toRight(HeimdallError("evidence not found", HeimdallError.ErrorCode.NOT_FOUND)))
   }
 
-  override def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[Throwable, Seq[Evidence]]] = {
+  override def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]] = {
     val request = ReadRequest(
       path = query.path,
       context = Some(requestContext),
@@ -71,16 +71,12 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
       ))))
     )
 
-    queryServiceFn.read(request).map {
-      case ReadResponse(Some(err), _, _) => Left(new Exception("Sage query error: " + err))
-      case resp => Right(resp.entities.map(evidence => Evidence.fromSageProto(evidence.entity.value.asInstanceOf[SageEvidenceProto])))
-    }
-    .recover {
-      case NonFatal(ex) => Left(ex)
-    }
+    for {
+      res <- queryServiceFn.read(request).map(toEither)
+    } yield res.map(entities => entities.map(entity => Evidence.fromSageProto(entity.entity.value.asInstanceOf[SageEvidenceProto])))
   }
 
-  def getEvidenceContentType(id: EvidenceId) : Future[Either[Throwable, String]] = {
+  def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]] = {
     def evidenceWithContentType = {
       val selection = EvidenceFieldSelect(
           partnerId = true,
@@ -100,33 +96,19 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
       .map(Future.successful)
       .getOrElse {
         // if not found then get from sage
-        evidenceWithContentType.flatMap(
-          either => either.fold(
-            err => Future.failed(err),
-            evidence => {
-              HdlCache.EvidenceContentType.set(key, evidence.contentType)
-              Future.successful(evidence.contentType)
-            }
-          )
-        )
+        evidenceWithContentType.flatMap {
+          case Left(l) => Future.failed(l)
+          case Right(evidence) =>
+            HdlCache.EvidenceContentType.set(key, evidence.contentType)
+            Future.successful(evidence.contentType)
+        }
       }
     }
     .map(Right(_))
     .recover {
-      case someError: Throwable => Left(someError)
+      case heimdallErr: HeimdallError => Left(heimdallErr)
+      case otherErr => Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
     }
-  }
-
-
-  private def requestContext = RequestContext(
-    correlationId = UUID.randomUUID.toString,
-    callingService = "heimdall"
-  )
-
-  private def credential(secret: String): Metadata = {
-    val header = new Metadata()
-    header.put(Metadata.Key.of("secret", Metadata.ASCII_STRING_MARSHALLER), secret)
-    header
   }
 
   private case class callerSecret(header: Metadata) extends CallCredentials {

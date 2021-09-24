@@ -51,7 +51,7 @@ class ProbeController @Inject()(
           for {
             // audit zip file accessed event
             zipAccessEvents <- FutureEither(Future.traverse(media.toList)(
-              file => getZipInfoAndBuildZipAccessEvent(sage, apidae, audit, file, updatedBy, remoteAddress).future
+              file => getZipInfoAndBuildZipAccessEvent(sage, apidae, file, updatedBy, remoteAddress).future
             ).map(toEitherOfList)).map(list => list.flatten)
             _ <- FutureEither(audit.recordEndSuccess(zipAccessEvents))
               .mapLeft(toHttpStatus("failedToSendZipFileAccessedAuditEvent")(_, Some(request.media)))
