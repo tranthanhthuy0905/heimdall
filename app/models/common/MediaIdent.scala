@@ -85,7 +85,7 @@ class MediaIdent(val fileIds: List[UUID], val evidenceIds: List[UUID], val partn
 
 
   private def isValid(): Boolean = {
-    fileIds.length == evidenceIds.length && fileIds.nonEmpty
+    fileIds.nonEmpty && fileIds.length == evidenceIds.length
   }
 
   private def listToString(list: List[UUID]): String = {
