@@ -7,7 +7,6 @@ import javax.inject.Inject
 import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
-import services.komrade.KomradeClient
 import services.rtm.{HeimdallRoutes, RtmQueryHelper, RtmRequest}
 import services.zookeeper.HeimdallLoadBalancer
 
@@ -16,7 +15,6 @@ import scala.concurrent.{ExecutionContext, Future}
 case class RtmRequestAction @Inject()(
   config: Config,
   dredd: DreddClient,
-  komrade: KomradeClient,
   loadBalancer: HeimdallLoadBalancer,
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, RtmRequest]
