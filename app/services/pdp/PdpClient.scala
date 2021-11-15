@@ -17,6 +17,7 @@ import com.axon.pdp.protos.v1.pdp_service.{PdpServiceGrpc, Tid => PTid}
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 trait PdpClient {
   def enforceBatch(jwt: String, entities: List[EntityDescriptor], action: String): Future[Boolean]
@@ -43,6 +44,7 @@ class PdpClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
   override def enforceBatch(jwt: String, entities: List[EntityDescriptor], action: String): Future[Boolean] = {
     val user: Tid       = jwtToUser(jwt)
     val ents: Seq[PTid] = entities.map(ed => PTid(ed.entityType.name, ed.id, ed.domain.getOrElse("")))
+    val func            = "enforceBatch"
 
     val batchRequest: EnforceBatchRequest =
       EnforceBatchRequest(
@@ -56,11 +58,20 @@ class PdpClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
           )
         )
       )
+
+    val future = client
+      .enforceBatch(batchRequest)
+      .map(r => r.result.forall(_.granted == true))
+
+    future.onComplete {
+      case Failure(_) => statsd.increment("PdpClient.errors", s"func:$func")
+      case _          => ()
+    }
+
     executionTime(
-      aspect = "PdpClient.enforceBatch",
-      future = client
-        .enforceBatch(batchRequest)
-        .map(r => r.result.forall(_.granted == true))
+      aspect = "PdpClient.exec",
+      future = future,
+      tags = s"func:$func"
     )
   }
 
