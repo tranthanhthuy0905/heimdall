@@ -94,7 +94,6 @@ curl -v --cookie "AXONSESSION=$COOKIE" "http://localhost:9000/media/hls/segment?
 ffplay "http://localhost:9000/media/thumbnail?file_id=$FILEID&evidence_id=$EVIDENCEID&partner_id=$PARTNERID&time=57&width=120&height=52&autorotate=true&streamingSessionToken=$SSTOKEN" -headers "Cookie: AXONSESSION=$COOKIE"
 
 ```
-
 ## Heimdall Anatomy
 ```
 ├── app                         → Application sources
