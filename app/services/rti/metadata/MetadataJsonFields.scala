@@ -43,6 +43,7 @@ trait MetadataJsonFields {
   protected final val lensSerialNumberFieldInput        = "LensSerialNumber"
   protected final val lensSpecificationFieldInput       = "LensSpecification"
   protected final val componentsConfigurationFieldInput = "ComponentsConfiguration"
+  protected final val configurationBytesFieldInput      = "ConfigurationBytes"
   protected final val contrastFieldInput                = "Contrast"
   protected final val brightnessValueFieldInput         = "BrightnessValue"
   protected final val lightSourceFieldInput             = "LightSource"
@@ -160,4 +161,20 @@ trait ReadableValue {
       .getOrElse("")
 
   private def tryToInt(s: String): Option[Int] = Try(s.toInt).toOption
+}
+
+trait ReadableHexValue {
+  protected def getMetadataValue(value: Int): Option[MetadataValue]
+
+  protected def fromString(data: String): String =
+    tryToInt(data)
+      .flatMap(getMetadataValue)
+      .map(_.displayValue)
+      .getOrElse("")
+
+  private def tryToInt(s: String): Option[Int] = 
+    if (s.startsWith("0x")) 
+      Try(Integer.parseInt(s.stripPrefix("0x"), 16)).toOption
+    else
+      Try(s.toInt).toOption
 }

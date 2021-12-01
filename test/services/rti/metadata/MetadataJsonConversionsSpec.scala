@@ -7,7 +7,7 @@ import utils.JsonFormat
 class MetadataJsonConversionsSpec extends PlaySpec with MetadataJsonConversions with JsonFormat {
 
   "MetadataJsonConversions" should {
-    "parse metadata from metadata json" in {
+    "parse metadata from metadata json v1" in {
       val body =
         s"""
            |{
@@ -332,6 +332,388 @@ class MetadataJsonConversionsSpec extends PlaySpec with MetadataJsonConversions 
                                      |    "displayName": "File Source",
                                      |    "displayValue": ""
                                      |  }
+                                     |}
+                                     |""".stripMargin)
+
+    jsonResult mustBe jsonExpected
+  }
+
+  "should correctly return value for FileSource, SceneType when they are in hex format" in {
+    val body =
+      s"""
+         |{
+         |  "FileSource": "0x00000003",
+         |  "SceneType": "0x00000001"
+         |}
+         |""".stripMargin
+
+    val metadata     = metadataFromJson(Json.parse(body))
+    val jsonResult   = removeNullValues(Json.toJson(metadata).as[JsObject])
+    val jsonExpected = Json.parse(s"""
+                                     |{
+                                     |  "fileSource": {
+                                     |    "displayName": "File Source",
+                                     |    "displayValue": "Digital Camera"
+                                     |  },
+                                     |  "sceneType": {
+                                     |    "displayName": "Scene Type",
+                                     |    "displayValue": "Directly photographed"
+                                     |  }
+                                     |}
+                                     |""".stripMargin)
+    jsonResult mustBe jsonExpected
+  }
+
+  "should correctly return value for FileSource, SceneType on dec format too" in {
+    val body =
+      s"""
+         |{
+         |  "FileSource": "3",
+         |  "SceneType": "1"
+         |}
+         |""".stripMargin
+
+    val metadata     = metadataFromJson(Json.parse(body))
+    val jsonResult   = removeNullValues(Json.toJson(metadata).as[JsObject])
+    val jsonExpected = Json.parse(s"""
+                                     |{
+                                     |  "fileSource": {
+                                     |    "displayName": "File Source",
+                                     |    "displayValue": "Digital Camera"
+                                     |  },
+                                     |  "sceneType": {
+                                     |    "displayName": "Scene Type",
+                                     |    "displayValue": "Directly photographed"
+                                     |  }
+                                     |}
+                                     |""".stripMargin)
+    jsonResult mustBe jsonExpected
+  }
+
+  "should correctly return empty string for unknown FileSource having value of 0x00000004" in {
+    val body =
+      s"""
+         |{
+         |  "FileSource": "0x00000004"
+         |}
+         |""".stripMargin
+    val metadata = metadataFromJson(Json.parse(body))
+    val jsonResult   = removeNullValues(Json.toJson(metadata).as[JsObject])
+    val jsonExpected = Json.parse(s"""
+                                    |{
+                                    |  "fileSource": {
+                                    |    "displayName": "File Source",
+                                    |    "displayValue": ""
+                                    |  }
+                                    |}
+                                    |""".stripMargin)
+    jsonResult mustBe jsonExpected
+  }
+  
+  "should correctly return value GPSAltitudeRef in both EXIF v1 and v2" in {
+    val bodyV1 =
+      s"""
+         |{
+         |  "GPSAltitudeRef": "0x00"
+         |}
+         |""".stripMargin
+
+    val metadata     = metadataFromJson(Json.parse(bodyV1))
+    val jsonResult   = removeNullValues(Json.toJson(metadata).as[JsObject])
+    val jsonExpected = Json.parse(s"""
+                                     |{
+                                     |  "gpsAltitudeRef": {
+                                     |    "displayName":  "Altitude Reference",
+                                     |    "displayValue": "Above Sea Level"
+                                     |  }
+                                     |}
+                                     |""".stripMargin)
+    jsonResult mustBe jsonExpected
+
+    val bodyV2 =
+      s"""
+         |{
+         |  "GPSAltitudeRef": "00"
+         |}
+         |""".stripMargin
+    val metadataV2   = metadataFromJson(Json.parse(bodyV2))
+    val jsonResultV2 = removeNullValues(Json.toJson(metadata).as[JsObject])
+    jsonResultV2 mustBe jsonExpected
+  }
+
+  "should return empty when parse bytes of ComponentsConfiguration failed" in {
+    val body = 
+    s"""
+         |{
+         |  "ComponentsConfiguration": {
+         |     "ConfigurationId": 2,
+         |     "ConfigurationBytes": "AQIDAA?="
+         |  }
+         |}
+    """.stripMargin
+    val metadata     = metadataFromJson(Json.parse(body))
+    val jsonResult   = removeNullValues(Json.toJson(metadata).as[JsObject])
+    val jsonExpected = Json.parse(s"""
+                                     |{
+                                     | "componentsConfiguration": {
+                                     |    "displayName": "Components Configuration",
+                                     |    "displayValue": ""
+                                     |  }
+                                     |}
+                                     |""".stripMargin)
+    jsonResult mustBe jsonExpected
+  }
+
+  "should parse newly upgraded metadata properly" in {
+    val body =
+      s"""
+         |{
+         |    "ApertureValue": "54823/32325",
+         |    "BrightnessValue": "24183/50483",
+         |    "ColorSpace": "65535",
+         |    "ComponentsConfiguration": {
+         |        "ConfigurationId": 2,
+         |        "ConfigurationBytes": "AQIDAA=="
+         |    },
+         |    "DateTime": "2020:03:06 14:21:38",
+         |    "DateTimeDigitized": "2020:03:06 14:21:38",
+         |    "ExifVersion": "0231",
+         |    "ExposureBiasValue": "0/1",
+         |    "ExposureMode": "0",
+         |    "ExposureProgram": "2",
+         |    "ExposureTime": "1/13",
+         |    "FNumber": "9/5",
+         |    "Flash": "24",
+         |    "FlashpixVersion": "0100",
+         |    "FocalLength": "399/100",
+         |    "FocalLengthIn35mmFilm": "28",
+         |    "GPSAltitude": "11.560000",
+         |    "GPSAltitudeRef": "01",
+         |    "GPSDateStamp": "2020:03:06",
+         |    "GPSDestBearing": "600201/2530",
+         |    "GPSDestBearingRef": "T",
+         |    "GPSImgDirection": "600201/2530",
+         |    "GPSImgDirectionRef": "T",
+         |    "GPSLatitude": "37.828308",
+         |    "GPSLatitudeRef": "S",
+         |    "GPSLongitude": "144.924683",
+         |    "GPSLongitudeRef": "E",
+         |    "GPSSpeed": "0/1",
+         |    "GPSSpeedRef": "K",
+         |    "GPSTag": "1970",
+         |    "ISOSpeedRatings": "100",
+         |    "LensMake": "Apple",
+         |    "LensModel": "iPhone 7 back camera 3.99mm f/1.8",
+         |    "LensSpecification": "399/100 399/100 9/5 9/5",
+         |    "Make": "Apple",
+         |    "MeteringMode": "5",
+         |    "Model": "iPhone 7",
+         |    "Orientation": "6",
+         |    "PixelXDimension": "4032",
+         |    "PixelYDimension": "3024",
+         |    "ResolutionUnit": "2",
+         |    "SceneCaptureType": "0",
+         |    "SceneType": "0x01000000",
+         |    "ShutterSpeedValue": "70954/19465",
+         |    "Software": "13.3.1",
+         |    "WhiteBalance": "0",
+         |    "XResolution": "72/1",
+         |    "YResolution": "72/1"
+         |}
+         |""".stripMargin
+
+    val metadata     = metadataFromJson(Json.parse(body))
+    val jsonResult   = removeNullValues(Json.toJson(metadata).as[JsObject])
+    val jsonExpected = Json.parse(s"""
+                                     {
+                                     |    "dateTime": {
+                                     |        "displayName": "Modified Date",
+                                     |        "displayValue": "2020:03:06 14:21:38"
+                                     |    },
+                                     |    "software": {
+                                     |        "displayName": "Software",
+                                     |        "displayValue": "13.3.1"
+                                     |    },
+                                     |    "orientation": {
+                                     |        "displayName": "Orientation",
+                                     |        "displayValue": "Rotate 90 CW"
+                                     |    },
+                                     |    "pixelXDimension": {
+                                     |        "displayName": "Image Width",
+                                     |        "displayValue": "4032"
+                                     |    },
+                                     |    "pixelYDimension": {
+                                     |        "displayName": "Image Height",
+                                     |        "displayValue": "3024"
+                                     |    },
+                                     |    "xResolution": {
+                                     |        "displayName": "X-Resolution",
+                                     |        "displayValue": "72/1"
+                                     |    },
+                                     |    "yResolution": {
+                                     |        "displayName": "Y-Resolution",
+                                     |        "displayValue": "72/1"
+                                     |    },
+                                     |    "resolutionUnit": {
+                                     |        "displayName": "Resolution Unit",
+                                     |        "displayValue": "inches"
+                                     |    },
+                                     |    "colorSpace": {
+                                     |        "displayName": "Color Representation",
+                                     |        "displayValue": "Uncalibrated"
+                                     |    },
+                                     |    "make": {
+                                     |        "displayName": "Camera Make",
+                                     |        "displayValue": "Apple"
+                                     |    },
+                                     |    "model": {
+                                     |        "displayName": "Camera Model",
+                                     |        "displayValue": "iPhone 7"
+                                     |    },
+                                     |    "fNumber": {
+                                     |        "displayName": "F-Stop",
+                                     |        "displayValue": "9/5"
+                                     |    },
+                                     |    "exposureTime": {
+                                     |        "displayName": "Exposure Time",
+                                     |        "displayValue": "1/13"
+                                     |    },
+                                     |    "shutterSpeedValue": {
+                                     |        "displayName": "Shutter Speed",
+                                     |        "displayValue": "70954/19465"
+                                     |    },
+                                     |    "isoSpeedRatings": {
+                                     |        "displayName": "ISO Speed",
+                                     |        "displayValue": "100"
+                                     |    },
+                                     |    "exposureBiasValue": {
+                                     |        "displayName": "Exposure Bias",
+                                     |        "displayValue": "0/1"
+                                     |    },
+                                     |    "focalLength": {
+                                     |        "displayName": "Focal Length",
+                                     |        "displayValue": "399/100"
+                                     |    },
+                                     |    "focalLengthIn35mmFilm": {
+                                     |        "displayName": "35mm Focal Length",
+                                     |        "displayValue": "28"
+                                     |    },
+                                     |    "apertureValue": {
+                                     |        "displayName": "Aperture Value",
+                                     |        "displayValue": "54823/32325"
+                                     |    },
+                                     |    "meteringMode": {
+                                     |        "displayName": "Metering Mode",
+                                     |        "displayValue": "Multi-segment"
+                                     |    },
+                                     |    "flash": {
+                                     |        "displayName": "Flash Mode",
+                                     |        "displayValue": "Auto, Did not fire"
+                                     |    },
+                                     |    "dateTimeDigitized": {
+                                     |        "displayName": "Date/Time Original",
+                                     |        "displayValue": "2020:03:06 14:21:38"
+                                     |    },
+                                     |    "lensMake": {
+                                     |        "displayName": "Lens Make",
+                                     |        "displayValue": "Apple"
+                                     |    },
+                                     |    "lensModel": {
+                                     |        "displayName": "Lens Model",
+                                     |        "displayValue": "iPhone 7 back camera 3.99mm f/1.8"
+                                     |    },
+                                     |    "lensSpecification": {
+                                     |        "displayName": "Lens Specification",
+                                     |        "displayValue": "399/100 399/100 9/5 9/5"
+                                     |    },
+                                     |    "componentsConfiguration": {
+                                     |        "displayName": "Components Configuration",
+                                     |        "displayValue": "YCbCr"
+                                     |    },
+                                     |    "brightnessValue": {
+                                     |        "displayName": "Brightness",
+                                     |        "displayValue": "24183/50483"
+                                     |    },
+                                     |    "exposureProgram": {
+                                     |        "displayName": "Exposure Program",
+                                     |        "displayValue": "Program AE"
+                                     |    },
+                                     |    "exposureMode": {
+                                     |        "displayName": "Exposure Mode",
+                                     |        "displayValue": "Auto"
+                                     |    },
+                                     |    "whiteBalance": {
+                                     |        "displayName": "White Balance Mode",
+                                     |        "displayValue": "Auto"
+                                     |    },
+                                     |    "sceneType": {
+                                     |        "displayName": "Scene Type",
+                                     |        "displayValue": ""
+                                     |    },
+                                     |    "sceneCaptureType": {
+                                     |        "displayName": "Scene Capture Type",
+                                     |        "displayValue": "Standard"
+                                     |    },
+                                     |    "exifVersion": {
+                                     |        "displayName": "Exif Version",
+                                     |        "displayValue": "0231"
+                                     |    },
+                                     |    "flashpixVersion": {
+                                     |        "displayName": "Flashpix Version",
+                                     |        "displayValue": "0100"
+                                     |    },
+                                     |    "gpsLatitudeRef": {
+                                     |        "displayName": "Latitude Reference",
+                                     |        "displayValue": "South"
+                                     |    },
+                                     |    "gpsLatitude": {
+                                     |        "displayName": "Latitude",
+                                     |        "displayValue": "37.828308"
+                                     |    },
+                                     |    "gpsLongitudeRef": {
+                                     |        "displayName": "Longitude Reference",
+                                     |        "displayValue": "East"
+                                     |    },
+                                     |    "gpsLongitude": {
+                                     |        "displayName": "Longitude",
+                                     |        "displayValue": "144.924683"
+                                     |    },
+                                     |    "gpsAltitudeRef": {
+                                     |        "displayName": "Altitude Reference",
+                                     |        "displayValue": "Below Sea Level"
+                                     |    },
+                                     |    "gpsAltitude": {
+                                     |        "displayName": "Altitude",
+                                     |        "displayValue": "11.560000"
+                                     |    },
+                                     |    "gpsSpeedRef": {
+                                     |        "displayName": "Speed Reference",
+                                     |        "displayValue": "km/h"
+                                     |    },
+                                     |    "gpsSpeed": {
+                                     |        "displayName": "Speed",
+                                     |        "displayValue": "0/1"
+                                     |    },
+                                     |    "gpsImageDirectionRef": {
+                                     |        "displayName": "Image Direction Reference",
+                                     |        "displayValue": "True North"
+                                     |    },
+                                     |    "gpsImageDirection": {
+                                     |        "displayName": "Image Direction",
+                                     |        "displayValue": "600201/2530"
+                                     |    },
+                                     |    "gpsDestBearingRef": {
+                                     |        "displayName": "Destination Bearing Reference",
+                                     |        "displayValue": "True North"
+                                     |    },
+                                     |    "gpsDestBearing": {
+                                     |        "displayName": "Destination Bearing",
+                                     |        "displayValue": "600201/2530"
+                                     |    },
+                                     |    "gpsDateStamp": {
+                                     |        "displayName": "Date Stamp",
+                                     |        "displayValue": "2020:03:06"
+                                     |    }
                                      |}
                                      |""".stripMargin)
 

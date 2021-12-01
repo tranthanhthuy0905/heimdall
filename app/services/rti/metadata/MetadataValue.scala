@@ -1,6 +1,8 @@
 package services.rti.metadata
 
 import play.api.libs.json._
+import java.util.Base64
+import scala.util.Try
 
 trait MetadataValue {
   def displayValue: String
@@ -58,7 +60,7 @@ sealed trait LongitudeRef extends MetadataValue {
 }
 
 sealed trait AltitudeRef extends MetadataValue {
-  def value: String
+  def value: Int
 }
 
 sealed trait SpeedRef extends MetadataValue {
@@ -1140,10 +1142,14 @@ case class ComponentsConfiguration(config: String) extends MetadataValue {
 
 object ComponentsConfiguration extends MetadataJsonFields {
   implicit val componentsConfigurationReads: Reads[ComponentsConfiguration] =
-    (__ \ componentsConfigurationFieldInput).read[String].map(ComponentsConfiguration.apply)
+    (__ \ componentsConfigurationFieldInput \ configurationBytesFieldInput).read[String].map(ComponentsConfiguration.apply)
 
   implicit val componentsConfigurationWrites: Writes[ComponentsConfiguration] = writesBuilder(
-    (data: ComponentsConfiguration) => (data.displayValue, data.config))
+    (data: ComponentsConfiguration) => (data.displayValue, interpret(data.config)))
+  
+  private final val valueName = Array("", "Y", "Cb", "Cr", "R", "G", "B")
+
+  protected def interpret(base64encoded: String): String = Try(Base64.getDecoder().decode(base64encoded)).getOrElse(Array()).map(x => valueName.lift(x).getOrElse("")).mkString
 }
 
 case class Contrast(contrast: String) extends MetadataValue {
@@ -1441,7 +1447,7 @@ object ExposureMode extends MetadataJsonFields with ReadableValue {
     val displayValue = "Auto bracket"
   }
 
-  private final val exposureModeList                                    = List[ExposureModeValue](Auto, Manual)
+  private final val exposureModeList                                    = List[ExposureModeValue](Auto, Manual, AutoBracket)
   protected def getMetadataValue(value: Int): Option[ExposureModeValue] = exposureModeList.find(_.value.equals(value))
 }
 
@@ -1547,7 +1553,7 @@ case class SceneType(sceneType: String) extends MetadataValue {
   val displayValue = "Scene Type"
 }
 
-object SceneType extends MetadataJsonFields with ReadableValue {
+object SceneType extends MetadataJsonFields with ReadableHexValue {
   implicit val sceneTypeReads: Reads[SceneType] = (__ \ sceneTypeFieldInput).read[String].map(SceneType.apply)
 
   implicit val sceneTypeWrites: Writes[SceneType] = writesBuilder(
@@ -1571,7 +1577,7 @@ case class SceneCaptureType(sc: String) extends MetadataValue {
 
 object SceneCaptureType extends MetadataJsonFields with ReadableValue {
   implicit val sceneCaptureTypeReads: Reads[SceneCaptureType] =
-    (__ \ sceneTypeFieldInput).read[String].map(SceneCaptureType.apply)
+    (__ \ sceneCaptureTypeFieldInput).read[String].map(SceneCaptureType.apply)
 
   implicit val sceneCaptureTypeWrites: Writes[SceneCaptureType] = writesBuilder(
     (data: SceneCaptureType) => (data.displayValue, fromString(data.sc)))
@@ -1610,7 +1616,7 @@ case class FileSource(fileSource: String) extends MetadataValue {
   val displayValue = "File Source"
 }
 
-object FileSource extends MetadataJsonFields with ReadableValue {
+object FileSource extends MetadataJsonFields with ReadableHexValue {
   implicit val fileSourceReads: Reads[FileSource] = (__ \ fileSourceFieldInput).read[String].map(FileSource.apply)
 
   implicit val fileSourceWrites: Writes[FileSource] = writesBuilder(
@@ -1631,7 +1637,7 @@ object FileSource extends MetadataJsonFields with ReadableValue {
     val displayValue = "Digital Camera"
   }
 
-  private final val filmScannerList = List[FileSourceValue](FilmScanner, ReflectionPrintScanner)
+  private final val filmScannerList = List[FileSourceValue](FilmScanner, ReflectionPrintScanner, DigitalCamera)
   protected def getMetadataValue(value: Int): Option[FileSourceValue] =
     filmScannerList.find(_.value.equals(value))
 }
@@ -1741,24 +1747,24 @@ case class GpsAltitudeRef(altitudeRef: String) extends MetadataValue {
   val displayValue = "Altitude Reference"
 }
 
-object GpsAltitudeRef extends MetadataJsonFields with ReadableStrValue {
+object GpsAltitudeRef extends MetadataJsonFields with ReadableHexValue {
   implicit val gpsAltitudeRefReads: Reads[GpsAltitudeRef] = (__ \ gpsAltitudeRefInput).read[String].map(GpsAltitudeRef.apply)
 
   implicit val gpsAltitudeRefWrites: Writes[GpsAltitudeRef] = writesBuilder(
     (data: GpsAltitudeRef) => (data.displayValue, fromString(data.altitudeRef)))
 
   case object AboveSeaLevel extends AltitudeRef {
-    val value        = "0x00"
+    val value        = 0
     val displayValue = "Above Sea Level"
   }
 
   case object BelowSeaLevel extends AltitudeRef {
-    val value        = "0x01"
+    val value        = 1
     val displayValue = "Below Sea Level"
   }
 
   private final val altitudeRefList = List[AltitudeRef](AboveSeaLevel, BelowSeaLevel)
-  protected def getMetadataValue(value: String): Option[AltitudeRef] =
+  protected def getMetadataValue(value: Int): Option[AltitudeRef] =
     altitudeRefList.find(_.value.equals(value))
 }
 
@@ -1916,4 +1922,3 @@ object GpsDateStamp extends MetadataJsonFields {
   implicit val gpsDateTimeWrites: Writes[GpsDateStamp] = writesBuilder(
     (data: GpsDateStamp) => (data.displayValue, data.dateStamp))
 }
-
