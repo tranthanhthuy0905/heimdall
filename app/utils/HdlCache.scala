@@ -4,7 +4,8 @@ import com.evidence.service.common.ServiceGlobal
 
 import java.net.URL
 import java.util.concurrent.TimeUnit
-import com.evidence.service.common.cache.{Cache, CacheConfig}
+import com.evidence.service.common.cache.generic.Cache
+import com.evidence.service.common.cache.CacheConfig
 import com.evidence.service.common.config.Configuration
 import com.evidence.service.komrade.thrift.WatermarkSetting
 
@@ -62,7 +63,7 @@ case object HdlTtl {
 
   val watermarkSettingsRedisTTL: FiniteDuration =
     Duration(config.getDuration("service.cache.watermark-settings.redis-ttl", TimeUnit.HOURS), TimeUnit.HOURS)
-  
+
   val evidenceContentTypeRedisTTL: FiniteDuration =
     Duration(config.getDuration("service.cache.evidence-contenttype.redis-ttl", TimeUnit.HOURS), TimeUnit.HOURS)
 

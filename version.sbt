@@ -41,7 +41,7 @@ version in ThisBuild := setVersionFunc(buildVersion)
 // *******************************
 lazy val outputVersion = taskKey[Unit]("Outputs current version to version.txt in targets");
 
-outputVersion in Compile := {
+Compile / outputVersion := {
   val file = baseDirectory.value / "target" / "version.txt"
-  IO.write(file, version in ThisBuild value)
+  IO.write(file, ThisBuild / version value)
 }
