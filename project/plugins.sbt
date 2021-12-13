@@ -1,5 +1,9 @@
 addSbtCoursier
 
+// Uncomment to check dependencies graph
+// https://github.com/sbt/sbt-dependency-graph#main-tasks
+//addDependencyTreePlugin
+
 addSbtPlugin("com.typesafe.play" % "sbt-plugin"    % "2.8.11")
 addSbtPlugin("org.scoverage"     % "sbt-scoverage" % "1.5.1")
 addSbtPlugin("com.geirsson"      % "sbt-scalafmt"  % "1.5.1")

@@ -13,7 +13,7 @@ object Common {
 
   val resolvers = Seq("Nexus" at "https://nexus.taservs.net/content/groups/public")
 
-  lazy val protoDependencies = Seq("io.grpc" % "grpc-netty-shaded" % "1.24.0")
+  lazy val protoDependencies = Seq("io.grpc" % "grpc-netty-shaded" % "1.42.1")
 
   val exclusions = Seq(
     ExclusionRule("org.slf4j", "slf4j-jdk14"),

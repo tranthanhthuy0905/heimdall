@@ -34,7 +34,7 @@ def setVersionFunc(versionStr: String): String = {
 // Avoid weird cyclical dependencies in SBT
 version := setVersionFunc(buildVersion)
 
-version in ThisBuild := setVersionFunc(buildVersion)
+ThisBuild / version := setVersionFunc(buildVersion)
 
 // *******************************
 // Output version to target

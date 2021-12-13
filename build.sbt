@@ -18,9 +18,14 @@ libraryDependencies ++= Seq(
   caffeine
 )
 
+//https://github.com/playframework/play-ws/pull/573
+// version 2.1.3 is last version depends on scala-java8-compat 0.9.1
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play-ws" % "2.8.11"
+  "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.3"
 )
+
+// avoid binary conflict dependencies
+dependencyOverrides += "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
 
 libraryDependencies ++= Seq(
   "com.evidence" %% "service-common"               % Common.serviceCommonVersion,
@@ -63,11 +68,11 @@ libraryDependencies ~= {
 }
 
 updateOptions := updateOptions.value.withCachedResolution(true)
-javaOptions in Test += "-Dconfig.file=conf/env/test.conf"
+Test / javaOptions += "-Dconfig.file=conf/env/test.conf"
 
 // Exclude development configs from zip package
-mappings in Universal := {
-  val origMappings = (mappings in Universal).value
+Universal / mappings := {
+  val origMappings = (Universal / mappings).value
   origMappings.filterNot { case (_, file) => file.endsWith("env/localdev.conf") }
 }
 
