@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit
 import com.evidence.service.common.cache.generic.Cache
 import com.evidence.service.common.cache.CacheConfig
 import com.evidence.service.common.config.Configuration
-import com.evidence.service.komrade.thrift.WatermarkSetting
+import com.evidence.service.komrade.thrift.{PartnerFeature, WatermarkSetting}
 
 import java.time.Instant
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -69,6 +69,9 @@ case object HdlTtl {
 
   val evidenceContentTypeMemTTL: FiniteDuration =
     Duration(config.getDuration("service.cache.evidence-contenttype.mem-ttl", TimeUnit.MINUTES), TimeUnit.MINUTES)
+
+  val partnerFeaturesRedisTTL: FiniteDuration =
+    Duration(config.getDuration("service.cache.partner-features.redis-ttl", TimeUnit.MINUTES), TimeUnit.MINUTES)
 }
 
 case object HdlCache {
@@ -147,6 +150,19 @@ case object HdlCache {
 
     override def set(key: String, value: String): Unit =
       cache.setSync(hdlKey(key), cacheKey, cacheValue(value, HdlTtl.evidenceContentTypeRedisTTL))
+
+    override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
+  }
+  case object PartnerFeatures extends HdlCache[String, Seq[PartnerFeature]] {
+    private val cacheKey = "PartnerFeatures"
+    private val cache =
+      new Cache[cacheValue[Seq[PartnerFeature]]](CacheConfig(ttl = Some(HdlTtl.partnerFeaturesRedisTTL)))
+
+    override def get(key: String): Option[Seq[PartnerFeature]] =
+      getValue(cache.getSync(hdlKey(key), cacheKey, refreshTTL = false), cacheKey)
+
+    override def set(key: String, value: Seq[PartnerFeature]): Unit =
+      cache.setSync(hdlKey(key), cacheKey, cacheValue(value, HdlTtl.partnerFeaturesRedisTTL))
 
     override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
   }

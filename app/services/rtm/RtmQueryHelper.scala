@@ -77,6 +77,8 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
     "resolutionSeconds"
   )
 
+  final val multiAudioStreamParams = List("multi", "stream", "sIndex")
+
   /**
     * heimdallToRtmRoutes provides Heimdall to RTM routes mapping ,and a list of whitelisted parameters per RTM route.
     *
@@ -99,14 +101,14 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
     mp3 -> MediaRoute("/mp3", List.empty)
   )
 
-  def apply(route: String, query: Map[String, Seq[String]]): Option[RtmQueryParams] = {
+  def apply(route: String, query: Map[String, Seq[String]], multiStreamEnabled: Boolean = false): Option[RtmQueryParams] = {
     route match {
       case str if str startsWith hlsMaster =>
-        filterAllowedParams(query, heimdallToRtmRoutes(hlsMaster))
+        filterAllowedParams(query + ("multi" -> Seq(multiStreamEnabled.toString)), addMultiAudioParamsIfNeeded(heimdallToRtmRoutes(hlsMaster), multiStreamEnabled))
       case str if str startsWith hlsVariant =>
-        filterAllowedParams(query, heimdallToRtmRoutes(hlsVariant))
+        filterAllowedParams(query, addMultiAudioParamsIfNeeded(heimdallToRtmRoutes(hlsVariant), multiStreamEnabled))
       case str if str startsWith hlsSegment =>
-        filterAllowedParams(query, heimdallToRtmRoutes(hlsSegment))
+        filterAllowedParams(query, addMultiAudioParamsIfNeeded(heimdallToRtmRoutes(hlsSegment), multiStreamEnabled))
       case str if str startsWith hlsLongSegment =>
         filterAllowedParams(query, heimdallToRtmRoutes(hlsLongSegment))
       case str if str startsWith probe =>
@@ -170,6 +172,14 @@ object RtmQueryHelper extends LazyLogging with HeimdallRoutes with UUIDHelper {
           "UTF-8"
         )
     }.reduceLeft(_ + "&" + _)
+  }
+
+  private def addMultiAudioParamsIfNeeded(route: MediaRoute, multiAudioEnabled: Boolean): MediaRoute = {
+    if (multiAudioEnabled) {
+      MediaRoute(route.rtmPath, List.concat(route.whitelistedParams, multiAudioStreamParams))
+    } else {
+      route
+    }
   }
 
   case class MediaRoute(rtmPath: String, whitelistedParams: List[String])
