@@ -45,7 +45,7 @@ case class GroupRtmRequestAction @Inject()(
             evidenceIds = List(fileIdent.evidenceId),
             partnerId = fileIdent.partnerId
           )
-          new RtmRequest(uri, newMedia, input)
+          new RtmRequest(uri, newMedia, Seq(presignedUrl), rtmQuery.params, input)
         }
       })
         .map(new GroupRtmRequest(_, input))

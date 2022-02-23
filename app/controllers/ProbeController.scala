@@ -16,7 +16,7 @@ import services.rtm.{RtmClient, RtmRequest}
 import services.sage.SageClient
 import services.apidae.ApidaeClient
 import utils.{AuditEventHelpers, EitherHelpers, HdlResponseHelpers, RequestUtils, WSResponseHelpers}
-import models.common.FileIdent
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProbeController @Inject()(
@@ -43,10 +43,10 @@ class ProbeController @Inject()(
   def probe: Action[AnyContent] =
     (heimdallRequestAction andThen permValidation.build(PermissionType.View) andThen rtmRequestAction).async {
       request =>
-        val authHandler = request.authorizationData
-        val updatedBy = updatedByTid(authHandler.parsedJwt)
+        val authHandler   = request.authorizationData
+        val updatedBy     = updatedByTid(authHandler.parsedJwt)
         val remoteAddress = RequestUtils.getClientIpAddress(request)
-        val media = request.media
+        val media         = request.media
         (
           for {
             // audit zip file accessed event
@@ -56,7 +56,7 @@ class ProbeController @Inject()(
             _ <- FutureEither(audit.recordEndSuccess(zipAccessEvents))
               .mapLeft(toHttpStatus("failedToSendZipFileAccessedAuditEvent")(_, Some(request.media)))
 
-            response <- FutureEither(rtm.send(request).map(withOKStatus))
+            response <- FutureEither(rtm.probe(request).map(withOKStatus))
             _ <- FutureEither(audit.recordEndSuccess(zipAccessedToBufferEvents(media.toList, zipAccessEvents, updatedBy, remoteAddress)))
               .mapLeft(toHttpStatus("failedToSendMedaBufferEvent")(_, Some(request.media)))
           } yield toProbeResult(response, request)
