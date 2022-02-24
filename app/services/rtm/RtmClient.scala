@@ -71,7 +71,7 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
 
   def k8sProbe[A](rtmRequest: RtmRequest[A]): Future[JsValue] = {
     val json = Json.obj(
-      "sources"      -> Json.arr(rtmRequest.getPresignedUrls.map(_.toString)),
+      "sources"      -> rtmRequest.getPresignedUrls.map(_.toString),
       "partner_id"   -> rtmRequest.media.partnerId,
       "evidence_ids" -> rtmRequest.media.evidenceIds.map(_.toString),
       "file_ids"     -> rtmRequest.media.fileIds.map(_.toString),
