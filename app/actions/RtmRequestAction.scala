@@ -3,8 +3,6 @@ package actions
 import akka.http.scaladsl.model.Uri
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
-
-import javax.inject.Inject
 import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.dredd.DreddClient
@@ -12,6 +10,7 @@ import services.komrade.{KomradeClient, PlaybackFeatures}
 import services.rtm.{HeimdallRoutes, RtmQueryHelper, RtmRequest}
 import services.zookeeper.HeimdallLoadBalancer
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 case class RtmRequestAction @Inject()(
@@ -26,7 +25,14 @@ case class RtmRequestAction @Inject()(
     with PlaybackFeatures {
 
   def refine[A](input: HeimdallRequest[A]) = {
-    val isMultiAudioEnabled =  isMultiStreamPlaybackEnabled(input.getQueryString("partner_id"))
+
+    for {
+      isMultiAudioEnabled <- input.getQueryString("partner_id").map(isMultiStreamPlaybackEnabled).getOrElse(Future.successful(false))
+      rtmRequest <- buildRtmQueries(input, isMultiAudioEnabled)
+    } yield rtmRequest
+  }
+
+  private def buildRtmQueries[A](input: HeimdallRequest[A], isMultiAudioEnabled: Boolean) = {
     RtmQueryHelper(input.path, input.queryString, isMultiAudioEnabled).map { rtmQuery =>
       for {
         presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
@@ -41,20 +47,13 @@ case class RtmRequestAction @Inject()(
             path = rtmQuery.path,
             queryString = Some(queries)
           )
-
         Right(new RtmRequest(uri, input.media, presignedUrls, rtmQuery.params, input))
       }
     }.getOrElse(Future.successful(Left(Results.BadRequest)))
+
   }
 
-  def isMultiStreamPlaybackEnabled(partnerId: Option[String]): Boolean = {
-    partnerId.map(komradeClient.listPlaybackPartnerFeatures).map(resp => {
-      resp.map(features => features.exists(_.featureName == MultiStreamPlaybackEnabledFeature))
-    }).getOrElse(Future.successful(false)).foreach(found => {
-      if (found) {
-        true
-      }
-    })
-    false
+  private def isMultiStreamPlaybackEnabled(partnerId: String): Future[Boolean] = {
+    komradeClient.listPlaybackPartnerFeatures(partnerId).map(features => features.exists(_.featureName == MultiStreamPlaybackEnabledFeature))
   }
 }
