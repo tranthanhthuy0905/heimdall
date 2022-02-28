@@ -7,7 +7,7 @@ import com.typesafe.config.Config
 
 import javax.inject.Singleton
 import models.common.EmptyMediaIdent
-import play.api.libs.json.{JsNull, JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -53,13 +53,13 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
     if (config.getBoolean("edc.service.rtm.rtmprobe_als_test")) {
       for {
         k8s <- k8sProbe(rtmRequest)
-        vm  <- vmFutureResponse.map(r => r.json.as[JsObject])
+        vm  <- vmFutureResponse
       } yield
-        if (!k8s.equals(vm)) {
+        if (!k8s.equals(vm.body)) {
           statsd.increment("ab_testing.response.mismatch")
           if (logCount.incrementAndGet() < logLimit) {
             logger.warn("mismatch between k8s and vm response")(
-              "vmResponse"  -> vm,
+              "vmResponse"  -> vm.body,
               "k8sResponse" -> k8s,
             )
           }
@@ -69,7 +69,7 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
     vmFutureResponse
   }
 
-  def k8sProbe[A](rtmRequest: RtmRequest[A]): Future[JsValue] = {
+  def k8sProbe[A](rtmRequest: RtmRequest[A]): Future[String] = {
     val json = Json.obj(
       "sources"      -> rtmRequest.getPresignedUrls.map(_.toString),
       "partner_id"   -> rtmRequest.media.partnerId,
@@ -97,9 +97,9 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
                     "partnerId"   -> rtmRequest.media.partnerId,
                   )
                 }
-                JsNull
+                ""
               },
-              k8s => k8s.json.asOpt[JsObject].getOrElse(JsNull)
+              k8s => k8s.body
             )
         )
       )
