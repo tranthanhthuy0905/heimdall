@@ -11,6 +11,10 @@ object HlsManifestFormatter {
         s"$pathPrefix/media/hls/"
       )
       .replaceAll(
+        ",URI=\"/hls/",
+        s""",URI="$pathPrefix/media/hls/"""
+      )
+      .replaceAll(
         "(?m)(?<=[?&])source=[^&]*(?=($|&))",
         s"${mediaIdent.toQueryString}${tokenToParam(token)}"
       )
