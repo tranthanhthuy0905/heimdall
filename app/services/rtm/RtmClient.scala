@@ -26,8 +26,9 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
     with LazyLogging
     with StrictStatsD {
 
-  final val logLimit = 50
-  val logCount       = new AtomicInteger()
+  final val logLimit  = 50
+  val logCount        = new AtomicInteger()
+  final val probePath = config.getString("edc.service.rtm.host") + "/probe"
 
   def send[A](rtmRequest: RtmRequest[A]): Future[WSResponse] = {
     // rtm will use these header information for log context and caching
@@ -78,7 +79,7 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
       "client_id"    -> rtmRequest.subjectId
     ) ++ Json.toJson(rtmRequest.getParams).as[JsObject]
 
-    ws.url(config.getString("edc.service.rtm.host") + "/probe")
+    ws.url(probePath)
       .withRequestTimeout(5.second)
       .withBody(json)
       .withMethod("POST")
