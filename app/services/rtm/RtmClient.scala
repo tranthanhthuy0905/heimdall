@@ -82,6 +82,7 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
       .withRequestTimeout(5.second)
       .withBody(json)
       .withMethod("POST")
+      .withHttpHeaders(("Content-Type", "application/json"))
       .execute()
       .transform(
         tryResult =>
