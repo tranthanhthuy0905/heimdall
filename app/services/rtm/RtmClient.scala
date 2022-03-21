@@ -11,9 +11,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
 
 import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Success
 
 trait RtmClient {
   def send[A](rtmRequest: RtmRequest[A]): Future[WSResponse]
@@ -26,8 +24,6 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
     with LazyLogging
     with StrictStatsD {
 
-  final val logLimit  = 50
-  val logCount        = new AtomicInteger()
   final val probePath = config.getString("edc.service.rtm.host") + "/probe"
 
   def send[A](rtmRequest: RtmRequest[A]): Future[WSResponse] = {
@@ -49,28 +45,6 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
   }
 
   def probe[A](rtmRequest: RtmRequest[A]): Future[WSResponse] = {
-    val vmFutureResponse = send(rtmRequest)
-
-    if (config.getBoolean("edc.service.rtm.rtmprobe_als_test")) {
-      for {
-        k8s <- k8sProbe(rtmRequest)
-        vm  <- vmFutureResponse
-      } yield
-        if (!k8s.equals(vm.body)) {
-          statsd.increment("ab_testing.response.mismatch")
-          if (logCount.incrementAndGet() < logLimit) {
-            logger.warn("mismatch between k8s and vm response")(
-              "vmResponse"  -> vm.body,
-              "k8sResponse" -> k8s,
-            )
-          }
-        }
-    }
-
-    vmFutureResponse
-  }
-
-  def k8sProbe[A](rtmRequest: RtmRequest[A]): Future[String] = {
     val json = Json.obj(
       "sources"      -> rtmRequest.getPresignedUrls.map(_.toString),
       "partner_id"   -> rtmRequest.media.partnerId,
@@ -80,30 +54,9 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
     ) ++ Json.toJson(rtmRequest.getParams).as[JsObject]
 
     ws.url(probePath)
-      .withRequestTimeout(5.second)
       .withBody(json)
       .withMethod("POST")
       .withHttpHeaders(("Content-Type", "application/json"))
       .execute()
-      .transform(
-        tryResult =>
-          Success(
-            tryResult.toEither.fold(
-              e => {
-                statsd.increment("ab_testing.rtmprobe.failed")
-                if (logCount.incrementAndGet() < logLimit) {
-                  logger.warn("call k8s rtmprobe failed")(
-                    "error"       -> e.getMessage,
-                    "evidenceIds" -> rtmRequest.media.evidenceIds,
-                    "fileIds"     -> rtmRequest.media.fileIds,
-                    "partnerId"   -> rtmRequest.media.partnerId,
-                  )
-                }
-                ""
-              },
-              k8s => k8s.body
-            )
-        )
-      )
   }
 }
