@@ -30,6 +30,14 @@ object TranscodedVideo extends PlaybackJsonFields {
     (JsPath \ transcodedVideoField).readNullable[Boolean].map(TranscodedVideo(_))
 }
 
+case class Page(value: Option[String])
+
+object Page extends PlaybackJsonFields {
+  implicit val page: Reads[Page] =
+    (JsPath \ pageField).readNullable[String].map(Page(_))
+}
+
+
 // ------ Info data ------
 //{
 //  token: String
@@ -37,6 +45,7 @@ object TranscodedVideo extends PlaybackJsonFields {
 //    browserName: string
 //    fileExtension: string
 //    transcodedVideo: boolean
+//    page: string
 //    aggregation: {
 //      360p:  {
 //          - totalViewDuration: number
@@ -64,6 +73,7 @@ case class Data(
   browserName: Option[BrowserName],
   fileExtension: Option[FileExtension],
   transcodedVideo: Option[TranscodedVideo],
+  page: Option[Page],
   aggregationEvents: AggregationEvents,
 )
 
@@ -72,6 +82,7 @@ object Data extends PlaybackJsonFields {
     (JsPath \ dataField).readNullable[BrowserName] and
       (JsPath \ dataField).readNullable[FileExtension] and
       (JsPath \ dataField).readNullable[TranscodedVideo] and
+      (JsPath \ dataField).readNullable[Page] and
       (JsPath \ dataField).read[AggregationEvents]
   )(Data.apply _)
 }
@@ -105,6 +116,7 @@ object Duration extends PlaybackJsonFields {
 //    browserName: string
 //    fileExtension: string
 //    transcodedVideo: boolean
+//    page: string
 //    buffering: {
 //       currentResolution: string,
 //       duration: Number
@@ -128,6 +140,7 @@ case class StalledData(
   browserName: Option[BrowserName],
   fileExtension: Option[FileExtension],
   transcodedVideo: Option[TranscodedVideo],
+  page: Option[Page],
   buffering: Buffering
 )
 
@@ -136,6 +149,7 @@ object StalledData extends PlaybackJsonFields {
     (JsPath \ dataField).readNullable[BrowserName] and
       (JsPath \ dataField).readNullable[FileExtension] and
       (JsPath \ dataField).readNullable[TranscodedVideo] and
+      (JsPath \ dataField).readNullable[Page] and
       (JsPath \ dataField).read[Buffering]
   )(StalledData.apply _)
 }

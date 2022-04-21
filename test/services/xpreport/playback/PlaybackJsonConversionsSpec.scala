@@ -54,6 +54,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       )
       val fileExtension = ".flv"
       val browserName = "Firefox"
+      val page = "CEP"
       val playbackInfoJson =
         s"""
            |{
@@ -62,6 +63,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
            |        "$browserNameField": "$browserName",
            |        "$fileExtensionField": "$fileExtension",
            |        "$transcodedVideoField": true,
+           |        "$pageField": "$page",
            |        "$aggregationEventsField": {
            |            "$res360" : {
            |                "$totalViewDurationField": ${viewDuration(res360)},
@@ -106,6 +108,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
             Some(BrowserName(Some(browserName))),
             Some(FileExtension(Some(fileExtension))),
             Some(TranscodedVideo(Some(true))),
+            Some(Page(Some(page))),
             AggregationEvents(
               Map(
                 res360 -> Duration(
@@ -151,6 +154,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "stream_token" -> streamToken,
         "browser_name" -> browserName,
         "file_extension" -> fileExtension,
+        "page" -> page,
         "transcoded_video" -> true
       ) ++ Seq (
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
@@ -219,6 +223,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
             Some(BrowserName(None)),
             Some(FileExtension(None)),
             Some(TranscodedVideo(Some(false))),
+            Some(Page(None)),
             AggregationEvents(
               Map(
                 res360 -> Duration(
@@ -243,7 +248,8 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "stream_token" -> streamToken,
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
-        "transcoded_video" -> false
+        "transcoded_video" -> false,
+        "page" -> "unknown",
       ) ++ Seq(
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
@@ -330,6 +336,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
             Some(BrowserName(None)),
             Some(FileExtension(None)),
             Some(TranscodedVideo(None)),
+            Some(Page(None)),
             AggregationEvents(
               Map(
                 res360 -> Duration(
@@ -354,6 +361,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "stream_token" -> "unknown",
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
+        "page" -> "unknown",
         "transcoded_video" -> "unknown"
       ) ++ Seq(
         "lag_ratio_all" -> (inputDelay.foldLeft(0.0)(_ + _._2) + bufferingTime.foldLeft(0.0)(_ + _._2)) / viewDuration.foldLeft(0.0)(_ + _._2),
@@ -420,6 +428,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
             Some(BrowserName(None)),
             Some(FileExtension(None)),
             Some(TranscodedVideo(None)),
+            Some(Page(None)),
             AggregationEvents(
               Map(
                 res360 -> Duration(
@@ -445,6 +454,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
         "transcoded_video" -> "unknown",
+        "page" -> "unknown",
       ) ++ Seq (
         "lag_ratio_all" -> 0.0,
         "input_delay_all" -> inputDelay.foldLeft(0.0)(_ + _._2),
@@ -484,6 +494,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
             Some(BrowserName(None)),
             Some(FileExtension(None)),
             Some(TranscodedVideo(None)),
+            Some(Page(None)),
             Buffering(
               Some(CurrentResolution(Some(res1080.toInt))),
               Some(StalledDuration(None)),
@@ -501,6 +512,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
         "transcoded_video" -> "unknown",
+        "page" -> "unknown",
         "buffering_resolution" -> res1080.toInt,
       )
       logDetail.toSet mustBe expectedLogDetail.toSet
@@ -526,6 +538,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
             Some(BrowserName(None)),
             Some(FileExtension(None)),
             Some(TranscodedVideo(None)),
+            Some(Page(None)),
             Buffering(
               Some(CurrentResolution(Some(res1080.toInt))),
               Some(StalledDuration(None)),
@@ -543,6 +556,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
         "transcoded_video" -> "unknown",
+        "page" -> "unknown",
         "buffering_resolution" -> res1080.toInt
       )
       logDetail.toSet mustBe expectedLogDetail.toSet
@@ -573,6 +587,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
             Some(BrowserName(None)),
             Some(FileExtension(None)),
             Some(TranscodedVideo(None)),
+            Some(Page(None)),
             Buffering(
               Some(CurrentResolution(Some(res1080.toInt))),
               Some(StalledDuration(Some(stalledDuration))),
@@ -590,6 +605,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "browser_name" -> "unknown",
         "file_extension" -> "unknown",
         "transcoded_video" -> "unknown",
+        "page" -> "unknown",
         "buffering_resolution" -> res1080.toInt,
         "buffering_duration" -> stalledDuration,
       )
@@ -603,6 +619,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
       val stalledReason = "Seek"
       val fileExtension = ".mp4"
       val browserName = "Chrome"
+      val page = "EDP"
       val stalledInfoJson =
         s"""
            |{
@@ -612,6 +629,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
            |        "$browserNameField": "$browserName",
            |        "$fileExtensionField": "$fileExtension",
            |        "$transcodedVideoField": true,
+           |        "$pageField": "$page",
            |        "$bufferingField": {
            |            "$currentResolutionField" : $res1080,
            |            "$stalledDurationField" : $stalledDuration,
@@ -629,6 +647,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
             Some(BrowserName(Some(browserName))),
             Some(FileExtension(Some(fileExtension))),
             Some(TranscodedVideo(Some(true))),
+            Some(Page(Some(page))),
             Buffering(
               Some(CurrentResolution(Some(res1080.toInt))),
               Some(StalledDuration(Some(stalledDuration))),
@@ -645,6 +664,7 @@ class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions 
         "event_state" -> event,
         "browser_name" -> browserName,
         "file_extension" -> fileExtension,
+        "page" -> page,
         "transcoded_video" -> true,
         "buffering_resolution" -> res1080.toInt,
         "buffering_duration" -> stalledDuration,
