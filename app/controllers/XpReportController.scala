@@ -59,7 +59,7 @@ class XpReportController @Inject()(
   private def logStalledImpl(fileIdent: FileIdent, stalledInfo: StalledInfo): Unit = {
     val event = stalledInfo.event.flatMap(_.value).getOrElse("START")
     stalledInfo.data match {
-      case Some(StalledData(_, _, _, buffering)) =>
+      case Some(StalledData(_, _, _, _, buffering)) =>
         // Log only when buffering duration larger than 2s
         if (event != "END" || (event == "END" && buffering.stalledDuration.flatMap(_.value).getOrElse(0.0) >= 2000)) {
           val logVars: Seq[LogVariable] = Seq(
