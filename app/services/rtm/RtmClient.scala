@@ -10,7 +10,6 @@ import models.common.EmptyMediaIdent
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
 
-import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future}
 
 trait RtmClient {
@@ -42,6 +41,7 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
     ws.url(rtmRequest.toString)
       .addHttpHeaders(header.toSeq: _*)
       .get()
+      .map(res => logOnError(res)(Seq("path" -> rtmRequest.path, "query" -> rtmRequest.queryString)))
   }
 
   def probe[A](rtmRequest: RtmRequest[A]): Future[WSResponse] = {
@@ -58,5 +58,14 @@ class RtmClientImpl @Inject()(ws: WSClient, config: Config)(implicit ex: Executi
       .withMethod("POST")
       .withHttpHeaders(("Content-Type", "application/json"))
       .execute()
+      .map(res => logOnError(res)(Seq("path" -> rtmRequest.path, "query" -> rtmRequest.queryString)))
+  }
+
+  private def logOnError(res: WSResponse)(logVars: Seq[(String, Any)]): WSResponse = {
+    if (res.status < 200 || res.status > 299) {
+      logger.error("rtm response not ok")(logVars :+ ("status" -> res.status): _*)
+    }
+
+    res
   }
 }
