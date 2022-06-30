@@ -1,7 +1,6 @@
 package services.sage
 
 import com.axon.sage.protos.common.common.Tid
-import com.axon.sage.protos.common.common.Tid.EntityType
 import com.axon.sage.protos.query.evidence_message.{EvidenceFieldSelect, Evidence => SageEvidenceProto}
 import com.axon.sage.protos.common.common.Tid.EntityType.{EVIDENCE, FILE}
 import com.axon.sage.protos.query.argument.UrlTTL
@@ -24,7 +23,6 @@ import play.api.cache.AsyncCacheApi
 import utils.{HdlCache, HdlTtl}
 
 import java.net.URL
-import java.util.UUID
 
 trait SageClient {
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
