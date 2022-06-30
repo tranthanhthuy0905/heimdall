@@ -26,7 +26,6 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
         HdlCache.PresignedUrl
           .get(key)
           .map { url =>
-            logger.error("Get url from Redis successfully")("url" -> url)
             Future.successful(url)
           }
           .getOrElse {
@@ -46,7 +45,6 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
     val sageResFuture = getUrlfromSage(file, ttl)
     val dreddResFuture = getUrlfromDredd(file, request, ttl)
 
-    logger.error("Out of Cache ")("uieg" -> "wefwe")
     // Always return dredd url response to keep performance of application the same
     for {
       dreddRes <- dreddResFuture recoverWith {
