@@ -27,9 +27,8 @@ import java.net.URL
 import java.util.UUID
 
 trait SageClient {
-  def getDataSeq[A](ids: Seq[EvidenceId], query: QueryRequest, tidType: EntityType) : Future[Either[HeimdallError, Seq[A]]]
-
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
+  def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]]
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]]
 
   def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]]
@@ -66,26 +65,27 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   val queryService = QueryServiceGrpc.stub(channel).withCallCredentials(callerSecret(credential(secret)))
   def queryServiceFn = queryService.withDeadlineAfter(queryDeadline, TimeUnit.SECONDS)
 
-  override def getDataSeq[A](ids: Seq[EvidenceId], query: QueryRequest, tidType: EntityType): Future[Either[HeimdallError, Seq[A]]] = {
+  override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
+    for {
+      res <- getEvidences(Seq(id), query)
+      evidence <- Future.successful(res.map(evidences => evidences.find(evidence => evidence.evidenceId equals id.entityId)))
+    } yield evidence.fold(l => Left(l), r => r.toRight(HeimdallError("evidence not found", HeimdallError.ErrorCode.NOT_FOUND)))
+  }
+
+  override def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]] = {
     val request = ReadRequest(
       path = query.path,
       context = Some(requestContext),
       criteria = Criteria.Tids(Tids(ids.map(id => Tid(
-        entityType = tidType,
+        entityType = EVIDENCE,
         entityId = id.entityId.toString,
         entityDomain = id.partnerId.toString
       ))))
     )
+
     for {
       res <- queryServiceFn.read(request).map(toEither)
-    } yield res.map(_.map(_.entity.value.asInstanceOf[A]))
-  }
-
-  override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
-    for {
-      res <- getDataSeq[Evidence](Seq(id), query, EVIDENCE)
-      evidence <- Future.successful(res.map(evidences => evidences.find(evidence => evidence.evidenceId equals id.entityId)))
-    } yield evidence.fold(l => Left(l), r => r.toRight(HeimdallError("evidence not found", HeimdallError.ErrorCode.NOT_FOUND)))
+    } yield res.map(entities => entities.map(entity => Evidence.fromSageProto(entity.entity.value.asInstanceOf[SageEvidenceProto])))
   }
 
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]] = {
@@ -124,7 +124,19 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   }
 
   override def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]] = {
-    getDataSeq[File](Seq(id), query, FILE).map(_.map(_.headOption).fold(l => Left(l), r => r.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
+    val request = ReadRequest(
+      path = query.path,
+      context = Some(requestContext),
+      criteria = Criteria.Tids(Tids(Seq(Tid(
+        entityType = FILE,
+        entityId = id.entityId.toString,
+        entityDomain = id.partnerId.toString
+      ))))
+    )
+    val fileRes = for {
+      res <- queryServiceFn.read(request).map(toEither)
+    } yield res.map(_.map(_.entity.value.asInstanceOf[File]))
+    fileRes.map(_.map(_.headOption).fold(l => Left(l), r => r.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
   }
 
   override def getUrl(file: FileIdent, ttl: Option[Duration]): Future[Either[HeimdallError, URL]] = {
