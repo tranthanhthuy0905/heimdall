@@ -5,19 +5,19 @@ import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
 import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
-import services.dredd.DreddClient
 import services.komrade.{KomradeClient, PlaybackFeatures}
 import services.rtm.{HeimdallRoutes, RtmQueryHelper, RtmRequest}
+import services.url.PresignedUrlRequest
 import services.zookeeper.HeimdallLoadBalancer
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 case class RtmRequestAction @Inject()(
-  config: Config,
-  dredd: DreddClient,
-  komradeClient: KomradeClient,
-  loadBalancer: HeimdallLoadBalancer,
+     config: Config,
+     presignedUrlReq: PresignedUrlRequest,
+     komradeClient: KomradeClient,
+     loadBalancer: HeimdallLoadBalancer,
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, RtmRequest]
     with LazyLogging
@@ -35,7 +35,7 @@ case class RtmRequestAction @Inject()(
   private def buildRtmQueries[A](input: HeimdallRequest[A], isMultiAudioEnabled: Boolean) = {
     RtmQueryHelper(input.path, input.queryString, isMultiAudioEnabled).map { rtmQuery =>
       for {
-        presignedUrls <- Future.traverse(input.media.toList)(dredd.getUrl(_, input))
+        presignedUrls <- Future.traverse(input.media.toList)(presignedUrlReq.getUrl(_,input))
         endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString)
         queries       <- Future.successful(RtmQueryHelper.getRTMQueries(rtmQuery.params, Some(input.watermark), input.playbackSettings, presignedUrls, input.audienceId))
       } yield {

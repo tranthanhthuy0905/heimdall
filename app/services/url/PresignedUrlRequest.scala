@@ -1,6 +1,6 @@
 package services.url
 
-import models.common.FileIdent
+import models.common.{FileIdent, HeimdallRequest}
 import com.evidence.service.common.logging.LazyLogging
 import services.dredd.DreddClient
 import services.sage.SageClient
@@ -11,10 +11,12 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 case class PresignedUrlRequest(sage: SageClient, dredd: DreddClient) extends LazyLogging{
-  def getUrl(file: FileIdent, ttl: Duration = HdlTtl.urlExpired): Future[URL] = {
-
+  def getUrl[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration = HdlTtl.urlExpired): Future[URL] = {
+    getUrlfromDredd(file, ttl, request)
   }
-  private def convertTTL(duration: Duration): Future[Duration] = {
 
+  // Internal get-url logic
+  private def getUrlfromDredd[A](file: FileIdent, ttl: Duration, request: HeimdallRequest[A]) : Future[URL] = {
+    dredd.getUrl(file, request, ttl)
   }
 }
