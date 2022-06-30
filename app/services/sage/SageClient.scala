@@ -1,28 +1,41 @@
 package services.sage
 
 import com.axon.sage.protos.common.common.Tid
+import com.axon.sage.protos.common.common.Tid.EntityType
 import com.axon.sage.protos.query.evidence_message.{EvidenceFieldSelect, Evidence => SageEvidenceProto}
-import com.axon.sage.protos.common.common.Tid.EntityType.EVIDENCE
+import com.axon.sage.protos.common.common.Tid.EntityType.{EVIDENCE, FILE}
+import com.axon.sage.protos.query.argument.UrlTTL
+import com.axon.sage.protos.query.file_message.{DownloadUrlFieldSelect, File, FileFieldSelect}
 import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
+import com.google.protobuf.duration.Duration
 import com.typesafe.config.Config
-import java.util.concurrent.{Executor, TimeUnit}
 
+import java.util.concurrent.{Executor, TimeUnit}
 import javax.inject.{Inject, Singleton}
 import io.grpc.{CallCredentials, Metadata}
-import models.common.HeimdallError
+import models.common.{FileIdent, HeimdallError}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import play.api.cache.AsyncCacheApi
 import utils.{HdlCache, HdlTtl}
 
+import java.net.URL
+import java.util.UUID
+
 trait SageClient {
+  def getDataSeq[A](ids: Seq[EvidenceId], query: QueryRequest, tidType: EntityType) : Future[Either[HeimdallError, Seq[A]]]
+
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
-  def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]]
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]]
+
+  def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]]
+
+  def getUrl(file: FileIdent,
+              ttl: Option[Duration]): Future[Either[HeimdallError,URL]]
 }
 
 @Singleton
@@ -53,27 +66,26 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   val queryService = QueryServiceGrpc.stub(channel).withCallCredentials(callerSecret(credential(secret)))
   def queryServiceFn = queryService.withDeadlineAfter(queryDeadline, TimeUnit.SECONDS)
 
-  override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
-    for {
-      res <- getEvidences(Seq(id), query)
-      evidence <- Future.successful(res.map(evidences => evidences.find(evidence => evidence.evidenceId equals id.entityId)))
-    } yield evidence.fold(l => Left(l), r => r.toRight(HeimdallError("evidence not found", HeimdallError.ErrorCode.NOT_FOUND)))
-  }
-
-  override def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]] = {
+  override def getDataSeq[A](ids: Seq[EvidenceId], query: QueryRequest, tidType: EntityType): Future[Either[HeimdallError, Seq[A]]] = {
     val request = ReadRequest(
       path = query.path,
       context = Some(requestContext),
       criteria = Criteria.Tids(Tids(ids.map(id => Tid(
-        entityType = EVIDENCE,
+        entityType = tidType,
         entityId = id.entityId.toString,
         entityDomain = id.partnerId.toString
       ))))
     )
-
     for {
       res <- queryServiceFn.read(request).map(toEither)
-    } yield res.map(entities => entities.map(entity => Evidence.fromSageProto(entity.entity.value.asInstanceOf[SageEvidenceProto])))
+    } yield res.map(_.map(_.entity.value.asInstanceOf[A]))
+  }
+
+  override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
+    for {
+      res <- getDataSeq[Evidence](Seq(id), query, EVIDENCE)
+      evidence <- Future.successful(res.map(evidences => evidences.find(evidence => evidence.evidenceId equals id.entityId)))
+    } yield evidence.fold(l => Left(l), r => r.toRight(HeimdallError("evidence not found", HeimdallError.ErrorCode.NOT_FOUND)))
   }
 
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]] = {
@@ -109,6 +121,20 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
       case heimdallErr: HeimdallError => Left(heimdallErr)
       case otherErr => Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
     }
+  }
+
+  override def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]] = {
+    getDataSeq[File](Seq(id), query, FILE).map(_.map(_.headOption).fold(l => Left(l), r => r.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
+  }
+
+  override def getUrl(file: FileIdent, ttl: Option[Duration]): Future[Either[HeimdallError, URL]] = {
+    val fileReq = EvidenceId(file.fileId, file.partnerId)
+    val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = Option(UrlTTL(ttl))))).namePaths().map(_.toProtoPath)
+
+    for {
+      urlString <- getFile(fileReq, QueryRequest(selection)).map(_.map(_.downloadUrl.map(_.url).map(_.trim).filter(_.nonEmpty))
+        .fold(l => Left(l), r => r.toRight(HeimdallError("Presigned-url not found", HeimdallError.ErrorCode.NOT_FOUND))))
+    } yield urlString.map(new URL(_))
   }
 
   private case class callerSecret(header: Metadata) extends CallCredentials {
