@@ -31,7 +31,7 @@ trait SageClient {
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]]
 
   def getUrl(file: FileIdent,
-             ttl: Option[Duration]): Future[Either[HeimdallError,URL]]
+             ttl: Duration): Future[Either[HeimdallError,URL]]
 }
 
 @Singleton
@@ -133,16 +133,15 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     val fileRes = for {
       res <- queryServiceFn.read(request).map(toEither)
     } yield res.map(_.map(_.entity.value.asInstanceOf[File]))
-    fileRes.map(_.map(_.headOption).fold(l => Left(l), r => r.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
+    fileRes.map(_.map(_.headOption).flatMap(_.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
   }
 
-  override def getUrl(file: FileIdent, ttl: Option[Duration]): Future[Either[HeimdallError, URL]] = {
+  override def getUrl(file: FileIdent, ttl: Duration): Future[Either[HeimdallError, URL]] = {
     val fileReq = EvidenceId(file.fileId, file.partnerId)
-    val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = Option(UrlTTL(convertTTL(ttl)))))).namePaths().map(_.toProtoPath)
+    val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = Some(UrlTTL(Some(convertTTL(ttl))))))).namePaths().map(_.toProtoPath)
 
     for {
-      urlString <- getFile(fileReq, QueryRequest(selection)).map(_.map(_.downloadUrl.map(_.url).map(_.trim).filter(_.nonEmpty))
-        .fold(l => Left(l), r => r.toRight(HeimdallError("Presigned-url not found", HeimdallError.ErrorCode.NOT_FOUND))))
+      urlString <- getFile(fileReq, QueryRequest(selection)).map(manageDownloadUrl(_))
     } yield urlString.map(new URL(_))
   }
 
@@ -155,7 +154,12 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     override def thisUsesUnstableApi(): Unit = ()
   }
 
-  private def convertTTL(ttl: Option[Duration]): Option[ProtobufDuration] = {
-    ttl.map(duration => ProtobufDuration(nanos = duration.toSeconds.toInt))
+  def convertTTL(ttl: Duration): ProtobufDuration = {
+    ProtobufDuration(nanos = ttl.toSeconds.toInt)
+  }
+
+  private def manageDownloadUrl(input: Either[HeimdallError, File]): Either[HeimdallError, String] = {
+    val urlString = input.map(_.downloadUrl.map(_.url).map(_.trim).filter(_.nonEmpty))
+    urlString.flatMap(_.toRight(HeimdallError("Presigned-url not found", HeimdallError.ErrorCode.NOT_FOUND)))
   }
 }
