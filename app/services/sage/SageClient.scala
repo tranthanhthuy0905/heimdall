@@ -1,7 +1,6 @@
 package services.sage
 
 import com.axon.sage.protos.common.common.Tid
-import com.axon.sage.protos.common.common.Tid.EntityType
 import com.axon.sage.protos.query.evidence_message.{EvidenceFieldSelect, Evidence => SageEvidenceProto}
 import com.axon.sage.protos.common.common.Tid.EntityType.{EVIDENCE, FILE}
 import com.axon.sage.protos.query.argument.UrlTTL
@@ -10,7 +9,8 @@ import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
-import com.google.protobuf.duration.Duration
+import scala.concurrent.duration.Duration
+import com.google.protobuf.duration.{Duration => ProtobufDuration}
 import com.typesafe.config.Config
 
 import java.util.concurrent.{Executor, TimeUnit}
@@ -24,17 +24,14 @@ import play.api.cache.AsyncCacheApi
 import utils.{HdlCache, HdlTtl}
 
 import java.net.URL
-import java.util.UUID
 
 trait SageClient {
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
   def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]]
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]]
 
-  def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]]
-
   def getUrl(file: FileIdent,
-              ttl: Option[Duration]): Future[Either[HeimdallError,URL]]
+             ttl: Duration): Future[Either[HeimdallError,URL]]
 }
 
 @Singleton
@@ -53,7 +50,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   val keepAliveConfig = Try(sageConfig.getConfig("keepalive")).getOrElse(null)
 
   val channel         = buildChannel(
-    host, port, ssl, keepAliveConfig, 
+    host, port, ssl, keepAliveConfig,
     RetryConfig(
       methods = Seq(
         RetryMethod("Read", "QueryService"),
@@ -91,9 +88,9 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]] = {
     def evidenceWithContentType = {
       val selection = EvidenceFieldSelect(
-          partnerId = true,
-          id = true,
-          contentType = true
+        partnerId = true,
+        id = true,
+        contentType = true
       ).namePaths().map(_.toProtoPath)
 
       getEvidence(id, QueryRequest(selection))
@@ -105,25 +102,25 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     cache.getOrElseUpdate[String](key, HdlTtl.evidenceContentTypeMemTTL) {
       // if not found then get from redis
       HdlCache.EvidenceContentType.get(key)
-      .map(Future.successful)
-      .getOrElse {
-        // if not found then get from sage
-        evidenceWithContentType.flatMap {
-          case Left(l) => Future.failed(l)
-          case Right(evidence) =>
-            HdlCache.EvidenceContentType.set(key, evidence.contentType)
-            Future.successful(evidence.contentType)
+        .map(Future.successful)
+        .getOrElse {
+          // if not found then get from sage
+          evidenceWithContentType.flatMap {
+            case Left(l) => Future.failed(l)
+            case Right(evidence) =>
+              HdlCache.EvidenceContentType.set(key, evidence.contentType)
+              Future.successful(evidence.contentType)
+          }
         }
+    }
+      .map(Right(_))
+      .recover {
+        case heimdallErr: HeimdallError => Left(heimdallErr)
+        case otherErr => Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
       }
-    }
-    .map(Right(_))
-    .recover {
-      case heimdallErr: HeimdallError => Left(heimdallErr)
-      case otherErr => Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
-    }
   }
 
-  override def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]] = {
+  private def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]] = {
     val request = ReadRequest(
       path = query.path,
       context = Some(requestContext),
@@ -136,16 +133,15 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     val fileRes = for {
       res <- queryServiceFn.read(request).map(toEither)
     } yield res.map(_.map(_.entity.value.asInstanceOf[File]))
-    fileRes.map(_.map(_.headOption).fold(l => Left(l), r => r.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
+    fileRes.map(_.map(_.headOption).flatMap(_.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
   }
 
-  override def getUrl(file: FileIdent, ttl: Option[Duration]): Future[Either[HeimdallError, URL]] = {
+  override def getUrl(file: FileIdent, ttl: Duration): Future[Either[HeimdallError, URL]] = {
     val fileReq = EvidenceId(file.fileId, file.partnerId)
-    val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = Option(UrlTTL(ttl))))).namePaths().map(_.toProtoPath)
+    val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = Some(UrlTTL(Some(convertTTL(ttl))))))).namePaths().map(_.toProtoPath)
 
     for {
-      urlString <- getFile(fileReq, QueryRequest(selection)).map(_.map(_.downloadUrl.map(_.url).map(_.trim).filter(_.nonEmpty))
-        .fold(l => Left(l), r => r.toRight(HeimdallError("Presigned-url not found", HeimdallError.ErrorCode.NOT_FOUND))))
+      urlString <- getFile(fileReq, QueryRequest(selection)).map(manageDownloadUrl(_))
     } yield urlString.map(new URL(_))
   }
 
@@ -156,5 +152,14 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
       })
     }
     override def thisUsesUnstableApi(): Unit = ()
+  }
+
+  def convertTTL(ttl: Duration): ProtobufDuration = {
+    ProtobufDuration(nanos = ttl.toSeconds.toInt)
+  }
+
+  private def manageDownloadUrl(input: Either[HeimdallError, File]): Either[HeimdallError, String] = {
+    val urlString = input.map(_.downloadUrl.map(_.url).map(_.trim).filter(_.nonEmpty))
+    urlString.flatMap(_.toRight(HeimdallError("Presigned-url not found", HeimdallError.ErrorCode.NOT_FOUND)))
   }
 }
