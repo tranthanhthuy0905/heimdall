@@ -21,6 +21,7 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient)(i
     val sageResFuture = getUrlfromSage(file, ttl)
     val dreddResFuture = getUrlfromDredd(file, request, ttl)
 
+    // Always return dredd url response to keep performance of application the same
     for {
       sageRes <- sageResFuture
       dreddRes <- dreddResFuture
