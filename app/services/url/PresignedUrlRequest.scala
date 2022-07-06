@@ -3,6 +3,7 @@ package services.url
 import com.evidence.service.common.ServiceGlobal.statsd
 import models.common.{FileIdent, HeimdallRequest}
 import com.evidence.service.common.logging.LazyLogging
+import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import services.dredd.DreddClient
 import services.sage.SageClient
 import utils.{HdlCache, HdlTtl}
@@ -15,7 +16,7 @@ import play.api.cache.AsyncCacheApi
 import javax.inject.Inject
 import scala.util.{Failure}
 
-case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, cache: AsyncCacheApi)(implicit executionContext: ExecutionContext) extends LazyLogging{
+case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, cache: AsyncCacheApi)(implicit executionContext: ExecutionContext) extends LazyLogging with StrictStatsD{
   def getUrl[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration = HdlTtl.urlExpired): Future[URL] = {
     getUrlwithCache(file, request, ttl)
   }
