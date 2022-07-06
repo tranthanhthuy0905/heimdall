@@ -9,7 +9,8 @@ import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
-import com.google.protobuf.duration.Duration
+import scala.concurrent.duration.Duration
+import com.google.protobuf.duration.{Duration => ProtobufDuration}
 import com.typesafe.config.Config
 
 import java.util.concurrent.{Executor, TimeUnit}
@@ -29,10 +30,8 @@ trait SageClient {
   def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]]
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]]
 
-  def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]]
-
   def getUrl(file: FileIdent,
-              ttl: Option[Duration]): Future[Either[HeimdallError,URL]]
+             ttl: Option[Duration]): Future[Either[HeimdallError,URL]]
 }
 
 @Singleton
@@ -51,7 +50,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   val keepAliveConfig = Try(sageConfig.getConfig("keepalive")).getOrElse(null)
 
   val channel         = buildChannel(
-    host, port, ssl, keepAliveConfig, 
+    host, port, ssl, keepAliveConfig,
     RetryConfig(
       methods = Seq(
         RetryMethod("Read", "QueryService"),
@@ -89,9 +88,9 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]] = {
     def evidenceWithContentType = {
       val selection = EvidenceFieldSelect(
-          partnerId = true,
-          id = true,
-          contentType = true
+        partnerId = true,
+        id = true,
+        contentType = true
       ).namePaths().map(_.toProtoPath)
 
       getEvidence(id, QueryRequest(selection))
@@ -103,25 +102,25 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     cache.getOrElseUpdate[String](key, HdlTtl.evidenceContentTypeMemTTL) {
       // if not found then get from redis
       HdlCache.EvidenceContentType.get(key)
-      .map(Future.successful)
-      .getOrElse {
-        // if not found then get from sage
-        evidenceWithContentType.flatMap {
-          case Left(l) => Future.failed(l)
-          case Right(evidence) =>
-            HdlCache.EvidenceContentType.set(key, evidence.contentType)
-            Future.successful(evidence.contentType)
+        .map(Future.successful)
+        .getOrElse {
+          // if not found then get from sage
+          evidenceWithContentType.flatMap {
+            case Left(l) => Future.failed(l)
+            case Right(evidence) =>
+              HdlCache.EvidenceContentType.set(key, evidence.contentType)
+              Future.successful(evidence.contentType)
+          }
         }
+    }
+      .map(Right(_))
+      .recover {
+        case heimdallErr: HeimdallError => Left(heimdallErr)
+        case otherErr => Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
       }
-    }
-    .map(Right(_))
-    .recover {
-      case heimdallErr: HeimdallError => Left(heimdallErr)
-      case otherErr => Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
-    }
   }
 
-  override def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]] = {
+  private def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]] = {
     val request = ReadRequest(
       path = query.path,
       context = Some(requestContext),
@@ -139,7 +138,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
 
   override def getUrl(file: FileIdent, ttl: Option[Duration]): Future[Either[HeimdallError, URL]] = {
     val fileReq = EvidenceId(file.fileId, file.partnerId)
-    val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = Option(UrlTTL(ttl))))).namePaths().map(_.toProtoPath)
+    val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = Option(UrlTTL(convertTTL(ttl)))))).namePaths().map(_.toProtoPath)
 
     for {
       urlString <- getFile(fileReq, QueryRequest(selection)).map(_.map(_.downloadUrl.map(_.url).map(_.trim).filter(_.nonEmpty))
@@ -154,5 +153,9 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
       })
     }
     override def thisUsesUnstableApi(): Unit = ()
+  }
+
+  private def convertTTL(ttl: Option[Duration]): Option[ProtobufDuration] = {
+    ttl.map(duration => ProtobufDuration(nanos = duration.toSeconds.toInt))
   }
 }
