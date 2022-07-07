@@ -9,7 +9,6 @@ import utils.HdlTtl
 import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
-
 import javax.inject.Inject
 
 case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient)(implicit executionContext: ExecutionContext) extends LazyLogging{
@@ -23,9 +22,11 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient)(i
 
     // Always return dredd url response to keep performance of application the same
     for {
-      sageRes <- sageResFuture
       dreddRes <- dreddResFuture
-    } yield dreddRes
+      sageRes <- sageResFuture recoverWith{
+        case e => Future.successful(dreddRes)
+      }
+    } yield sageRes
   }
 
   // Internal get-url logic
