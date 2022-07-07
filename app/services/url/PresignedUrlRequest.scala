@@ -23,7 +23,7 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient)(i
     // Always return dredd url response to keep performance of application the same
     for {
       dreddRes <- dreddResFuture
-      sageRes <- sageResFuture recoverWith{
+      _ <- sageResFuture recoverWith{
         case e => Future.successful(dreddRes)
       }
     } yield dreddRes
