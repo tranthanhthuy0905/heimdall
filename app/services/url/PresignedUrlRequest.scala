@@ -26,7 +26,7 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient)(i
       sageRes <- sageResFuture recoverWith{
         case e => Future.successful(dreddRes)
       }
-    } yield sageRes
+    } yield dreddRes
   }
 
   // Internal get-url logic
