@@ -59,25 +59,14 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
               Future.failed(e)
             }
           }
-      sageRes <- sageResFuture recover {
+      _ <- sageResFuture recover {
         case e => {
           // Create a metric graph to visualize the number of times Sage fails to return presigned-url
           statsd.increment("presigned_url_error", "source:sage")
           dreddRes
         }
       }
-    } yield {
-      compareClients(sageRes, dreddRes)
-    }
-  }
-
-  private def compareClients(sageRes: URL, dreddRes: URL) : URL = {
-    if (!sageRes.equals(dreddRes)) {
-      // Create a metric graph to visualize the number of time Sage response is different from that of Dredd
-      // Then, to acknowledge whether this case happens and it is potential issue or not
-      statsd.increment("sage_diff")
-    }
-    dreddRes
+    } yield dreddRes
   }
 
   // Internal get-url logic
