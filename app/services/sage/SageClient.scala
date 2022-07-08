@@ -138,7 +138,8 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
 
   override def getUrl(file: FileIdent, ttl: Duration): Future[Either[HeimdallError, URL]] = {
     val fileReq = EvidenceId(file.fileId, file.partnerId)
-    val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = Some(UrlTTL(Some(convertTTL(ttl))))))).namePaths().map(_.toProtoPath)
+    val urlArg = Some(UrlTTL(duration=Some(convertTTL(ttl))))
+    val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = urlArg, expiredAt = true))).namePaths().map(_.toProtoPath)
 
     for {
       urlString <- getFile(fileReq, QueryRequest(selection)).map(manageDownloadUrl(_))
@@ -155,7 +156,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   }
 
   def convertTTL(ttl: Duration): ProtobufDuration = {
-    ProtobufDuration(nanos = ttl.toSeconds.toInt)
+    ProtobufDuration(seconds = ttl.toSeconds, nanos = ttl.toNanos.toInt)
   }
 
   private def manageDownloadUrl(input: Either[HeimdallError, File]): Either[HeimdallError, String] = {
