@@ -43,30 +43,25 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
   }
 
   private def getUrlTest[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
-    val sageResFuture = getUrlfromSage(file, ttl)
-    val dreddResFuture = getUrlfromDredd(file, request, ttl)
+    val sageResFuture = monitoring(getUrlfromSage(file, ttl), "sage")
+    val dreddResFuture = monitoring(getUrlfromDredd(file, request, ttl), "dredd")
 
     // Always return dredd url response to keep performance of application the same
     for {
-      dreddRes <- dreddResFuture recoverWith {
-            case e => {
-              statsd.increment("presigned_url_error", "source:dredd")
-              sageResFuture onComplete{
-                case Failure(err) => {
-                  statsd.increment("presigned_url_error", "source:sage")
-                }
-              }
-              Future.failed(e)
-            }
-          }
+      dreddRes <- dreddResFuture
       _ <- sageResFuture recover {
-        case e => {
-          // Create a metric graph to visualize the number of times Sage fails to return presigned-url
-          statsd.increment("presigned_url_error", "source:sage")
-          dreddRes
-        }
+        case e => dreddRes
       }
     } yield dreddRes
+  }
+
+  private def monitoring(res: Future[URL], client: String): Future[URL] = {
+    res onComplete {
+      case Failure(err) => {
+        statsd.increment("presigned_url_error", s"source:$client")
+      }
+    }
+    res
   }
 
   // Internal get-url logic
