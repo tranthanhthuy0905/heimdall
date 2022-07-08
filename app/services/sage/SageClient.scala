@@ -156,7 +156,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   }
 
   def convertTTL(ttl: Duration): ProtobufDuration = {
-    ProtobufDuration(seconds = ttl.toSeconds, nanos = ttl.toNanos.toInt)
+    ProtobufDuration(seconds = ttl.toSeconds)
   }
 
   private def manageDownloadUrl(input: Either[HeimdallError, File]): Either[HeimdallError, String] = {
