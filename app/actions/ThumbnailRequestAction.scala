@@ -2,16 +2,19 @@ package actions
 
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
+
 import javax.inject.Inject
 import models.common._
 import play.api.mvc.{ActionRefiner, Results}
+
 import scala.concurrent.ExecutionContext
 import services.dredd.DreddClient
 import services.rti.ThumbnailRequest
+import services.url.PresignedUrlRequest
 import utils.UUIDHelper
 
 case class ThumbnailRequestAction @Inject()(
-  dreddClient: DreddClient
+                                             presignedUrlReq: PresignedUrlRequest,
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, ThumbnailRequest]
     with LazyLogging
@@ -23,7 +26,7 @@ case class ThumbnailRequestAction @Inject()(
   def refine[A](request: HeimdallRequest[A]) = {
     val result = for {
       file         <- FutureEither.successful(request.media.headOption.toRight(Results.BadRequest))
-      presignedUrl <- FutureEither(dreddClient.getUrl(file, request).map(Right(_)))
+      presignedUrl <- FutureEither(presignedUrlReq.getUrl(file, request).map(Right(_)))
     } yield {
       ThumbnailRequest(file, presignedUrl, thumbnailWidth, thumbnailHeight, request)
     }
