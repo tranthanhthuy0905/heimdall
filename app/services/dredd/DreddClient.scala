@@ -1,20 +1,18 @@
 package services.dredd
 
-import java.net.URL
-import java.util.UUID
-
 import com.evidence.api.thrift.v1.TidEntities
 import com.evidence.service.common.finagle.FinagleClient
 import com.evidence.service.common.finagle.FutureConverters._
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.dredd.thrift._
 import com.typesafe.config.Config
-import javax.inject.{Inject, Singleton}
 import models.common.{FileIdent, HeimdallRequest}
-import play.api.cache.AsyncCacheApi
-import utils.{HdlCache, HdlTtl}
+import utils.HdlTtl
 
-import scala.concurrent.duration.{Duration, HOURS, MINUTES}
+import java.net.URL
+import java.util.UUID
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
 trait DreddClient {

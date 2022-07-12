@@ -1,18 +1,17 @@
 package services.url
 
-import models.common.{FileIdent, HeimdallRequest}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
+import models.common.{FileIdent, HeimdallRequest}
+import play.api.cache.AsyncCacheApi
 import services.dredd.DreddClient
 import services.sage.SageClient
 import utils.{HdlCache, HdlTtl}
 
 import java.net.URL
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration.Duration
-import play.api.cache.AsyncCacheApi
-
 import javax.inject.Inject
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, cache: AsyncCacheApi)(implicit executionContext: ExecutionContext) extends LazyLogging with StrictStatsD{
