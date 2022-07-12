@@ -22,7 +22,7 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
   }
   private def getUrlwithCache[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
     if (ttl >= HdlTtl.urlExpired) {
-      val key = s"$file.partnerId-$file.evidenceId-$file.fileId"
+      val key = s"${file.partnerId}-${file.evidenceId}-${file.fileId}"
       cache.getOrElseUpdate[URL](key, HdlTtl.urlMemTTL) {
         HdlCache.PresignedUrl
           .get(key)
