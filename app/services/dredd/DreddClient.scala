@@ -31,7 +31,7 @@ trait DreddClient {
 }
 
 @Singleton
-class CachedDreddClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex: ExecutionContext)
+class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
     extends DreddClient
     with LazyLogging {
 
@@ -90,37 +90,16 @@ class CachedDreddClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(impl
       }
     }
 
-    def getUrl =
-      for {
-        presignedUrlResponse <- getPresignedUrl(
-          partnerId,
-          evidenceId,
-          fileId,
-          request,
-          ttl
-        )
-        url <- extractUrlFromDreddResponse(presignedUrlResponse)
-      } yield url
-
-    if (ttl >= HdlTtl.urlExpired) {
-      val key = s"$partnerId-$evidenceId-$fileId"
-      cache.getOrElseUpdate[URL](key, HdlTtl.urlMemTTL) {
-        HdlCache.PresignedUrl
-          .get(key)
-          .map { url =>
-            Future.successful(url)
-          }
-          .getOrElse {
-            val res = getUrl.map { url =>
-              {
-                HdlCache.PresignedUrl.set(key, url)
-                url
-              }
-            }
-            res
-          }
-      }
-    } else getUrl
+    for {
+      presignedUrlResponse <- getPresignedUrl(
+        partnerId,
+        evidenceId,
+        fileId,
+        request,
+        ttl
+      )
+      url <- extractUrlFromDreddResponse(presignedUrlResponse)
+    } yield url
   }
 
   private def getPresignedUrl[A](

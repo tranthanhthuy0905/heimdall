@@ -1,6 +1,5 @@
 package services.url
 
-import com.evidence.service.common.ServiceGlobal.statsd
 import models.common.{FileIdent, HeimdallRequest}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
@@ -58,14 +57,13 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
     }
   }
 
-  private def countGetUrlError(url: Future[URL], source: String, startTime: Long): Future[URL] = {
+  private def countGetUrlError(url: Future[URL], service: String, startTime: Long): Future[URL] = {
     url onComplete {
-      case Success(url) => {
-        statsd.time("service_call", System.currentTimeMillis() - startTime, s"service:$source", "status:success")
-      }
-      case Failure(err) => {
-        statsd.increment("presigned_url_error", s"source:$source")
-        statsd.time("service_call", System.currentTimeMillis() - startTime, s"service:$source", "status:fail")
+      case Success(_) =>
+        statsd.time("service_call", System.currentTimeMillis() - startTime, s"service:$service", "status:success")
+      case Failure(_) => {
+        statsd.increment("presigned_url_error", s"source:$service")
+        statsd.time("service_call", System.currentTimeMillis() - startTime, s"service:$service", "status:fail")
       }
     }
     url
@@ -77,12 +75,6 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
   }
 
   private def getUrlfromSage(file: FileIdent, ttl: Duration): Future[URL] = {
-    sage.getUrl(file, ttl).flatMap(_.fold(l => {
-      val mes = l.message
-      logger.debug("Sage fails to return URL ")("error" -> mes, "errorCode" -> l.errorCode)
-      Future.failed( new Exception("Sage fails to return URL " + s"error=$mes"))
-    },
-      r => Future.successful(r))
-    )
+    sage.getUrl(file, ttl).flatMap(_.fold(l => Future.failed(l), r => Future.successful(r)))
   }
 }
