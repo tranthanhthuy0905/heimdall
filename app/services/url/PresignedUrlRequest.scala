@@ -14,7 +14,7 @@ import scala.concurrent.duration.Duration
 import play.api.cache.AsyncCacheApi
 
 import javax.inject.Inject
-import scala.util.{Failure}
+import scala.util.{Failure, Success}
 
 case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, cache: AsyncCacheApi)(implicit executionContext: ExecutionContext) extends LazyLogging with StrictStatsD{
   def getUrl[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration = HdlTtl.urlExpired): Future[URL] = {
@@ -43,8 +43,9 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
   }
 
   private def getUrlTest[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
-    val sageResFuture = monitoring(getUrlfromSage(file, ttl), "sage")
-    val dreddResFuture = monitoring(getUrlfromDredd(file, request, ttl), "dredd")
+    val startTime = System.currentTimeMillis()
+    val sageResFuture = countGetUrlError(getUrlfromSage(file, ttl), "sage", startTime)
+    val dreddResFuture = countGetUrlError(getUrlfromDredd(file, request, ttl), "dredd", startTime)
 
     // Always return dredd url response to keep performance of application the same
     for {
@@ -52,16 +53,22 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
       _ <- sageResFuture recover {
         case e => dreddRes
       }
-    } yield dreddRes
+    } yield {
+      dreddRes
+    }
   }
 
-  private def monitoring(res: Future[URL], client: String): Future[URL] = {
-    res onComplete {
+  private def countGetUrlError(url: Future[URL], source: String, startTime: Long): Future[URL] = {
+    url onComplete {
+      case Success(url) => {
+        statsd.time("service_call", System.currentTimeMillis() - startTime, s"service:$source", "status:success")
+      }
       case Failure(err) => {
-        statsd.increment("presigned_url_error", s"source:$client")
+        statsd.increment("presigned_url_error", s"source:$source")
+        statsd.time("service_call", System.currentTimeMillis() - startTime, s"service:$source", "status:fail")
       }
     }
-    res
+    url
   }
 
   // Internal get-url logic
