@@ -5,7 +5,7 @@ import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.audit.{AuditClient, AuditClientImpl}
 import services.document.{DocumentClient, DocumentClientImpl}
 import services.drd.{DrdClient, DrdClientImpl}
-import services.dredd.{CachedDreddClientImpl, DreddClient}
+import services.dredd.{DreddClientImpl, DreddClient}
 import services.global.HeimdallApplicationLifecycle
 import services.komrade.{CachedKomradeClientImpl, KomradeClient}
 import services.metadata.{MetadataClient, MetadataClientImpl}
@@ -22,7 +22,7 @@ class Module extends AbstractModule {
     // Bindings
     bind(classOf[AuditClient]).to(classOf[AuditClientImpl])
     bind(classOf[Authorizer]).to(classOf[AuthorizerImpl])
-    bind(classOf[DreddClient]).to(classOf[CachedDreddClientImpl])
+    bind(classOf[DreddClient]).to(classOf[DreddClientImpl])
     bind(classOf[KomradeClient]).to(classOf[CachedKomradeClientImpl])
     bind(classOf[PdpClient]).to(classOf[PdpClientImpl])
     bind(classOf[RtmClient]).to(classOf[RtmClientImpl])

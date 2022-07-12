@@ -1,20 +1,18 @@
 package services.dredd
 
-import java.net.URL
-import java.util.UUID
-
 import com.evidence.api.thrift.v1.TidEntities
 import com.evidence.service.common.finagle.FinagleClient
 import com.evidence.service.common.finagle.FutureConverters._
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.dredd.thrift._
 import com.typesafe.config.Config
-import javax.inject.{Inject, Singleton}
 import models.common.{FileIdent, HeimdallRequest}
-import play.api.cache.AsyncCacheApi
-import utils.{HdlCache, HdlTtl}
+import utils.HdlTtl
 
-import scala.concurrent.duration.{Duration, HOURS, MINUTES}
+import java.net.URL
+import java.util.UUID
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
 trait DreddClient {
@@ -31,7 +29,7 @@ trait DreddClient {
 }
 
 @Singleton
-class CachedDreddClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex: ExecutionContext)
+class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
     extends DreddClient
     with LazyLogging {
 
@@ -90,37 +88,16 @@ class CachedDreddClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(impl
       }
     }
 
-    def getUrl =
-      for {
-        presignedUrlResponse <- getPresignedUrl(
-          partnerId,
-          evidenceId,
-          fileId,
-          request,
-          ttl
-        )
-        url <- extractUrlFromDreddResponse(presignedUrlResponse)
-      } yield url
-
-    if (ttl >= HdlTtl.urlExpired) {
-      val key = s"$partnerId-$evidenceId-$fileId"
-      cache.getOrElseUpdate[URL](key, HdlTtl.urlMemTTL) {
-        HdlCache.PresignedUrl
-          .get(key)
-          .map { url =>
-            Future.successful(url)
-          }
-          .getOrElse {
-            val res = getUrl.map { url =>
-              {
-                HdlCache.PresignedUrl.set(key, url)
-                url
-              }
-            }
-            res
-          }
-      }
-    } else getUrl
+    for {
+      presignedUrlResponse <- getPresignedUrl(
+        partnerId,
+        evidenceId,
+        fileId,
+        request,
+        ttl
+      )
+      url <- extractUrlFromDreddResponse(presignedUrlResponse)
+    } yield url
   }
 
   private def getPresignedUrl[A](
