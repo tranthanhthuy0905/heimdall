@@ -22,40 +22,24 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
   private def getUrlwithCache[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
     if (ttl >= HdlTtl.urlExpired) {
       val key = s"${file.partnerId}-${file.evidenceId}-${file.fileId}"
-      var calledSide = ""
-      var urlGetTime = System.currentTimeMillis()
-      val urlCache = cache.getOrElseUpdate[URL](key, HdlTtl.urlMemTTL) {
+      statsd.increment("get_url_cache", "scope:total_request")
+      cache.getOrElseUpdate[URL](key, HdlTtl.urlMemTTL) {
         HdlCache.PresignedUrl
           .get(key)
           .map { url =>
-            urlGetTime = System.currentTimeMillis()
-            calledSide = "Redis"
             Future.successful(url)
           }
           .getOrElse {
             val res = getUrlTest(file, request, ttl).map { url =>
               {
                 HdlCache.PresignedUrl.set(key, url)
-                urlGetTime = System.currentTimeMillis()
+                statsd.increment("get_url_cache", "scope:miss")
                 url
               }
             }
-            calledSide = "new get"
             res
           }
       }
-      urlCache.onComplete {
-        case Success(url) =>
-          if (calledSide == "new get") {
-            statsd.increment("cache", "ratio:miss")
-          } else {
-            statsd.increment("cache", "ratio:hit")
-          }
-          // TODO: Should create Unit Test to test the correctness of Cache later. Current Test is only to check Log
-          logger.info(s"Time to get the URL successfully from $calledSide")("time" -> urlGetTime)
-          logger.info(s"Key-value pair successfully from $calledSide")("key" -> key, "value" -> url)
-      }
-      urlCache
     } else getUrlTest(file, request, ttl)
   }
 
@@ -69,13 +53,11 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
       _ <- sageResFuture recover {
         case e => dreddRes
       }
-    } yield {
-      dreddRes
-    }
+    } yield dreddRes
   }
 
   private def getUrlfromDredd[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration) : Future[URL] = {
-    executionTime[URL]("service_call", dredd.getUrl(file, request, ttl), true, "source:dredd")
+    executionTime[URL]("get_url", dredd.getUrl(file, request, ttl), false, "source:dredd")
   }
 
   private def getUrlfromSage(file: FileIdent, ttl: Duration): Future[URL] = {
@@ -84,6 +66,6 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
         Future.failed(l)
       }, url => Future.successful(url))
     }
-    executionTime[URL]("service_call", future, true, "source:sage")
+    executionTime[URL]("get_url", future, false, "source:sage")
   }
 }
