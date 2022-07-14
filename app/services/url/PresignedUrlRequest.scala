@@ -52,17 +52,16 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
             statsd.increment("cache", "ratio:hit")
           }
           // TODO: Should create Unit Test to test the correctness of Cache later. Current Test is only to check Log
-          logger.info(s"Time to get the URL successfully from $calledSide ")("time" -> urlGetTime)
-          logger.info(s"Key-value pair successfully from $calledSide ")("key" -> key, "value" -> url)
+          logger.info(s"Time to get the URL successfully from $calledSide")("time" -> urlGetTime)
+          logger.info(s"Key-value pair successfully from $calledSide")("key" -> key, "value" -> url)
       }
       urlCache
     } else getUrlTest(file, request, ttl)
   }
 
   private def getUrlTest[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
-    val metricName = "service_call"
-    val sageResFuture = getUrlfromSageWithMetric(file, ttl, metricName)
-    val dreddResFuture = getUrlfromDreddWithMetric(file, request, ttl, metricName)
+    val sageResFuture = getUrlfromSage(file, ttl)
+    val dreddResFuture = getUrlfromDredd(file, request, ttl)
 
     // Always return dredd url response to keep performance of application the same
     for {
@@ -75,11 +74,16 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
     }
   }
 
-  private def getUrlfromDreddWithMetric[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration, metricName: String) : Future[URL] = {
-    dredd.getUrlWithLatencyMetric(file, request, ttl, metricName)
+  private def getUrlfromDredd[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration) : Future[URL] = {
+    executionTime[URL]("service_call", dredd.getUrl(file, request, ttl), true, "source:dredd")
   }
 
-  private def getUrlfromSageWithMetric(file: FileIdent, ttl: Duration, metricName: String): Future[URL] = {
-    sage.getUrlWithLatencyMetric(file, ttl, metricName)
+  private def getUrlfromSage(file: FileIdent, ttl: Duration): Future[URL] = {
+    val future = sage.getUrl(file, ttl).flatMap {_.fold(l => {
+        logger.error("noUrlResponseFromSage")("error" -> l, "fileId" -> file.fileId, "evidenceId" -> file.evidenceId)
+        Future.failed(l)
+      }, url => Future.successful(url))
+    }
+    executionTime[URL]("service_call", future, true, "source:sage")
   }
 }

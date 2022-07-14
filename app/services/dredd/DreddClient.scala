@@ -7,7 +7,7 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.dredd.thrift._
 import com.typesafe.config.Config
 import models.common.{FileIdent, HeimdallRequest}
-import utils.{HdlTtl, LatencyHelper}
+import utils.HdlTtl
 
 import java.net.URL
 import java.util.UUID
@@ -26,15 +26,12 @@ trait DreddClient {
     fileId: UUID,
     request: HeimdallRequest[A],
     ttl: Duration = HdlTtl.urlExpired): Future[URL]
-
-  def getUrlWithLatencyMetric[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration, metricName: String, tagList: String*): Future[URL]
 }
 
 @Singleton
 class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
     extends DreddClient
-    with LazyLogging
-    with LatencyHelper {
+    with LazyLogging {
 
   private val client: DreddService.MethodPerEndpoint = {
     val env = FinagleClient.getEnvironment(config)
@@ -126,12 +123,5 @@ class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
       suppressAudit = Some(true)
     )
     client.getPresignedUrl2(auth, request, requestContext).toScalaFuture
-  }
-
-  override def getUrlWithLatencyMetric[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration, metricName: String, tagList: String*): Future[URL] = {
-    val startTime = System.currentTimeMillis()
-    val method = getUrl(file, request, ttl)
-    val tags = tagList :+ "service:dredd"
-    createLatencyMetric(method, metricName, startTime, tags: _*)
   }
 }

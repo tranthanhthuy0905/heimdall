@@ -22,7 +22,7 @@ import models.common.{FileIdent, HeimdallError}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import play.api.cache.AsyncCacheApi
-import utils.{HdlCache, HdlTtl, LatencyHelper}
+import utils.{HdlCache, HdlTtl}
 
 import java.net.URL
 
@@ -32,20 +32,14 @@ trait SageClient {
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]]
 
   def getUrl(file: FileIdent,
-             ttl: Duration): Future[URL]
-
-  def getUrlRaw(file: FileIdent,
              ttl: Duration): Future[Either[HeimdallError, URL]]
-
-  def getUrlWithLatencyMetric(file: FileIdent, ttl: Duration, metricName: String, tagList: String*): Future[URL]
 }
 
 @Singleton
 class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex: ExecutionContext) extends SageClient
   with SageClientHelper
   with StrictStatsD
-  with LoggingHelper
-  with LatencyHelper {
+  with LoggingHelper {
 
   val sageConfig      = config.getConfig("edc.service.sage")
   val secret          = sageConfig.getString("secret")
@@ -143,17 +137,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     fileRes.map(_.map(_.headOption).flatMap(_.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
   }
 
-  // Log and omit error - Public to use
-  override def getUrl(file: FileIdent, ttl: Duration): Future[URL] = {
-    getUrlRaw(file, ttl).flatMap(_.fold(l => {
-        logger.error("noUrlResponseFromSage ")("mes" -> l, "fileId" -> file.fileId, "evidenceId" -> file.evidenceId)
-        Future.failed(l)
-      }, r => Future.successful(r)
-    ))
-  }
-
-  // Return raw result: error or URL - Public to use
-  override def getUrlRaw(file: FileIdent, ttl: Duration): Future[Either[HeimdallError, URL]] = {
+  override def getUrl(file: FileIdent, ttl: Duration): Future[Either[HeimdallError, URL]] = {
     val fileReq = EvidenceId(file.fileId, file.partnerId)
     val urlArg = Some(UrlTTL(duration=Some(convertTTL(ttl))))
     val selection = FileFieldSelect(downloadUrl = Some(DownloadUrlFieldSelect(url=true, urlArgument = urlArg, expiredAt = true))).namePaths().map(_.toProtoPath)
@@ -174,14 +158,6 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
 
   def convertTTL(ttl: Duration): ProtobufDuration = {
     ProtobufDuration(seconds = ttl.toSeconds)
-  }
-
-  // Log and omit error then create metric - Public to use
-  override def getUrlWithLatencyMetric(file: FileIdent, ttl: Duration, metricName: String, tagList: String*): Future[URL] = {
-    val startTime = System.currentTimeMillis()
-    val method = getUrl(file, ttl)
-    val tags = tagList :+ "service:sage"
-    createLatencyMetric(method, metricName, startTime, tags: _*)
   }
 
   private def manageDownloadUrl(input: Either[HeimdallError, File]): Either[HeimdallError, String] = {
