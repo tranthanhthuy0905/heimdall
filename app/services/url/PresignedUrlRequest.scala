@@ -48,10 +48,12 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
         case Success(url) =>
           if (calledSide == "new get") {
             statsd.increment("cache", "ratio:miss")
-            // TODO: Should create Unit Test to test the correctness of Cache later. Current Test is only to check Log
-            logger.info(s"Time to get the URL successfully from $calledSide ")("time" -> urlGetTime)
-            logger.info(s"Key-value pair successfully from $calledSide ")("key" -> key, "value" -> url)
+          } else {
+            statsd.increment("cache", "ratio:hit")
           }
+          // TODO: Should create Unit Test to test the correctness of Cache later. Current Test is only to check Log
+          logger.info(s"Time to get the URL successfully from $calledSide ")("time" -> urlGetTime)
+          logger.info(s"Key-value pair successfully from $calledSide ")("key" -> key, "value" -> url)
       }
       urlCache
     } else getUrlTest(file, request, ttl)
