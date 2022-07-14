@@ -12,7 +12,6 @@ import java.net.URL
 import javax.inject.Inject
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success}
 
 case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, cache: AsyncCacheApi)(implicit executionContext: ExecutionContext) extends LazyLogging with StrictStatsD {
   def getUrl[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration = HdlTtl.urlExpired): Future[URL] = {
@@ -61,11 +60,12 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
   }
 
   private def getUrlfromSage(file: FileIdent, ttl: Duration): Future[URL] = {
+    val baseTime = System.currentTimeMillis
     val future = sage.getUrl(file, ttl).flatMap {_.fold(l => {
         logger.error("noUrlResponseFromSage")("error" -> l, "fileId" -> file.fileId, "evidenceId" -> file.evidenceId)
         Future.failed(l)
       }, url => Future.successful(url))
     }
-    executionTime[URL]("get_url", future, false, "source:sage")
+    executionTime[URL]("get_url", future, false, baseTime, "source:sage")
   }
 }
