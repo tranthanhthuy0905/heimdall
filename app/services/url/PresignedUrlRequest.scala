@@ -12,15 +12,16 @@ import java.net.URL
 import javax.inject.Inject
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
-case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, cache: AsyncCacheApi)(implicit executionContext: ExecutionContext) extends LazyLogging with StrictStatsD{
+case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, cache: AsyncCacheApi)(implicit executionContext: ExecutionContext) extends LazyLogging with StrictStatsD {
   def getUrl[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration = HdlTtl.urlExpired): Future[URL] = {
     getUrlwithCache(file, request, ttl)
   }
+
   private def getUrlwithCache[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
     if (ttl >= HdlTtl.urlExpired) {
       val key = s"${file.partnerId}-${file.evidenceId}-${file.fileId}"
+      statsd.increment("get_url_cache", "scope:total_request")
       cache.getOrElseUpdate[URL](key, HdlTtl.urlMemTTL) {
         HdlCache.PresignedUrl
           .get(key)
@@ -31,6 +32,7 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
             val res = getUrlTest(file, request, ttl).map { url =>
               {
                 HdlCache.PresignedUrl.set(key, url)
+                statsd.increment("get_url_cache", "scope:miss")
                 url
               }
             }
@@ -41,9 +43,8 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
   }
 
   private def getUrlTest[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
-    val startTime = System.currentTimeMillis()
-    val sageResFuture = countGetUrlError(getUrlfromSage(file, ttl), "sage", startTime)
-    val dreddResFuture = countGetUrlError(getUrlfromDredd(file, request, ttl), "dredd", startTime)
+    val sageResFuture = getUrlfromSage(file, ttl)
+    val dreddResFuture = getUrlfromDredd(file, request, ttl)
 
     // Always return dredd url response to keep performance of application the same
     for {
@@ -51,29 +52,20 @@ case class PresignedUrlRequest @Inject()(sage: SageClient, dredd: DreddClient, c
       _ <- sageResFuture recover {
         case e => dreddRes
       }
-    } yield {
-      dreddRes
-    }
+    } yield dreddRes
   }
 
-  private def countGetUrlError(url: Future[URL], service: String, startTime: Long): Future[URL] = {
-    url onComplete {
-      case Success(_) =>
-        statsd.time("service_call", System.currentTimeMillis() - startTime, s"service:$service", "status:success")
-      case Failure(_) => {
-        statsd.increment("presigned_url_error", s"source:$service")
-        statsd.time("service_call", System.currentTimeMillis() - startTime, s"service:$service", "status:fail")
-      }
-    }
-    url
-  }
-
-  // Internal get-url logic
   private def getUrlfromDredd[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration) : Future[URL] = {
-    dredd.getUrl(file, request, ttl)
+    executionTime[URL]("get_url", dredd.getUrl(file, request, ttl), false, "source:dredd")
   }
 
   private def getUrlfromSage(file: FileIdent, ttl: Duration): Future[URL] = {
-    sage.getUrl(file, ttl).flatMap(_.fold(l => Future.failed(l), r => Future.successful(r)))
+    val baseTime = System.currentTimeMillis
+    val future = sage.getUrl(file, ttl).flatMap {_.fold(l => {
+        logger.error("noUrlResponseFromSage")("error" -> l, "fileId" -> file.fileId, "evidenceId" -> file.evidenceId)
+        Future.failed(l)
+      }, url => Future.successful(url))
+    }
+    executionTime[URL]("get_url", future, false, baseTime, "source:sage")
   }
 }
