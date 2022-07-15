@@ -1,20 +1,22 @@
 package controllers
 
-import actions.{HeimdallRequestAction, PermValidationActionBuilder, XpReportRequestAction}
+import actions.{HeimdallRequestAction, XpReportRequestAction}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.logging.Logger.LogVariable
+import models.auth.StreamingSessionData
+
 import javax.inject.Inject
 import models.common.{FileIdent, PermissionType}
 import play.api.libs.json.{JsBoolean, JsValue}
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
-import services.xpreport.playback.{EventsInfo, PlaybackJsonConversions, StalledData, StalledInfo}
+import services.xpreport.playback.{EventsInfo, PlaybackJsonConversions, StalledData, StalledInfo, XpReportRequest}
 
 import scala.concurrent.ExecutionContext
 
 class XpReportController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
-  permValidation: PermValidationActionBuilder,
   xpReportRequestAction: XpReportRequestAction,
+  sessionData: StreamingSessionData,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
@@ -24,26 +26,35 @@ class XpReportController @Inject()(
   def logInfo: Action[JsValue] =
     (
       heimdallRequestAction andThen
-        permValidation.build(PermissionType.View) andThen
         xpReportRequestAction
     ).apply(parse.json) { request =>
-      val json       = request.body
-      val eventsInfo = playbackInfoFromJson(json)
-      logLagRatioImpl(request.file, eventsInfo)
-      Ok(JsBoolean(true))
+      if (!isValid(request)) Forbidden(JsBoolean(false))
+      else {
+        val json       = request.body
+        val eventsInfo = playbackInfoFromJson(json)
+        logLagRatioImpl(request.file, eventsInfo)
+        Ok(JsBoolean(true))
+      }
     }
 
   def logStalled: Action[JsValue] =
     (
       heimdallRequestAction andThen
-        permValidation.build(PermissionType.View) andThen
         xpReportRequestAction
     ).apply(parse.json) { request =>
-      val json        = request.body
-      val stalledInfo = stalledInfoFromJson(json)
-      logStalledImpl(request.file, stalledInfo)
-      Ok(JsBoolean(true))
+      if (!isValid(request)) Forbidden(JsBoolean(false))
+      else {
+        val json        = request.body
+        val stalledInfo = stalledInfoFromJson(json)
+        logStalledImpl(request.file, stalledInfo)
+        Ok(JsBoolean(true))
+      }
     }
+
+  private def isValid(request: XpReportRequest[JsValue]): Boolean = {
+    val token = (request.body \ "token").asOpt[String].getOrElse("")
+    sessionData.validateToken(token, request.request.cookie, request.request.media.getSortedFileIds)
+  }
 
   private def logLagRatioImpl(fileIdent: FileIdent, eventsInfo: EventsInfo): Unit = {
     val logVars: Seq[LogVariable] = Seq(
@@ -63,10 +74,10 @@ class XpReportController @Inject()(
         // Log only when buffering duration larger than 2s
         if (event != "END" || (event == "END" && buffering.stalledDuration.flatMap(_.value).getOrElse(0.0) >= 2000)) {
           val logVars: Seq[LogVariable] = Seq(
-            "event_type"   -> "stalled",
-            "evidence_id"  -> fileIdent.evidenceId,
-            "partner_id"   -> fileIdent.partnerId,
-            "file_id"      -> fileIdent.fileId,
+            "event_type"  -> "stalled",
+            "evidence_id" -> fileIdent.evidenceId,
+            "partner_id"  -> fileIdent.partnerId,
+            "file_id"     -> fileIdent.fileId,
           ) ++ logStalledInfoDetail(stalledInfo)
 
           logger.info("ExperienceReport")(logVars: _*)
