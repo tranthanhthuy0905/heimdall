@@ -13,6 +13,8 @@ object Common {
 
   val resolvers = Seq("Nexus" at "https://nexus.taservs.net/content/groups/public")
 
+  val dockerBaseImage = "axonhub.azurecr.io/axon/amazoncorretto:11"
+
   lazy val protoDependencies = Seq("io.grpc" % "grpc-netty-shaded" % "1.42.1")
 
   val exclusions = Seq(

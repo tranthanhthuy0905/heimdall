@@ -6,6 +6,23 @@ resolvers ++= Common.resolvers
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayAkkaHttpServer)
 
+// SBT packager
+enablePlugins(JavaAppPackaging)
+
+// enable docker build
+enablePlugins(DockerPlugin)
+enablePlugins(UniversalPlugin)
+
+Docker / packageName := packageName.value
+Docker / version := version.value
+dockerBaseImage := Common.dockerBaseImage
+dockerAliases := Seq(
+  dockerAlias.value.withUsername(Some("ecom"))
+)
+Docker / daemonUserUid := None
+Docker / daemonUser := "daemon"
+Docker / daemonGroupGid := None
+
 // Do not run scaladoc/javadoc
 Compile / doc / sources := Seq.empty
 Compile / packageDoc / publishArtifact := false
