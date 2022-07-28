@@ -24,6 +24,9 @@ POST /media/xpreport/stalled                controllers.XpReportController.logSt
 
 GET /media/metadata                         controllers.MetadataController.metadata
 
+GET /media/zip/status                       controllers.ZipController.getStatus
+GET /media/zip/structure                    controllers.ZipController.getStructure
+
 # Routing for Concatenation
 POST /media/video/concatenate               controllers.ConcatenationController.requestConcat
 

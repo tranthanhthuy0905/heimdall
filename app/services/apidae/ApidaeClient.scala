@@ -15,6 +15,8 @@ trait ApidaeClient {
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
+  def getZipStructure(partnerID: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
+  def getZipStatus(partnerID: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def requestConcatenate(body: JsValue): Future[WSResponse]
 }
 
@@ -54,6 +56,27 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
         "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
         "file_id"     -> fileId.toString,
+      )
+      .withMethod("GET")
+      .execute()
+
+  def getZipStructure(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] = {
+    buildApidaeEndpoint("/v1/zip/structure")
+      .withQueryStringParameters(
+        "partner_id" -> partnerId.toString,
+        "evidence_id" -> evidenceId.toString,
+        "file_id" -> fileId.toString,
+      )
+      .withMethod("GET")
+      .execute()
+  }
+
+  def getZipStatus(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
+    buildApidaeEndpoint("/v1/zip/status")
+      .withQueryStringParameters(
+        "partner_id" -> partnerId.toString,
+        "evidence_id" -> evidenceId.toString,
+        "file_id" -> fileId.toString,
       )
       .withMethod("GET")
       .execute()
