@@ -15,4 +15,5 @@ fi
 
 bin/sbt compile outputVersion package universal:packageBin -Dpackaging.buildQualifier="" -Dpackaging.buildNumber="$version" \
   clean \
-  docker:publishLocal
+  docker:publishLocal \
+  writeDockerImageList
