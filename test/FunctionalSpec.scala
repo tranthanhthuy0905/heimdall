@@ -23,7 +23,6 @@ class FunctionalSpec extends PlaySpec with GuiceOneAppPerSuite {
       route(app, FakeRequest(GET, "/media/hls/longsegment")).map(status(_)) mustBe Some(FORBIDDEN)
     }
 
-
     "send 200 on a good request" in {
       route(app, FakeRequest(GET, "/media/alive")).map(status(_)) mustBe Some(OK)
     }
