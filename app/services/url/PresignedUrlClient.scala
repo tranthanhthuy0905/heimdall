@@ -9,7 +9,7 @@ import services.sage.SageClient
 import utils.{HdlCache, HdlTtl}
 
 import java.net.URL
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
