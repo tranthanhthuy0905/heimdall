@@ -3,22 +3,20 @@ package actions
 import akka.http.scaladsl.model.Uri
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
-
-import javax.inject.Inject
 import models.common.{HeimdallRequest, MediaIdent}
 import play.api.mvc.{ActionRefiner, Results}
-import services.dredd.DreddClient
 import services.komrade.KomradeClient
 import services.rtm.{GroupRtmRequest, HeimdallRoutes, RtmQueryHelper, RtmRequest}
-import services.url.PresignedUrlRequest
+import services.url.PresignedUrlClient
 import services.zookeeper.HeimdallLoadBalancer
 import utils.EitherHelpers
 
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 case class GroupRtmRequestAction @Inject()(
                                        config: Config,
-                                       presignedUrlReq: PresignedUrlRequest,
+                                       presignedUrlReq: PresignedUrlClient,
                                        komrade: KomradeClient,
                                        loadBalancer: HeimdallLoadBalancer,
                                      )(implicit val executionContext: ExecutionContext)
