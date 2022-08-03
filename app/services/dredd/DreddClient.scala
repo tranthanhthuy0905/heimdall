@@ -115,7 +115,7 @@ class DreddClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext)
     val requestContext =
       RequestContext(dreddUpdatedBy, Some(input.clientIpAddress))
 
-    val request = PresignedUrlImpl(
+    val request = PresignedUrlRequest(
       partnerId = agencyId.toString,
       evidenceId = evidenceId.toString,
       fileId = fileId.toString,
