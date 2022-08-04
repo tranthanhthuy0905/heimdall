@@ -54,20 +54,18 @@ case class PresignedUrlImpl @Inject()(sage: SageClient, dredd: DreddClient, cach
 
   private def getUrlTest[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
     val sageResFuture  = getUrlfromSage(file, ttl)
-    val dreddResFuture = getUrlfromDredd(file, request, ttl)
+//    val dreddResFuture = getUrlfromDredd(file, request, ttl)
 
     // Always return dredd url response to keep performance of application the same
     for {
-      dreddRes <- dreddResFuture
-      _ <- sageResFuture recover {
-        case e => dreddRes
-      }
-    } yield dreddRes
+//      dreddRes <- dreddResFuture
+      sageRes <- sageResFuture
+    } yield sageRes
   }
 
-  private def getUrlfromDredd[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
-    executionTime[URL]("get_url", dredd.getUrl(file, request, ttl), false, "source:dredd")
-  }
+//  private def getUrlfromDredd[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
+//    executionTime[URL]("get_url", dredd.getUrl(file, request, ttl), false, "source:dredd")
+//  }
 
   private def getUrlfromSage(file: FileIdent, ttl: Duration): Future[URL] = {
     val baseTime = System.currentTimeMillis
