@@ -8,6 +8,7 @@ import models.auth.Authorizer
 import play.api.mvc.{Filter, RequestHeader, Result}
 import play.api.routing.Router
 import java.time.Duration
+import java.lang.System
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -34,7 +35,7 @@ class LoggingRequestFilter @Inject()(implicit val mat: Materializer, ec: Executi
         requestHeader,
         actionName
       ),
-      includeServiceLevelLatencyStat = true)
+      includeServiceLevelStat = true)
   }
 
   private def executeRequest(

@@ -38,11 +38,29 @@ libraryDependencies ++= Seq(
 //https://github.com/playframework/play-ws/pull/573
 // version 2.1.3 is last version depends on scala-java8-compat 0.9.1
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.3"
+  "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.3",
 )
 
 // avoid binary conflict dependencies
-dependencyOverrides += "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1"
+dependencyOverrides ++= Seq(
+  "org.scala-lang.modules" %% "scala-java8-compat" % "0.9.1",
+  "com.fasterxml.jackson.core" % "jackson-core" % Common.jacksonVersion,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % Common.jacksonVersion,
+  "com.fasterxml.jackson.core" % "jackson-databind" % Common.jacksonVersion,
+  "com.google.code.gson" % "gson" % Common.gsonVersion,
+  "org.owasp.esapi" % "esapi" % Common.esapiVersion,
+  "org.apache.santuario" % "xmlsec" % Common.xmlsecVersion,
+  "com.google.protobuf" % "protobuf-java" % Common.protobufJavaVersion,
+  "commons-collections" % "commons-collections" % Common.commonCollectionVersion,
+  "ca.juliusdavies" % "not-yet-commons-ssl " % Common.notYetCommonsSslVersion,
+  "ch.qos.logback" % "logback-core" % Common.logbackCoreVersion,
+  "org.apache.httpcomponents" % "httpclient" % Common.apacheHttpVersion,
+  "net.minidev" % "json-smart" % Common.minidevVersion,
+  "io.netty" % "netty-codec" % Common.nettyVersion,
+  "io.netty" % "netty-codec-http" % Common.nettyVersion,
+  "io.netty" % "netty-codec-http2" % Common.nettyVersion,
+  "org.yaml" % "snakeyaml" % Common.snakeYamlVersion,
+)
 
 libraryDependencies ++= Seq(
   "com.evidence" %% "service-common"               % Common.serviceCommonVersion,
