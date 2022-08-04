@@ -2,19 +2,17 @@ package actions
 
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
-
-import javax.inject.Inject
 import models.common._
 import play.api.mvc.{ActionRefiner, Results}
-
-import scala.concurrent.ExecutionContext
-import services.dredd.DreddClient
 import services.rti.RtiRequest
-import services.url.PresignedUrlRequest
+import services.url.PresignedUrlClient
 import utils.UUIDHelper
 
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext
+
 case class RtiRequestAction @Inject()(
-                                       presignedUrlReq: PresignedUrlRequest,
+                                       presignedUrlReq: PresignedUrlClient,
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, RtiRequest]
     with LazyLogging

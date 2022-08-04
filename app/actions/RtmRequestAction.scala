@@ -7,7 +7,7 @@ import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
 import services.komrade.{KomradeClient, PlaybackFeatures}
 import services.rtm.{HeimdallRoutes, RtmQueryHelper, RtmRequest}
-import services.url.PresignedUrlRequest
+import services.url.PresignedUrlClient
 import services.zookeeper.HeimdallLoadBalancer
 
 import javax.inject.Inject
@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class RtmRequestAction @Inject()(
      config: Config,
-     presignedUrlReq: PresignedUrlRequest,
+     presignedUrlReq: PresignedUrlClient,
      komradeClient: KomradeClient,
      loadBalancer: HeimdallLoadBalancer,
 )(implicit val executionContext: ExecutionContext)

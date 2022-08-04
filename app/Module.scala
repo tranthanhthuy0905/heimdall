@@ -5,7 +5,7 @@ import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.audit.{AuditClient, AuditClientImpl}
 import services.document.{DocumentClient, DocumentClientImpl}
 import services.drd.{DrdClient, DrdClientImpl}
-import services.dredd.{DreddClientImpl, DreddClient}
+import services.dredd.{DreddClient, DreddClientImpl}
 import services.global.HeimdallApplicationLifecycle
 import services.komrade.{CachedKomradeClientImpl, KomradeClient}
 import services.metadata.{MetadataClient, MetadataClientImpl}
@@ -14,6 +14,7 @@ import services.rti.{RtiClient, RtiClientImpl}
 import services.rtm.{RtmClient, RtmClientImpl}
 import services.sage.{SageClient, SageClientImpl}
 import services.sessions.{SessionsClient, SessionsClientImpl}
+import services.url.{PresignedUrlClient, PresignedUrlImpl}
 import services.zookeeper.{HeimdallLoadBalancer, HeimdallLoadBalancerProvider, ZookeeperClientProvider}
 
 class Module extends AbstractModule {
@@ -34,6 +35,7 @@ class Module extends AbstractModule {
     bind(classOf[SessionsClient]).to(classOf[SessionsClientImpl])
     bind(classOf[StreamingSessionData]).to(classOf[StreamingSessionDataImpl])
     bind(classOf[SageClient]).to(classOf[SageClientImpl])
+    bind(classOf[PresignedUrlClient]).to(classOf[PresignedUrlImpl])
     // Providers
     bind(classOf[CuratorFramework]).toProvider(classOf[ZookeeperClientProvider]).in(classOf[Singleton])
     bind(classOf[HeimdallLoadBalancer]).toProvider(classOf[HeimdallLoadBalancerProvider]).in(classOf[Singleton])
