@@ -2,6 +2,7 @@ package utils
 
 import play.api.libs.ws.WSResponse
 import play.api.mvc.BaseController
+import scala.collection.immutable.Seq
 
 trait WSResponseHelpers extends BaseController {
 

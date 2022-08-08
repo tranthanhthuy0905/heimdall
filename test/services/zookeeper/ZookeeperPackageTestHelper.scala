@@ -2,6 +2,7 @@ package services.zookeeper
 
 import java.util
 import java.util.UUID
+import scala.collection.immutable.Seq
 
 import org.apache.curator.framework.recipes.cache.ChildData
 import org.apache.zookeeper.data.Stat

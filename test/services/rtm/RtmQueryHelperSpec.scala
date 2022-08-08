@@ -2,6 +2,7 @@ package services.rtm
 
 import org.scalatestplus.play.PlaySpec
 import java.util.UUID.randomUUID
+import scala.collection.immutable.Seq
 
 class RtmQueryValidatorSpec extends PlaySpec {
   val uuid      = randomUUID

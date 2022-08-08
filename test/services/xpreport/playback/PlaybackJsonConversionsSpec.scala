@@ -3,6 +3,7 @@ package services.xpreport.playback
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.Json
 import utils.JsonFormat
+import scala.collection.immutable.Seq
 
 class PlaybackJsonConversionsSpec extends PlaySpec with PlaybackJsonConversions with PlaybackJsonFields with JsonFormat {
 

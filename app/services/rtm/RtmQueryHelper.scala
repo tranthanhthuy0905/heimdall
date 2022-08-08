@@ -6,8 +6,6 @@ import com.evidence.service.common.logging.LazyLogging
 import services.komrade.PlaybackSettings
 import utils.UUIDHelper
 
-import scala.collection.immutable.Map
-
 /**
   * RtmQueryParams is a query extended with file identifier.
   * It contains RTM path/route/API, and validated and filtered query parameters.

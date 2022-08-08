@@ -1,4 +1,5 @@
 import sbt._
+import scala.collection.immutable.Seq
 
 object Common {
   val serviceCommonVersion       = "27.3.3837"

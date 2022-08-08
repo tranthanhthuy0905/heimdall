@@ -7,6 +7,7 @@ import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Result, Results}
 import services.komrade.KomradeClient
 import utils.DateTime
+import scala.collection.immutable.Seq
 
 import scala.concurrent.{ExecutionContext, Future}
 
