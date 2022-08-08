@@ -10,6 +10,7 @@ import services.rtm.{GroupRtmRequest, HeimdallRoutes, RtmQueryHelper, RtmRequest
 import services.url.PresignedUrlClient
 import services.zookeeper.HeimdallLoadBalancer
 import utils.EitherHelpers
+import scala.collection.immutable.Seq
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

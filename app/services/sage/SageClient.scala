@@ -11,6 +11,7 @@ import com.axon.sage.protos.v1.evidence_video_service.{EvidenceVideoServiceGrpc,
 import com.axon.sage.protos.v1.evidence_video_service.ConvertedFile
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
+import scala.collection.immutable.Seq
 
 import scala.concurrent.duration.Duration
 import com.google.protobuf.duration.{Duration => ProtobufDuration}

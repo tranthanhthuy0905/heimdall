@@ -4,6 +4,7 @@ import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.google.inject.Inject
 import com.typesafe.config.Config
+import scala.collection.immutable.Seq
 
 import javax.inject.Singleton
 import models.common.EmptyMediaIdent

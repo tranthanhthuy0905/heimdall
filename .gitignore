@@ -10,3 +10,4 @@ conf/envs/dev.conf
 .bsp
 .metals
 .vscode
+conf/env/qa.conf

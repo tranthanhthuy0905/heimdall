@@ -5,6 +5,7 @@ import models.common.MediaIdent
 import play.api.http.HttpEntity
 import play.api.libs.ws.WSResponse
 import play.api.mvc._
+import scala.collection.immutable.Seq
 
 trait HdlResponseHelpers extends BaseController with LazyLogging {
 

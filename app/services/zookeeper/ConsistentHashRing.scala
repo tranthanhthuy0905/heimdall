@@ -2,6 +2,7 @@ package services.zookeeper
 
 import scala.collection.SortedMap
 import java.security.MessageDigest
+import scala.collection.immutable.Seq
 
 /**
   * Maps resources to a set of [[T]] elements. The idea is that it distributes the resources evenly and if only some

@@ -1,6 +1,7 @@
 package services.pdp
 
 import java.util.UUID
+import scala.collection.immutable.Seq
 
 import com.axon.pdp.protos.v1.pdp_service._
 import com.evidence.api.thrift.v1.EntityDescriptor
