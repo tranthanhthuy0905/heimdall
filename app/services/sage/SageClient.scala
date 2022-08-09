@@ -9,6 +9,7 @@ import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
+import scala.collection.immutable.Seq
 
 import scala.concurrent.duration.Duration
 import com.google.protobuf.duration.{Duration => ProtobufDuration}

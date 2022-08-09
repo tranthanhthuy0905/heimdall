@@ -1,6 +1,7 @@
 package services.xpreport.playback
 
 import play.api.libs.json.JsValue
+import scala.collection.immutable.Seq
 
 trait PlaybackJsonConversions {
 

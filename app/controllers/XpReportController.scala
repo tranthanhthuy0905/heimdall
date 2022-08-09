@@ -4,6 +4,7 @@ import actions.{HeimdallRequestAction, XpReportRequestAction}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.logging.Logger.LogVariable
 import models.auth.StreamingSessionData
+import scala.collection.immutable.Seq
 
 import javax.inject.Inject
 import models.common.{FileIdent, PermissionType}

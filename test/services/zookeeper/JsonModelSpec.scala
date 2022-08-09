@@ -3,6 +3,7 @@ package services.zookeeper
 import com.evidence.service.common.zookeeper.ServiceEndpoint
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json.{JsResultException, JsValue, Json}
+import scala.collection.immutable.Seq
 
 class JsonModelSpec extends PlaySpec {
 

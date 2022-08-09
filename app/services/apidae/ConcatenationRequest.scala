@@ -1,6 +1,7 @@
 package services.apidae
 
 import com.evidence.service.common.Convert
+import scala.collection.immutable.Seq
 
 import java.util.UUID
 import models.common.HeimdallRequest

@@ -6,6 +6,7 @@ import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Result, Results}
 import services.metadata.MetadataRequest
 import utils.UUIDHelper
+import scala.collection.immutable.Seq
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

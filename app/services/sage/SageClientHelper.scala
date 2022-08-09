@@ -52,10 +52,10 @@ trait SageClientHelper extends Retry {
     header
   }
 
-  def toEither(readResponse: ReadResponse): Either[HeimdallError, Seq[Entity]] = {
+  def toEither(readResponse: ReadResponse): Either[HeimdallError, scala.collection.immutable.Seq[Entity]] = {
     readResponse match {
       case ReadResponse(Some(err), _, _) => Left(toHeimdallError(err))
-      case resp => Right(resp.entities)
+      case resp => Right(resp.entities.to[scala.collection.immutable.Seq])
     }
   }
 
