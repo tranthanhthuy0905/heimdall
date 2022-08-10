@@ -24,9 +24,11 @@ import models.common.{FileIdent, HeimdallError}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import play.api.cache.AsyncCacheApi
+import play.api.mvc.Results
 import utils.{HdlCache, HdlTtl}
 
 import java.net.URL
+import scala.util.control.NonFatal
 
 trait SageClient {
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
@@ -74,12 +76,14 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
       evidenceId = id.entityId.toString
     )
 
-    for {
-      res <- evidenceVideoServiceFn.getConvertedFiles(request).map {
+    evidenceVideoServiceFn.getConvertedFiles(request).map {
         case GetConvertedFilesResponse(Some(err), _) => Left(toHeimdallError(err))
         case resp => Right(resp.files.sortBy(_.index))
+      }.recover {
+        case NonFatal(ex) =>
+          logger.error(ex, "get converted files exception")("exception" -> ex)
+          Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
       }
-    } yield res
   }
 
   override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
