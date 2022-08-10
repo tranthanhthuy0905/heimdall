@@ -1,10 +1,9 @@
 package services.sage
 
 import models.common.{FileIdent, HeimdallRequest}
-import com.axon.sage.protos.v1.evidence_video_service.{ExtractionStatus, ConvertedFile => SageConvertedFileProto}
+import com.axon.sage.protos.v1.evidence_video_service.{ExtractionStatus, ConvertedFile}
 import com.axon.sage.protos.common.common.Tid
 import com.axon.sage.protos.query.file_message.File
-import com.axon.sage.protos.query.file_message.File.Status
 import com.google.protobuf.duration.Duration
 import com.google.protobuf.timestamp.Timestamp
 import play.api.libs.json._
@@ -14,50 +13,22 @@ import play.api.libs.json.{JsString, JsValue, Writes}
 
 import java.time.Instant
 
-import java.util.UUID
 import play.api.mvc.WrappedRequest
 
 case class ConvertedFilesRequest[A](file: FileIdent, request: HeimdallRequest[A])
   extends WrappedRequest[A](request)
 
-case class ConvertedFile(evidenceId: UUID,
-                         partnerId: UUID,
-                         displayName: String,
-                         contentType: String,
-                         duration: Duration,
-                         fileName: String,
-                         owner: Tid,
-                         status: Status,
-                         extractions: Seq[ExtractionStatus],
-                         index: Int
-                        )
-
-object ConvertedFile {
-  def fromSageProto(convertedFile: SageConvertedFileProto) : ConvertedFile = {
-    new ConvertedFile(
-      UUID.fromString(convertedFile.id),
-      UUID.fromString(convertedFile.partnerId),
-      convertedFile.displayName.getOrElse(""),
-      convertedFile.contentType,
-      convertedFile.duration.getOrElse(Duration.of(0, 0)),
-      convertedFile.fileName.getOrElse(""),
-      convertedFile.owner.getOrElse(Tid.defaultInstance),
-      convertedFile.status,
-      convertedFile.extractions,
-      convertedFile.index
-    )
-  }
-
+object ConvertedFileJson {
   def convertedFilesToJsonValue(files: Seq[ConvertedFile]): JsValue = Json.toJson(files map toJsonObj)
 
   def toJsonObj(file: ConvertedFile): JsObject = {
     Json.obj(
-      "id" -> file.evidenceId,
+      "id" -> file.id,
       "displayName" -> file.displayName,
       "contentType" -> file.contentType,
-      "duration" -> toJson(file.duration),
+      "duration" ->  toJson(file.duration.getOrElse(Duration.of(0, 0))),
       "fileName" -> file.fileName,
-      "owner" -> toJson(file.owner),
+      "owner" -> toJson(file.owner.getOrElse(Tid.defaultInstance)),
       "status" -> toString(file.status),
       "extractions" -> extractionStatusesToJsValue(file.extractions),
       "index" -> file.index

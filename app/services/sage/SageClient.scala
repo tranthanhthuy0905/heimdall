@@ -7,7 +7,8 @@ import com.axon.sage.protos.query.argument.UrlTTL
 import com.axon.sage.protos.query.file_message.{DownloadUrlFieldSelect, File, FileFieldSelect}
 import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
-import com.axon.sage.protos.v1.evidence_video_service.{EvidenceVideoServiceGrpc, GetConvertedFilesRequest, GetConvertedFilesResponse, ConvertedFile => SageConvertedFileProto}
+import com.axon.sage.protos.v1.evidence_video_service.{EvidenceVideoServiceGrpc, GetConvertedFilesRequest, GetConvertedFilesResponse}
+import com.axon.sage.protos.v1.evidence_video_service.ConvertedFile
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
 
@@ -23,11 +24,9 @@ import models.common.{FileIdent, HeimdallError}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import play.api.cache.AsyncCacheApi
-import play.api.mvc.Results
 import utils.{HdlCache, HdlTtl}
 
 import java.net.URL
-import scala.util.control.NonFatal
 
 trait SageClient {
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
@@ -80,7 +79,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
         case GetConvertedFilesResponse(Some(err), _) => Left(toHeimdallError(err))
         case resp => Right(resp.files.sortBy(_.index))
       }
-    } yield res.map(files => files.map(file => ConvertedFile.fromSageProto(file)))
+    } yield res
   }
 
   override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {

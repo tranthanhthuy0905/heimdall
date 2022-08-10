@@ -6,8 +6,6 @@ import play.api.libs.ws.{WSClient, WSResponse}
 
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json
-import play.api.libs.ws.{WSClient, WSResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 

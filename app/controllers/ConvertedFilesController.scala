@@ -1,10 +1,11 @@
 package controllers
 
+import com.axon.sage.protos.v1.evidence_video_service.ConvertedFile
 import actions.{ConvertedFilesRequestAction, FeatureValidationActionBuilder, HeimdallRequestAction, PermValidationActionBuilder, TokenValidationAction}
 import com.evidence.service.common.logging.LazyLogging
 import models.common.{AuthorizationAttr, PermissionType}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import services.sage.{ConvertedFile, SageClient}
+import services.sage.{SageJson, SageClient}
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -17,6 +18,7 @@ class ConvertedFilesController @Inject()(heimdallRequestAction: HeimdallRequestA
                                          sage: SageClient,
                                          components: ControllerComponents)(implicit ex: ExecutionContext)
   extends AbstractController(components)
+    with SageJson
     with LazyLogging {
 
   def getConvertedFiles: Action[AnyContent] =
@@ -36,7 +38,7 @@ class ConvertedFilesController @Inject()(heimdallRequestAction: HeimdallRequestA
       sage.
         getConvertedFiles(services.sage.EvidenceId(request.file.evidenceId, request.file.partnerId)).
         map {
-          case Right(files) => Ok(ConvertedFile.convertedFilesToJsonValue(filterExtractionInfo(evidenceId, authHandler.parsedJwt.audienceId, files)))
+          case Right(files) => Ok(convertedFilesToJsonValue(filterExtractionInfo(evidenceId, authHandler.parsedJwt.audienceId, files)))
           case Left(error) =>
             InternalServerError(error.message)
         }

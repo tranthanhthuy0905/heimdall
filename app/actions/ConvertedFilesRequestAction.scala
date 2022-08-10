@@ -1,6 +1,5 @@
 package actions
 
-import com.evidence.service.common.Convert
 import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import models.common.HeimdallRequest
