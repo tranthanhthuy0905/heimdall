@@ -75,11 +75,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
       evidenceId = id.entityId.toString
     )
 
-   evidenceVideoServiceFn.getConvertedFiles(request).map(toEither).recover {
-      case NonFatal(ex) =>
-        logger.error(ex, "get converted files exception")("exception" -> ex)
-        Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
-    }
+    evidenceVideoServiceFn.getConvertedFiles(request).map(toEither)
   }
 
   override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
