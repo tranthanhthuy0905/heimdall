@@ -5,12 +5,13 @@ import com.axon.sage.protos.query.evidence_message.{EvidenceFieldSelect, Evidenc
 import com.axon.sage.protos.common.common.Tid.EntityType.{EVIDENCE, FILE}
 import com.axon.sage.protos.query.argument.UrlTTL
 import com.axon.sage.protos.query.file_message.{DownloadUrlFieldSelect, File, FileFieldSelect}
-import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest}
+import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest, ReadResponse}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
+import com.axon.sage.protos.v1.evidence_video_service.{EvidenceVideoServiceGrpc, GetConvertedFilesRequest, GetConvertedFilesResponse, ConvertedFile => SageConvertedFileProto}
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, SECONDS}
 import com.google.protobuf.duration.{Duration => ProtobufDuration}
 import com.typesafe.config.Config
 
@@ -22,15 +23,17 @@ import models.common.{FileIdent, HeimdallError}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import play.api.cache.AsyncCacheApi
+import play.api.mvc.Results
 import utils.{HdlCache, HdlTtl}
 
 import java.net.URL
+import scala.util.control.NonFatal
 
 trait SageClient {
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
   def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]]
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]]
-
+  def getConvertedFiles(id: EvidenceId): Future[Either[HeimdallError, Seq[ConvertedFile]]]
   def getUrl(file: FileIdent,
              ttl: Duration): Future[Either[HeimdallError, URL]]
 }
@@ -61,7 +64,24 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   )
 
   val queryService = QueryServiceGrpc.stub(channel).withCallCredentials(callerSecret(credential(secret)))
+  val evidenceVideoService = EvidenceVideoServiceGrpc.stub(channel).withCallCredentials(callerSecret(credential(secret)))
   def queryServiceFn = queryService.withDeadlineAfter(queryDeadline, TimeUnit.SECONDS)
+  def evidenceVideoServiceFn = evidenceVideoService.withDeadlineAfter(evVideoDeadline, TimeUnit.SECONDS)
+
+  override def getConvertedFiles(id: EvidenceId): Future[Either[HeimdallError, Seq[ConvertedFile]]] = {
+    val request =  GetConvertedFilesRequest(
+      context = Some(requestContext),
+      partnerId = id.partnerId.toString,
+      evidenceId = id.entityId.toString
+    )
+
+    for {
+      res <- evidenceVideoServiceFn.getConvertedFiles(request).map {
+        case GetConvertedFilesResponse(Some(err), _) => Left(toHeimdallError(err))
+        case resp => Right(resp.files.sortBy(_.index))
+      }
+    } yield res.map(files => files.map(file => ConvertedFile.fromSageProto(file)))
+  }
 
   override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
     for {
@@ -82,7 +102,12 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     )
 
     for {
-      res <- queryServiceFn.read(request).map(toEither)
+      res <- queryServiceFn.read(request).map {
+        {
+          case ReadResponse(Some(err), _, _) => Left(toHeimdallError(err))
+          case resp => Right(resp.entities)
+        }
+      }
     } yield res.map(entities => entities.map(entity => Evidence.fromSageProto(entity.entity.value.asInstanceOf[SageEvidenceProto])))
   }
 

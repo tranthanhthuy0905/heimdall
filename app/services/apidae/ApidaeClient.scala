@@ -14,6 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait ApidaeClient {
   def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
+  def getMediaSummary(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getZipFileInfo(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getZipStructure(partnerID: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getZipStatus(partnerID: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
@@ -46,6 +47,16 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
         "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
         "user_id"     -> userId.toString,
+      )
+      .withMethod("GET")
+      .execute()
+
+  def getMediaSummary(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
+    buildApidaeEndpoint("/v1/media/summary")
+      .withQueryStringParameters(
+        "partner_id" -> partnerId.toString,
+        "evidence_id" -> evidenceId.toString,
+        "file_id" -> fileId.toString,
       )
       .withMethod("GET")
       .execute()
