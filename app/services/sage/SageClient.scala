@@ -25,11 +25,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
 import play.api.cache.AsyncCacheApi
-import play.api.mvc.Results
 import utils.{HdlCache, HdlTtl}
 
 import java.net.URL
-import scala.util.control.NonFatal
 
 trait SageClient {
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
