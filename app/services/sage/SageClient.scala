@@ -69,21 +69,23 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   def queryServiceFn = queryService.withDeadlineAfter(queryDeadline, TimeUnit.SECONDS)
   def evidenceVideoServiceFn = evidenceVideoService.withDeadlineAfter(evVideoDeadline, TimeUnit.SECONDS)
 
-  override def getConvertedFiles(id: EvidenceId) = {
-    val request =  GetConvertedFilesRequest(
+  override def getConvertedFiles(id: EvidenceId): Future[Either[HeimdallError, Seq[ConvertedFile]]] = {
+    val request = new GetConvertedFilesRequest(
       context = Some(requestContext),
       partnerId = id.partnerId.toString,
       evidenceId = id.entityId.toString
     )
 
-    evidenceVideoServiceFn.getConvertedFiles(request).map {
-        case GetConvertedFilesResponse(Some(err), _) => Left(toHeimdallError(err))
-        case resp => Right(resp.files.sortBy(_.index))
-      }.recover {
-        case NonFatal(ex) =>
-          logger.error(ex, "get converted files exception")("exception" -> ex)
-          Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
-      }
+    evidenceVideoService.getConvertedFiles(request).map {
+      case GetConvertedFilesResponse(Some(err), _) =>
+        logger.error("get converted files return error")("err" -> err)
+        Left(toHeimdallError(err))
+      case resp => Right(resp.files.sortBy(_.index))
+    }.recover {
+      case NonFatal(ex) =>
+        logger.error(ex, "get converted files exception")("exception" -> ex)
+        Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
+    }
   }
 
   override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
