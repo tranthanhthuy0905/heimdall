@@ -69,7 +69,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   def queryServiceFn = queryService.withDeadlineAfter(queryDeadline, TimeUnit.SECONDS)
   def evidenceVideoServiceFn = evidenceVideoService.withDeadlineAfter(evVideoDeadline, TimeUnit.SECONDS)
 
-  override def getConvertedFiles(id: EvidenceId): Future[Either[HeimdallError, Seq[ConvertedFile]]] = {
+  override def getConvertedFiles(id: EvidenceId) = {
     val request =  GetConvertedFilesRequest(
       context = Some(requestContext),
       partnerId = id.partnerId.toString,
