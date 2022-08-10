@@ -5,13 +5,13 @@ import com.axon.sage.protos.query.evidence_message.{EvidenceFieldSelect, Evidenc
 import com.axon.sage.protos.common.common.Tid.EntityType.{EVIDENCE, FILE}
 import com.axon.sage.protos.query.argument.UrlTTL
 import com.axon.sage.protos.query.file_message.{DownloadUrlFieldSelect, File, FileFieldSelect}
-import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest, ReadResponse}
+import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
 import com.axon.sage.protos.v1.evidence_video_service.{EvidenceVideoServiceGrpc, GetConvertedFilesRequest, GetConvertedFilesResponse, ConvertedFile => SageConvertedFileProto}
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
 
-import scala.concurrent.duration.{Duration, SECONDS}
+import scala.concurrent.duration.Duration
 import com.google.protobuf.duration.{Duration => ProtobufDuration}
 import com.typesafe.config.Config
 
@@ -102,12 +102,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     )
 
     for {
-      res <- queryServiceFn.read(request).map {
-        {
-          case ReadResponse(Some(err), _, _) => Left(toHeimdallError(err))
-          case resp => Right(resp.entities)
-        }
-      }
+      res <- queryServiceFn.read(request).map(toEither)
     } yield res.map(entities => entities.map(entity => Evidence.fromSageProto(entity.entity.value.asInstanceOf[SageEvidenceProto])))
   }
 
