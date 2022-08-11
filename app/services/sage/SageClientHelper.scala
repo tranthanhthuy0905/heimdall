@@ -7,6 +7,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import com.axon.sage.protos.common.common.{Error, RequestContext}
+import com.axon.sage.protos.v1.evidence_video_service.{ConvertedFile, GetConvertedFilesResponse}
 import com.axon.sage.protos.v1.query_service.{Entity, ReadResponse}
 import models.common.HeimdallError
 
@@ -56,6 +57,13 @@ trait SageClientHelper extends Retry {
     readResponse match {
       case ReadResponse(Some(err), _, _) => Left(toHeimdallError(err))
       case resp => Right(resp.entities.to[scala.collection.immutable.Seq])
+    }
+  }
+
+  def toEither(getConvertedFilesResponse: GetConvertedFilesResponse): Either[HeimdallError, scala.collection.immutable.Seq[ConvertedFile]] = {
+    getConvertedFilesResponse match {
+      case GetConvertedFilesResponse(Some(err), _) => Left(toHeimdallError(err))
+      case resp => Right(resp.files.sortBy(_.index).to[scala.collection.immutable.Seq])
     }
   }
 
