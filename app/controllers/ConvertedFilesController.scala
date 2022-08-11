@@ -29,7 +29,6 @@ class ConvertedFilesController @Inject()(heimdallRequestAction: HeimdallRequestA
         andThen permValidation.build(PermissionType.View)
         andThen apidaeRequestAction
       ).async { implicit request =>
-
       def filterExtractionInfo(id: services.sage.EvidenceId, audienceId: String, files: Seq[ConvertedFile]): Seq[ConvertedFile] = {
         if (audienceId != id.partnerId.toString) files.map(file => file.copy(extractions = Seq.empty)) else files
       }
@@ -37,11 +36,10 @@ class ConvertedFilesController @Inject()(heimdallRequestAction: HeimdallRequestA
       val authHandler = request.attrs(AuthorizationAttr.Key)
       val evidenceId = services.sage.EvidenceId(request.file.evidenceId, request.file.partnerId)
 
-      (for {
-        result <- FutureEither(
-          sage.
-            getConvertedFiles(services.sage.EvidenceId(request.file.evidenceId, request.file.partnerId))
-        ).mapLeft(toHttpStatus("failedToSendEvidenceConvertedFilesEvent")(_))
-      } yield result).fold(error, files => Ok(convertedFilesToJsonValue(filterExtractionInfo(evidenceId, authHandler.parsedJwt.audienceId, files))).as(ContentTypes.JSON))
+      FutureEither(
+        sage.
+          getConvertedFiles(services.sage.EvidenceId(request.file.evidenceId, request.file.partnerId))).
+          mapLeft(toHttpStatus("failedToSendEvidenceConvertedFilesEvent")(_))
+        .fold(error, files => Ok(convertedFilesToJsonValue(filterExtractionInfo(evidenceId, authHandler.parsedJwt.audienceId, files))).as(ContentTypes.JSON))
     }
 }
