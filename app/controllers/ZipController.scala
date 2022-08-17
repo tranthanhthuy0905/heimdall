@@ -3,10 +3,11 @@ package controllers
 import actions._
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
-import models.common.PermissionType
+import models.common.{AuthorizationAttr, PermissionType}
 import play.api.http.ContentTypes
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.apidae.ApidaeClient
+import services.audit.{AuditClient, AuditConversions, EvidenceLoadedForReviewEvent}
 import utils.{HdlResponseHelpers, WSResponseHelpers}
 
 import javax.inject.Inject
@@ -17,9 +18,11 @@ class ZipController @Inject()(
   featureValidationAction: FeatureValidationActionBuilder,
   apidaeRequestAction: ApidaeRequestAction,
   apidae: ApidaeClient,
+  audit: AuditClient,
   components: ControllerComponents)(implicit ex: ExecutionContext)
       extends AbstractController(components)
       with LazyLogging
+      with AuditConversions
       with WSResponseHelpers
       with HdlResponseHelpers  {
 
@@ -44,10 +47,18 @@ class ZipController @Inject()(
         andThen permValidation.build(PermissionType.View)
         andThen apidaeRequestAction
     ).async { implicit request =>
-      FutureEither(
-        apidae.
-          getZipStructure(request.file.partnerId, request.file.evidenceId, request.file.fileId).
-          map(withOKStatus))
-        .fold(error, response => Ok(response.json).as(ContentTypes.JSON))
+
+      val authHandler = request.attrs(AuthorizationAttr.Key)
+      val auditEvent = EvidenceLoadedForReviewEvent(
+        evidenceTid(request.file.evidenceId, request.file.partnerId),
+        updatedByTid(authHandler.parsedJwt),
+        fileTid(request.file.fileId, request.file.partnerId),
+        request.request.clientIpAddress
+      )
+      (for {
+        response <- FutureEither(apidae.getZipStructure(request.file.partnerId, request.file.evidenceId, request.file.fileId).map(withOKStatus))
+        _ <- FutureEither(audit.recordEndSuccess(auditEvent))
+          .mapLeft(toHttpStatus("failedToSendEvidenceLoadedForReviewEvent")(_))
+        } yield response).fold(error, response => Ok(response.json).as(ContentTypes.JSON))
     }
 }
