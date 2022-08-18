@@ -25,10 +25,10 @@ case class PresignedUrlImpl @Inject()(sage: SageClient, dredd: DreddClient, cach
     with StrictStatsD {
 
   def getUrl[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration = HdlTtl.urlExpired): Future[URL] = {
-    getUrlwithCache(file, request, ttl)
+    getUrlwithCache(file, request, ttl)(getUrlfromSage)
   }
 
-  private def getUrlwithCache[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
+  private def getUrlwithCache[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration)(getUrlfromSource: (FileIdent, Duration) => Future[URL]): Future[URL] = {
     if (ttl >= HdlTtl.urlExpired) {
       val key = s"${file.partnerId}-${file.evidenceId}-${file.fileId}"
       statsd.increment("get_url_cache", "scope:total_request")
@@ -39,7 +39,7 @@ case class PresignedUrlImpl @Inject()(sage: SageClient, dredd: DreddClient, cach
             Future.successful(url)
           }
           .getOrElse {
-            val res = getUrlTest(file, request, ttl).map { url =>
+            val res = getUrlfromSource(file, ttl).map { url =>
               {
                 HdlCache.PresignedUrl.set(key, url)
                 statsd.increment("get_url_cache", "scope:miss")
@@ -49,23 +49,23 @@ case class PresignedUrlImpl @Inject()(sage: SageClient, dredd: DreddClient, cach
             res
           }
       }
-    } else getUrlTest(file, request, ttl)
+    } else getUrlfromSource(file, ttl)
   }
 
   private def getUrlTest[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
     val sageResFuture  = getUrlfromSage(file, ttl)
-//    val dreddResFuture = getUrlfromDredd(file, request, ttl)
+    val dreddResFuture = getUrlfromDredd(file, request, ttl)
 
     // Always return dredd url response to keep performance of application the same
     for {
-//      dreddRes <- dreddResFuture
-      sageRes <- sageResFuture
-    } yield sageRes
+      dreddRes <- dreddResFuture
+      _ <- sageResFuture
+    } yield dreddRes
   }
 
-//  private def getUrlfromDredd[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
-//    executionTime[URL]("get_url", dredd.getUrl(file, request, ttl), false, "source:dredd")
-//  }
+  private def getUrlfromDredd[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration): Future[URL] = {
+    executionTime[URL]("get_url", dredd.getUrl(file, request, ttl), false, "source:dredd")
+  }
 
   private def getUrlfromSage(file: FileIdent, ttl: Duration): Future[URL] = {
     val baseTime = System.currentTimeMillis
