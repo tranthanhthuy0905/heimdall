@@ -27,6 +27,11 @@ GET /media/metadata                         controllers.MetadataController.metad
 GET /media/zip/status                       controllers.ZipController.getStatus
 GET /media/zip/structure                    controllers.ZipController.getStructure
 
+GET /media/summary                          controllers.MediaSummaryController.getMediaSummary
+
+GET /media/conversion/files                 controllers.ConvertedFilesController.getConvertedFiles
+
+
 # Routing for Concatenation
 POST /media/video/concatenate               controllers.ConcatenationController.requestConcat
 

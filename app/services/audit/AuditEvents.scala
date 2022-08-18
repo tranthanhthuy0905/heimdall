@@ -333,3 +333,12 @@ case class VideoConcatenationRequestedEvent (
     ("CombinedVideoTitle" -> Json.toJson(combinedVideoTitle))
   }
 }
+
+case class EvidenceLoadedForReviewEvent (
+  targetTid: Tid,
+  updatedByTid: Tid,
+  fileTid: Tid,
+  remoteAddress: String
+) extends AuditEvent {
+  final val eventTypeUuid = "69a37f83-a886-c97a-2070-514168cff10c"
+}

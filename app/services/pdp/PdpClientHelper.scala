@@ -1,6 +1,7 @@
 package services.pdp
 
 import java.util
+import scala.collection.immutable.Seq
 
 import com.axon.pdp.protos.v1.pdp_service.{PdpServiceGrpc, Tid => PTid}
 import com.evidence.service.common.Tid

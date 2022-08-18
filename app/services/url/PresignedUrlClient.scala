@@ -72,7 +72,7 @@ case class PresignedUrlImpl @Inject()(sage: SageClient, dredd: DreddClient, cach
     val future = sage.getUrl(file, ttl).flatMap {
       _.fold(
         l => {
-          logger.error("noUrlResponseFromSage")("error" -> l, "fileId" -> file.fileId, "evidenceId" -> file.evidenceId)
+          logger.error("noUrlResponseFromSage")("message" -> l.message, "errorCode" -> l.errorCode, "fileId" -> file.fileId, "evidenceId" -> file.evidenceId, "partnerId" -> file.partnerId)
           Future.failed(l)
         },
         url => Future.successful(url)

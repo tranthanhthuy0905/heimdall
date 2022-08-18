@@ -7,8 +7,10 @@ import com.axon.sage.protos.query.argument.UrlTTL
 import com.axon.sage.protos.query.file_message.{DownloadUrlFieldSelect, File, FileFieldSelect}
 import com.axon.sage.protos.v1.query_service.{QueryServiceGrpc, ReadRequest}
 import com.axon.sage.protos.v1.query_service.ReadRequest.{Criteria, Tids}
+import com.axon.sage.protos.v1.evidence_video_service.{EvidenceVideoServiceGrpc, GetConvertedFilesRequest, GetConvertedFilesResponse, ConvertedFile}
 import com.evidence.service.common.monitoring.statsd.StrictStatsD
 import com.evidence.service.common.logging.LoggingHelper
+import scala.collection.immutable.Seq
 
 import scala.concurrent.duration.Duration
 import com.google.protobuf.duration.{Duration => ProtobufDuration}
@@ -21,6 +23,7 @@ import models.common.{FileIdent, HeimdallError}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NonFatal
 import play.api.cache.AsyncCacheApi
 import utils.{HdlCache, HdlTtl}
 
@@ -30,7 +33,7 @@ trait SageClient {
   def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]]
   def getEvidences(ids: Seq[EvidenceId], query: QueryRequest): Future[Either[HeimdallError, Seq[Evidence]]]
   def getEvidenceContentType(id: EvidenceId) : Future[Either[HeimdallError, String]]
-
+  def getConvertedFiles(id: EvidenceId): Future[Either[HeimdallError, Seq[ConvertedFile]]]
   def getUrl(file: FileIdent,
              ttl: Duration): Future[Either[HeimdallError, URL]]
 }
@@ -61,7 +64,9 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   )
 
   val queryService = QueryServiceGrpc.stub(channel).withCallCredentials(callerSecret(credential(secret)))
+  val evidenceVideoService = EvidenceVideoServiceGrpc.stub(channel).withCallCredentials(callerSecret(credential(secret)))
   def queryServiceFn = queryService.withDeadlineAfter(queryDeadline, TimeUnit.SECONDS)
+  def evidenceVideoServiceFn = evidenceVideoService.withDeadlineAfter(evVideoDeadline, TimeUnit.SECONDS)
 
   override def getEvidence(id: EvidenceId, query: QueryRequest): Future[Either[HeimdallError, Evidence]] = {
     for {
@@ -119,6 +124,16 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
         case heimdallErr: HeimdallError => Left(heimdallErr)
         case otherErr => Left(HeimdallError("internal server error", HeimdallError.ErrorCode.INTERNAL_SERVER_ERROR))
       }
+  }
+
+  override def getConvertedFiles(id: EvidenceId): Future[Either[HeimdallError, Seq[ConvertedFile]]] = {
+    val request =  GetConvertedFilesRequest(
+      context = Some(requestContext),
+      partnerId = id.partnerId.toString,
+      evidenceId = id.entityId.toString
+    )
+
+    evidenceVideoServiceFn.getConvertedFiles(request).map(toEither)
   }
 
   private def getFile(id: EvidenceId, query: QueryRequest) : Future[Either[HeimdallError, File]] = {

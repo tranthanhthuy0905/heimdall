@@ -2,6 +2,7 @@ package services.rtm
 
 import akka.http.scaladsl.model.Uri
 import models.common.{HeimdallRequest, MediaIdent}
+import scala.collection.immutable.Seq
 
 import java.net.URL
 

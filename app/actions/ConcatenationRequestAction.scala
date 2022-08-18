@@ -7,6 +7,7 @@ import utils.UUIDHelper
 import models.common.HeimdallRequest
 import play.api.libs.json.JsValue
 import play.api.mvc._
+import scala.collection.immutable.Seq
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

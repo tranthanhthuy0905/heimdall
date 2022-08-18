@@ -3,6 +3,7 @@ package services.zookeeper
 import com.evidence.service.common.zookeeper.ServiceEndpoint
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Json, Reads}
+import scala.collection.immutable.Seq
 
 /**
   * Example of rtm node info:
