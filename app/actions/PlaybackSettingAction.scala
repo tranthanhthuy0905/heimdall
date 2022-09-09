@@ -12,11 +12,7 @@ case class PlaybackSettingAction @Inject()(komrade: KomradeClient)(implicit val 
   override def refine[A](input: HeimdallRequest[A]): Future[Either[Result, HeimdallRequest[A]]] = {
     for {
       watermarkSetting <- FutureEither(komrade.getWatermarkSettings(partnerId  = input.audienceId).map(setting => withSomeValue(Some(setting), "failed to retrieve playback settings")))
-    } yield HeimdallRequest(
-      request = input,
-      authorizationData = input.authorizationData,
-      playbackSettings = Some(PlaybackSettings.fromThrift(watermarkSetting))
-    )
+    } yield input.copy(playbackSettings = Some(PlaybackSettings.fromThrift(watermarkSetting)))
   }.future
 
   private def withSomeValue[T](optionValue: Option[T], errorMessage: String): Either[Result, T] =
