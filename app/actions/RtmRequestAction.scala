@@ -35,7 +35,7 @@ case class RtmRequestAction @Inject()(
   private def buildRtmQueries[A](input: HeimdallRequest[A], isMultiAudioEnabled: Boolean) = {
     RtmQueryHelper(input.path, input.queryString, isMultiAudioEnabled).map { rtmQuery =>
       for {
-        presignedUrls <- Future.traverse(input.media.toList)(presignedUrlReq.getUrl(_,input))
+        presignedUrls <- Future.traverse(input.media.toList)(presignedUrlReq.getUrl(_))
         endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString)
         queries       <- Future.successful(RtmQueryHelper.getRTMQueries(rtmQuery.params, Some(input.watermark), input.playbackSettings, presignedUrls, input.audienceId))
       } yield {
