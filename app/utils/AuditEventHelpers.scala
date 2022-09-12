@@ -4,21 +4,20 @@ import com.axon.sage.protos.query.evidence_message.EvidenceFieldSelect
 import com.evidence.service.audit.Tid
 import play.api.libs.ws.WSResponse
 import services.audit._
-import models.common.FileIdent
+import models.common.{AuthorizationAttr, FileIdent, HeimdallRequest}
 import services.apidae.ApidaeClient
+
 import scala.concurrent.ExecutionContext
-import play.api.mvc.BaseController
 import com.evidence.service.common.logging.LazyLogging
 import play.api.libs.json.JsValue
 import services.sage.{EvidenceId, SageClient}
-import scala.collection.mutable.{Set, ListBuffer}
 
-trait AuditEventHelpers extends BaseController 
+import scala.collection.mutable.{ListBuffer, Set}
+
+trait AuditEventHelpers extends AuditConversions
     with WSResponseHelpers
-    with AuditConversions
     with EitherHelpers
     with LazyLogging {
-
     def getZipInfoAndBuildZipAccessEvent(
           sage: SageClient,
           apidae: ApidaeClient,
@@ -31,7 +30,7 @@ trait AuditEventHelpers extends BaseController
                                     .mapLeft(anyError(file))
             event <- {
               if (evidenceContentType == "application/zip") {
-                FutureEither(apidae.getZipFileInfo(file.partnerId, file.evidenceId, file.fileId).map(withOKStatus))
+                FutureEither(apidae.getZipFileInfoRaw(file.partnerId, file.evidenceId, file.fileId).map(withOKStatus))
                 .map(
                   info => Some(buildZipFileAccessedEvent(info.json, file, updatedByTid, remoteAddress))
                 )
@@ -69,7 +68,7 @@ trait AuditEventHelpers extends BaseController
       )
     }
 
-    def buildZipFileAccessedEvent(response: WSResponse, baseEvent: AuditEvent) : AuditEvent = {   
+    def buildZipFileAccessedEvent(response: WSResponse, baseEvent: AuditEvent) : AuditEvent = {
         // if this is a zip file then use zip audit event
         val evidenceTitle = (response.json \ "data" \ "file_name").asOpt[String].getOrElse("")
         val filePath = (response.json \ "data" \ "file_path").asOpt[String].getOrElse("")
@@ -119,7 +118,7 @@ trait AuditEventHelpers extends BaseController
         zipEventBuilder: (WSResponse, AuditEvent) => AuditEvent)(implicit ex: ExecutionContext) = {
         // if evidence content type is application/zip then query for file's path
         if (evidenceContentType == "application/zip") {
-            FutureEither(apidae.getZipFileInfo(file.partnerId, file.evidenceId, file.fileId).map(withOKStatus)).map(response => zipEventBuilder(response, baseEvent))
+            FutureEither(apidae.getZipFileInfoRaw(file.partnerId, file.evidenceId, file.fileId).map(withOKStatus)).map(response => zipEventBuilder(response, baseEvent))
         }
         else {
             FutureEither.successful(Right(baseEvent))

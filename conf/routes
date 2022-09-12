@@ -10,7 +10,6 @@ GET  /media/alive                           controllers.HealthController.isItUp
 # Heimdall API
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 GET  /media/image/transcode                 controllers.ImageController.view
-GET  /media/image/thumbnail                 controllers.ImageController.extractThumbnail
 GET  /media/image/zoom                      controllers.ImageController.zoom
 GET  /media/image/metadata                  controllers.ImageController.metadata
 

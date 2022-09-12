@@ -44,7 +44,7 @@ case class WatermarkAction @Inject()(komrade: KomradeClient)(
       user <- FutureEither(
         komrade.getUser(input.audienceId, input.subjectId).map(withSomeValue(_, "failed to retrieve username")))
 
-    } yield HeimdallRequest(input, input.authorizationData, watermark = Watermark(partner, user))).future
+    } yield input.copy(watermark = Watermark(partner, user))).future
   }
 
   private def withSomeValue[T](optionValue: Option[T], errorMessage: String): Either[Result, T] =
