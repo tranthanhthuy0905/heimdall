@@ -12,6 +12,7 @@ import java.net.URL
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 trait PresignedUrlClient {
   def getUrl[A](file: FileIdent, request: HeimdallRequest[A], ttl: Duration = HdlTtl.urlExpired): Future[URL]
@@ -79,6 +80,11 @@ case class PresignedUrlImpl @Inject()(sage: SageClient, dredd: DreddClient, cach
         },
         url => Future.successful(url)
       )
+    }
+    // Compare with the executionTime once done calling Sage
+    future.onComplete {
+      case Success(_) => logger.error("OnSuccess Time")("time" -> System.currentTimeMillis, "fileId" -> file.fileId, "evidenceId" -> file.evidenceId, "partnerId" -> file.partnerId)
+      case Failure(_) => logger.error("OnFailure Time")("time" -> System.currentTimeMillis, "fileId" -> file.fileId, "evidenceId" -> file.evidenceId, "partnerId" -> file.partnerId)
     }
     executionTime[URL]("get_url", future, false, baseTime, "source:sage")
   }

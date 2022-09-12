@@ -146,10 +146,25 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
         entityDomain = id.partnerId.toString
       ))))
     )
+    // Check Latency of Sage
+    val baseTime = System.currentTimeMillis
     val fileRes = for {
       res <- queryServiceFn.read(request).map(toEither)
     } yield res.map(_.map(_.entity.value.asInstanceOf[File]))
-    fileRes.map(_.map(_.headOption).flatMap(_.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
+    fileRes.map(_.map(_.headOption).flatMap(file => {
+      file match {
+        case Some(fileRaw) =>
+          val currTime = (System.currentTimeMillis - baseTime) / 1000
+          if (currTime > 1.5) {
+            logger.error("SageExecuteTooSlow")("correlationId" -> requestContext.correlationId, "fileId" -> id.entityId, "partnerId" -> id.partnerId, "execTime" -> currTime)
+            // To compare with exeuction time when being called in PresignedUrlClient
+            logger.error("GetFile Time")("time" -> System.currentTimeMillis, "fileId" -> id.entityId, "partnerId" -> id.partnerId)
+          }
+          Right(fileRaw)
+        case None =>
+          file.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))
+      }
+    }))
   }
 
   override def getUrl(file: FileIdent, ttl: Duration): Future[Either[HeimdallError, URL]] = {
