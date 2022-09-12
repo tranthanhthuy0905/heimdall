@@ -154,8 +154,8 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     fileRes.map(_.map(_.headOption).flatMap(file => {
       file match {
         case Some(fileRaw) =>
-          val currTime = (System.currentTimeMillis - baseTime) / 1000
-          if (currTime > 1.5) {
+          val currTime = System.currentTimeMillis - baseTime
+          if (currTime > 250) {
             logger.error("SageExecuteTooSlow")("correlationId" -> requestContext.correlationId, "fileId" -> id.entityId, "partnerId" -> id.partnerId, "execTime" -> currTime)
             // To compare with exeuction time when being called in PresignedUrlClient
             logger.error("GetFile Time")("time" -> System.currentTimeMillis, "fileId" -> id.entityId, "partnerId" -> id.partnerId)
