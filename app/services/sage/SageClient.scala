@@ -22,7 +22,7 @@ import io.grpc.{CallCredentials, Metadata}
 import models.common.{FileIdent, HeimdallError}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 import play.api.cache.AsyncCacheApi
 import utils.{HdlCache, HdlTtl}
@@ -146,10 +146,13 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
         entityDomain = id.partnerId.toString
       ))))
     )
+    // Check Latency of Sage
+    val baseTime = System.currentTimeMillis
     val fileRes = for {
       res <- queryServiceFn.read(request).map(toEither)
     } yield res.map(_.map(_.entity.value.asInstanceOf[File]))
-    fileRes.map(_.map(_.headOption).flatMap(_.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
+    val finalFile = fileRes.map(_.map(_.headOption).flatMap(_.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
+    logSageExecTime(id, finalFile, baseTime)
   }
 
   override def getUrl(file: FileIdent, ttl: Duration): Future[Either[HeimdallError, URL]] = {
@@ -178,5 +181,20 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   private def manageDownloadUrl(input: Either[HeimdallError, File]): Either[HeimdallError, String] = {
     val urlString = input.map(_.downloadUrl.map(_.url).map(_.trim).filter(_.nonEmpty))
     urlString.flatMap(_.toRight(HeimdallError("Presigned-url not found", HeimdallError.ErrorCode.NOT_FOUND)))
+  }
+
+  private def logSageExecTime[T](id: EvidenceId, future: Future[T], baseTime: Long) = {
+    def logging(mes: String, threshold: Long) = {
+      val currTime = System.currentTimeMillis
+      val diff = currTime - baseTime
+      if (diff > threshold) {
+        logger.error(mes)("correlationId" -> requestContext.correlationId, "fileId" -> id.entityId, "partnerId" -> id.partnerId, "execTime" -> diff, "startTime" -> baseTime, "endTime" -> currTime)
+      }
+    }
+    future.onComplete {
+      case Success(_) => logging("SageExecuteTooSlow", 250)
+      case Failure(_) => logging("SageExecuteFailTooSlow", 2000)
+    }
+    future
   }
 }
