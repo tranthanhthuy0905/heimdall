@@ -15,7 +15,7 @@ case class HeimdallRequestAction @Inject()(defaultParser: BodyParsers.Default)(
     with LazyLogging {
 
   def refine[A](request: Request[A]): Future[Either[Result, HeimdallRequest[A]]] = {
-    logger.info("Request header")("header" -> request.queryString)
+    logger.info("Request header")("header" -> request.queryString, "request" -> request)
     Future(
       request.attrs
         .get(AuthorizationAttr.Key)
