@@ -3,7 +3,7 @@ package actions
 import com.evidence.service.common.monad.FutureEither
 import models.common.{AuditEventType, AuthorizationAttr, HeimdallRequest}
 import play.api.mvc.{ActionRefiner, Result, Results}
-import services.audit.{AuditConversions, AuditEvent, EvidenceReviewEvent}
+import services.audit.{AuditConversions, AuditEvent, EvidencePlaybackRequested, EvidenceReviewEvent, VideoConcatenationRequestedEvent}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,6 +36,14 @@ case class AuditEventAction @Inject()(auditEventType: AuditEventType.Value)()(
             fileTid(file.fileId, file.partnerId),
             input.clientIpAddress
           )
+        case AuditEventType.EvidenceConversionRequested =>
+          EvidencePlaybackRequested(
+            evidenceTid(file.evidenceId, file.partnerId),
+            updatedByTid(authHandler.parsedJwt),
+            fileTid(file.fileId, file.partnerId),
+            input.clientIpAddress
+          )
+
 
       }).map(Right(_)).getOrElse(Left(Results.BadRequest))
     }

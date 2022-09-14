@@ -3,7 +3,7 @@ package controllers
 import actions._
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
-import models.common.{AuthorizationAttr, PermissionType}
+import models.common.{AuditEventType, AuthorizationAttr, PermissionType}
 import play.api.http.ContentTypes
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import services.apidae.ApidaeClient
@@ -17,6 +17,7 @@ class ZipController @Inject()(
   permValidation: PermValidationActionBuilder,
   featureValidationAction: FeatureValidationActionBuilder,
   apidaeRequestAction: ApidaeRequestAction,
+  zipAuditEventAction: ZipAuditEventActionBuilder,
   apidae: ApidaeClient,
   audit: AuditClient,
   components: ControllerComponents)(implicit ex: ExecutionContext)
@@ -45,17 +46,11 @@ class ZipController @Inject()(
       heimdallRequestAction
         andThen featureValidationAction.build("edc.service.apidae.enable")
         andThen permValidation.build(PermissionType.View)
+        andThen zipAuditEventAction.build(AuditEventType.ZipEvidenceLoaded)
         andThen apidaeRequestAction
     ).async { implicit request =>
-
-      val authHandler = request.attrs(AuthorizationAttr.Key)
-      val auditEvent = EvidenceLoadedForReviewEvent(
-        evidenceTid(request.file.evidenceId, request.file.partnerId),
-        updatedByTid(authHandler.parsedJwt),
-        fileTid(request.file.fileId, request.file.partnerId),
-        request.request.clientIpAddress
-      )
       (for {
+        auditEvent <- FutureEither.successful(request.request.auditEvent.toRight(INTERNAL_SERVER_ERROR))
         response <- FutureEither(apidae.getZipStructure(request.file.partnerId, request.file.evidenceId, request.file.fileId).map(withOKStatus))
         _ <- FutureEither(audit.recordEndSuccess(auditEvent))
           .mapLeft(toHttpStatus("failedToSendEvidenceLoadedForReviewEvent")(_))

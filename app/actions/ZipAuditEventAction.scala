@@ -4,7 +4,7 @@ import com.evidence.service.common.monad.FutureEither
 import models.common.{AuditEventType, AuthorizationAttr, FileIdent, HeimdallRequest, ZipFileMetadata}
 import play.api.mvc.{ActionRefiner, Result, Results}
 import services.apidae.ApidaeClient
-import services.audit.{AuditConversions, AuditEvent, EvidenceReviewEvent, ZipFileAccessedEvent}
+import services.audit.{AuditConversions, AuditEvent, EvidenceLoadedForReviewEvent, EvidenceReviewEvent, ZipFileAccessedEvent}
 import services.sage.{EvidenceId, SageClient}
 
 import javax.inject.Inject
@@ -60,6 +60,13 @@ case class ZipAuditEventAction @Inject()(auditEventType: AuditEventType.Value)(s
             input.clientIpAddress,
             zipFileMetadata.fileName,
             zipFileMetadata.filePath
+          )
+        case AuditEventType.ZipEvidenceLoaded =>
+          EvidenceLoadedForReviewEvent(
+            evidenceTid(zipFileMetadata.evidenceId, zipFileMetadata.partnerId),
+            updatedByTid(authHandler.parsedJwt),
+            fileTid(zipFileMetadata.fileId, zipFileMetadata.partnerId),
+            input.clientIpAddress
           )
     }
   }

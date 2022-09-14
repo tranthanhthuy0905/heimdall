@@ -5,7 +5,6 @@ import com.evidence.service.common.logging.LazyLogging
 import javax.inject.Inject
 import play.api.http.ContentTypes
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import services.audit.AuditConversions
 import services.drd.DrdClient
 import utils.{HdlResponseHelpers, WSResponseHelpers}
 
@@ -20,7 +19,6 @@ class RedactionController @Inject()(
 )(implicit ex: ExecutionContext)
     extends AbstractController(components)
     with LazyLogging
-    with AuditConversions
     with WSResponseHelpers
     with HdlResponseHelpers {
 
