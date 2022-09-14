@@ -15,7 +15,6 @@ import scala.concurrent.ExecutionContext
 class ZipController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   permValidation: PermValidationActionBuilder,
-  featureValidationAction: FeatureValidationActionBuilder,
   apidaeRequestAction: ApidaeRequestAction,
   zipAuditEventAction: ZipAuditEventActionBuilder,
   apidae: ApidaeClient,
@@ -30,7 +29,6 @@ class ZipController @Inject()(
   def getStatus: Action[AnyContent] =
     (
       heimdallRequestAction
-        andThen featureValidationAction.build("edc.service.apidae.enable")
         andThen permValidation.build(PermissionType.View)
         andThen apidaeRequestAction
     ).async { implicit request =>
@@ -44,7 +42,6 @@ class ZipController @Inject()(
   def getStructure: Action[AnyContent] =
     (
       heimdallRequestAction
-        andThen featureValidationAction.build("edc.service.apidae.enable")
         andThen permValidation.build(PermissionType.View)
         andThen zipAuditEventAction.build(AuditEventType.ZipEvidenceLoaded)
         andThen apidaeRequestAction

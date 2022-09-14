@@ -18,7 +18,6 @@ import utils.{HdlResponseHelpers, WSResponseHelpers}
 class MediaConvertController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   permValidation: PermValidationActionBuilder,
-  featureValidationAction: FeatureValidationActionBuilder,
   apidaeRequestAction: ApidaeRequestAction,
   auditEventAction: AuditEventActionBuilder,
   mediaConvertValidation: MediaConvertValidation,
@@ -35,7 +34,6 @@ class MediaConvertController @Inject()(
   def convert: Action[AnyContent] =
     (
       heimdallRequestAction
-        andThen featureValidationAction.build("edc.service.apidae.enable")
         andThen permValidation.build(PermissionType.View)
         andThen auditEventAction.build(AuditEventType.EvidenceConversionRequested)
         andThen apidaeRequestAction
@@ -55,7 +53,6 @@ class MediaConvertController @Inject()(
   def status: Action[AnyContent] =
     (
       heimdallRequestAction
-        andThen featureValidationAction.build("edc.service.apidae.enable")
         andThen permValidation.build(PermissionType.View)
         andThen apidaeRequestAction
     ).async { implicit request =>

@@ -24,7 +24,6 @@ class ImageController @Inject()(
   permValidation: PermValidationActionBuilder,
   auditEventAction: AuditEventActionBuilder,
   zipAuditEventAction: ZipAuditEventActionBuilder,
-  featureValidationAction: FeatureValidationActionBuilder,
   watermarkAction: WatermarkAction,
   rtiRequestAction: RtiRequestAction,
   rti: RtiClient,
