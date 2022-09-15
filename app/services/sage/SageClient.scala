@@ -192,8 +192,8 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
       }
     }
     future.onComplete {
-      case Success(_) => logging("SageExecuteTooSlow", 250)
-      case Failure(_) => logging("SageExecuteFailTooSlow", 2000)
+      case Success(_) => logging("SageExecuteTooSlow", 100)
+      case Failure(_) => logging("SageExecuteFailTooSlow", 500)
     }
     future
   }
