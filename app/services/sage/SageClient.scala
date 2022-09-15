@@ -146,13 +146,11 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
         entityDomain = id.partnerId.toString
       ))))
     )
-    // Check Latency of Sage
-    val baseTime = System.currentTimeMillis
     val fileRes = for {
       res <- queryServiceFn.read(request).map(toEither)
     } yield res.map(_.map(_.entity.value.asInstanceOf[File]))
     val finalFile = fileRes.map(_.map(_.headOption).flatMap(_.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
-    logSageExecTime(id, finalFile, baseTime)
+    logSageExecTime(id, finalFile, System.currentTimeMillis, request)
   }
 
   override def getUrl(file: FileIdent, ttl: Duration): Future[Either[HeimdallError, URL]] = {
@@ -183,17 +181,19 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     urlString.flatMap(_.toRight(HeimdallError("Presigned-url not found", HeimdallError.ErrorCode.NOT_FOUND)))
   }
 
-  private def logSageExecTime[T](id: EvidenceId, future: Future[T], baseTime: Long) = {
+  private def logSageExecTime[T](id: EvidenceId, future: Future[T], baseTime: Long, request: ReadRequest) = {
     def logging(mes: String, threshold: Long) = {
+      val correlationId = request.context.map(_.correlationId).getOrElse("")
+      val callingService = request.context.map(_.callingService).getOrElse("")
       val currTime = System.currentTimeMillis
       val diff = currTime - baseTime
       if (diff > threshold) {
-        logger.error(mes)("correlationId" -> requestContext.correlationId, "fileId" -> id.entityId, "partnerId" -> id.partnerId, "execTime" -> diff, "startTime" -> baseTime, "endTime" -> currTime)
+        logger.warn(mes)("correlationId" -> correlationId, "callingService" -> callingService, "fileId" -> id.entityId, "partnerId" -> id.partnerId, "execTimeInMilSec" -> diff, "startTime" -> baseTime, "endTime" -> currTime)
       }
     }
     future.onComplete {
-      case Success(_) => logging("SageExecuteTooSlow", 100)
-      case Failure(_) => logging("SageExecuteFailTooSlow", 500)
+      case Success(_) => logging("SageExecuteSuccessTooSlow", 150)
+      case _ => ()
     }
     future
   }
