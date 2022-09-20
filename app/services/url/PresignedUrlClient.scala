@@ -36,7 +36,6 @@ case class PresignedUrlImpl @Inject()(sage: SageClient, dredd: DreddClient, cach
         HdlCache.PresignedUrl
           .get(key)
           .map { url =>
-            logger.info("Redis success")("key" -> key)
             Future.successful(url)
           }
           .getOrElse {
