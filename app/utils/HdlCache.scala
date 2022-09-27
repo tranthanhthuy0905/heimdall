@@ -73,7 +73,7 @@ case object HdlTtl {
   val partnerFeaturesRedisTTL: FiniteDuration =
     Duration(config.getDuration("service.cache.partner-features.redis-ttl", TimeUnit.MINUTES), TimeUnit.MINUTES)
 
-  val bufferedEventTTL: FiniteDuration = 3 * TimeUnit.SECONDS
+  val bufferedEventTTL: FiniteDuration = FiniteDuration.apply(3, TimeUnit.SECONDS)
 }
 
 case object HdlCache {
