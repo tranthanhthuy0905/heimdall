@@ -72,6 +72,8 @@ case object HdlTtl {
 
   val partnerFeaturesRedisTTL: FiniteDuration =
     Duration(config.getDuration("service.cache.partner-features.redis-ttl", TimeUnit.MINUTES), TimeUnit.MINUTES)
+
+  val bufferedEventTTL: FiniteDuration = 2 * TimeUnit.SECONDS
 }
 
 case object HdlCache {
@@ -163,6 +165,20 @@ case object HdlCache {
 
     override def set(key: String, value: Seq[PartnerFeature]): Unit =
       cache.setSync(hdlKey(key), cacheKey, cacheValue(value, HdlTtl.partnerFeaturesRedisTTL))
+
+    override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
+  }
+
+  case object AuditDebounce extends HdlCache[String, Boolean] {
+    private val cacheKey = "AuditDebounce"
+    private val cache =
+      new Cache[cacheValue[Boolean]](CacheConfig(ttl = Some(HdlTtl.bufferedEventTTL)))
+
+    override def get(key: String): Option[Boolean] =
+      getValue(cache.getSync(hdlKey(key), cacheKey, refreshTTL = false), cacheKey)
+
+    override def set(key: String, value: Boolean): Unit =
+      cache.setSync(hdlKey(key), cacheKey, cacheValue(value, HdlTtl.bufferedEventTTL))
 
     override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
   }
