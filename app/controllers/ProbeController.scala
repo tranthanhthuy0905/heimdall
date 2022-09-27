@@ -1,12 +1,6 @@
 package controllers
 
-import actions.{
-  GroupRtmRequestAction,
-  GroupRtmRequestFilterAction,
-  HeimdallRequestAction,
-  PermValidationActionBuilder,
-  RtmRequestAction
-}
+import actions.{GroupRtmRequestAction, GroupRtmRequestFilterAction, HeimdallRequestAction, PermValidationActionBuilder, RtmRequestAction}
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
 
@@ -56,19 +50,14 @@ class ProbeController @Inject()(
         (
           for {
             // audit zip file accessed event
-            zipAccessEvents <- FutureEither(
-              Future
-                .traverse(media.toList)(
-                  file => getZipInfoAndBuildZipAccessEvent(sage, apidae, file, updatedBy, remoteAddress).future
-                )
-                .map(toEitherOfList)).map(list => list.flatten)
-            _ <- FutureEither(audit.recordEndSuccessDebounce(zipAccessEvents))
+            zipAccessEvents <- FutureEither(Future.traverse(media.toList)(
+              file => getZipInfoAndBuildZipAccessEvent(sage, apidae, file, updatedBy, remoteAddress).future
+            ).map(toEitherOfList)).map(list => list.flatten)
+            _ <- FutureEither(audit.recordEndSuccess(zipAccessEvents))
               .mapLeft(toHttpStatus("failedToSendZipFileAccessedAuditEvent")(_, Some(request.media)))
 
             response <- FutureEither(rtm.probe(request).map(withOKStatus))
-            _ <- FutureEither(
-              audit.recordEndSuccessDebounce(
-                zipAccessedToBufferEvents(media.toList, zipAccessEvents, updatedBy, remoteAddress)))
+            _ <- FutureEither(audit.recordEndSuccess(zipAccessedToBufferEvents(media.toList, zipAccessEvents, updatedBy, remoteAddress)))
               .mapLeft(toHttpStatus("failedToSendMedaBufferEvent")(_, Some(request.media)))
           } yield toProbeResult(response, request)
         ).fold(error, Ok(_).as(ContentTypes.JSON))
@@ -78,21 +67,18 @@ class ProbeController @Inject()(
     (heimdallRequestAction
       andThen permValidation.build(PermissionType.View)
       andThen groupRtmRequestAction
-      andThen groupRtmRequestFilterAction).async { request =>
-      Future
-        .traverse(request.toList) { rtmRequest =>
-          rtm
-            .send(rtmRequest)
-            .map(withOKStatus)
+      andThen groupRtmRequestFilterAction
+    ).async {
+      request =>
+        Future.traverse(request.toList) {rtmRequest =>
+          rtm.send(rtmRequest).map(withOKStatus)
             .map(response => response.map(toProbeResult(_, rtmRequest)))
-        }
-        .map { res =>
+        }.map { res =>
           toEitherOfList(res.toList)
             .fold(
               error,
-              res =>
-                Ok(
-                  Json.obj(("data", res))
+              res => Ok(
+                Json.obj(("data", res))
               )
             )
         }
@@ -108,8 +94,7 @@ class ProbeController @Inject()(
     val streamingToken = generateStreamingToken(request)
 
     val responseWithToken = response.json
-      .as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingToken)) + ("fileIds" -> Json.toJson(
-      request.media.fileIds))
+      .as[JsObject] + ("streamingSessionToken" -> Json.toJson(streamingToken)) + ("fileIds" -> Json.toJson(request.media.fileIds))
     responseWithToken
   }
 }

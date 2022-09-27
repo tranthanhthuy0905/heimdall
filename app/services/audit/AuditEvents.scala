@@ -51,7 +51,7 @@ trait AuditEvent {
   /**
     * buildJson() builds json object for audit event, any future audit event can override this to add/remove fields
     */
-  def buildJson(): JsValue = {
+  def buildJson() : JsValue = {
     Json
       .obj(
         "TargetTID" -> Json.obj(
@@ -73,20 +73,12 @@ trait AuditEvent {
         "ClientIpAddress" -> remoteAddress
       )
   }
-
   /**
     * toJsonString serializes data into JSON formatted message converted to a string.
     */
   def toJsonString: String = {
     buildJson().toString
   }
-
-  def sha256Hash(): String =
-    String.format(
-      "%064x",
-      new java.math.BigInteger(
-        1,
-        java.security.MessageDigest.getInstance("SHA-256").digest(toJsonString.getBytes("UTF-8"))))
 }
 
 /**
@@ -211,10 +203,10 @@ case class ZipFileAccessedEvent(
   filePath: String
 ) extends AuditEvent {
   final val eventTypeUuid = "932be422-15e7-c578-6b0c-5265569c61f5"
-  override def buildJson(): JsValue = {
-    super.buildJson().as[JsObject] +
-      ("EvidenceTitle" -> Json.toJson(evidenceTitle)) +
-      ("FilePath"      -> Json.toJson(filePath))
+  override def buildJson() : JsValue = {
+    super.buildJson().as[JsObject] + 
+      ("EvidenceTitle" -> Json.toJson(evidenceTitle)) + 
+      ("FilePath" -> Json.toJson(filePath))
   }
 }
 
@@ -231,10 +223,10 @@ case class ZipFileStreamedEvent(
   filePath: String
 ) extends AuditEvent {
   final val eventTypeUuid = "f4adeeea-7dfe-cf94-f7ef-43abd6929933"
-  override def buildJson(): JsValue = {
-    super.buildJson().as[JsObject] +
-      ("EvidenceTitle" -> Json.toJson(evidenceTitle)) +
-      ("FilePath"      -> Json.toJson(filePath))
+  override def buildJson() : JsValue = {
+    super.buildJson().as[JsObject] + 
+    ("EvidenceTitle" -> Json.toJson(evidenceTitle)) + 
+    ("FilePath" -> Json.toJson(filePath))
   }
 }
 
@@ -251,10 +243,10 @@ case class ZipFileBufferedEvent(
   filePath: String
 ) extends AuditEvent {
   final val eventTypeUuid = "77f9f84d-6e13-ef63-1298-ef3a0c9499da"
-  override def buildJson(): JsValue = {
-    super.buildJson().as[JsObject] +
-      ("EvidenceTitle" -> Json.toJson(evidenceTitle)) +
-      ("FilePath"      -> Json.toJson(filePath))
+  override def buildJson() : JsValue = {
+    super.buildJson().as[JsObject] + 
+    ("EvidenceTitle" -> Json.toJson(evidenceTitle)) + 
+    ("FilePath" -> Json.toJson(filePath))
   }
 }
 
@@ -301,7 +293,7 @@ case class WatermarkSettingsUpdatedEvent(
   position: Int
 ) extends AuditEvent {
   override val eventTypeUuid = "9c300b45-1ec7-f9c9-0683-6142aae00f6e"
-  override val fileTid       = Tid(TidEntities.File)
+  override val fileTid = Tid(TidEntities.File)
 
   override def toJsonString: String = {
     Json
@@ -316,7 +308,7 @@ case class WatermarkSettingsUpdatedEvent(
           "Domain" -> updatedByTid.domain,
           "ID"     -> updatedByTid.id
         ),
-        "Position"        -> position,
+        "Position" -> position,
         "Ver"             -> ver,
         "ClientIpAddress" -> remoteAddress
       )
@@ -328,7 +320,7 @@ case class WatermarkSettingsUpdatedEvent(
  * echo -n com.evidence.data.subscriber.events.v2.VideoConcatenationRequested | md5
  * ced5588a173a85e0876cb45d35b2afce
  */
-case class VideoConcatenationRequestedEvent(
+case class VideoConcatenationRequestedEvent (
   targetTid: Tid,
   updatedByTid: Tid,
   fileTid: Tid,
@@ -336,13 +328,13 @@ case class VideoConcatenationRequestedEvent(
   combinedVideoTitle: String,
 ) extends AuditEvent {
   val eventTypeUuid = "dd62129c-b510-b4f4-091c-437d7e1c386a"
-  override def buildJson(): JsValue = {
-    super.buildJson().as[JsObject] +
-      ("CombinedVideoTitle" -> Json.toJson(combinedVideoTitle))
+  override def buildJson() : JsValue = {
+    super.buildJson().as[JsObject] + 
+    ("CombinedVideoTitle" -> Json.toJson(combinedVideoTitle))
   }
 }
 
-case class EvidenceLoadedForReviewEvent(
+case class EvidenceLoadedForReviewEvent (
   targetTid: Tid,
   updatedByTid: Tid,
   fileTid: Tid,
