@@ -33,8 +33,12 @@ class AuditClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
   }
 
   private def doRecordAuditDebounce(event: AuditEvent): Future[String] = {
-    if (HdlCache.AuditDebounce.get(event.sha256Hash()).getOrElse(false)) {
-      doRecordAudit(event)
+    val key = event.sha256Hash()
+    if (HdlCache.AuditDebounce.get(key).getOrElse(false)) {
+      doRecordAudit(event).map(res => {
+        HdlCache.AuditDebounce.set(key, value = true)
+        res
+      })
     } else {
       Future.successful("debounced")
     }
