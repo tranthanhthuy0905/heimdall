@@ -5,15 +5,13 @@ import com.evidence.service.common.finagle.FinagleClient
 import com.evidence.service.common.finagle.FutureConverters._
 import com.evidence.service.common.logging.LazyLogging
 import com.typesafe.config.Config
-import utils.HdlCache
-
 import javax.inject.{Inject, Singleton}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 trait AuditClient {
   def recordEndSuccess(event: AuditEvent): Future[Either[Throwable, String]]
   def recordEndSuccess(event: List[AuditEvent]): Future[Either[Throwable, List[String]]]
-  def recordEndSuccessDebounce(event: List[AuditEvent]): Future[Either[Throwable, List[String]]]
 }
 
 @Singleton
@@ -32,18 +30,6 @@ class AuditClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
     Authorization(authType, "N/A", "N/A", secret)
   }
 
-  private def doRecordAuditDebounce(event: AuditEvent): Future[String] = {
-    val key = event.sha256Hash()
-    if (HdlCache.AuditDebounce.get(key).getOrElse(false)) {
-      Future.successful("debounced")
-    } else {
-      doRecordAudit(event).map(res => {
-        HdlCache.AuditDebounce.set(key, value = true)
-        res
-      })
-    }
-  }
-
   private def doRecordAudit(event: AuditEvent): Future[String] =
     client
       .recordEventEndWithSuccess(
@@ -58,12 +44,6 @@ class AuditClientImpl @Inject()(config: Config)(implicit ex: ExecutionContext) e
   override def recordEndSuccess(events: List[AuditEvent]): Future[Either[Throwable, List[String]]] = {
     Future
       .traverse(events)(doRecordAudit)
-      .transformWith(value => Future.successful(value.toEither))
-  }
-
-  override def recordEndSuccessDebounce(events: List[AuditEvent]): Future[Either[Throwable, List[String]]] = {
-    Future
-      .traverse(events)(doRecordAuditDebounce)
       .transformWith(value => Future.successful(value.toEither))
   }
 
