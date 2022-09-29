@@ -22,7 +22,7 @@ object Common {
   val notYetCommonsSslVersion    = "0.3.15"
   val logbackCoreVersion         = "1.2.11"
   val apacheHttpVersion          = "4.5.13"
-  val snakeYamlVersion           = "1.31"
+  val snakeYamlVersion           = "1.32"
 
   val resolvers = Seq("Nexus" at "https://nexus.taservs.net/content/groups/public")
 
