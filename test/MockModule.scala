@@ -5,7 +5,6 @@ import services.apidae.{ApidaeClient, ApidaeClientImpl}
 import services.audit.AuditClient
 import services.document.{DocumentClient, DocumentClientImpl}
 import services.drd.{DrdClient, DrdClientImpl}
-import services.dredd.DreddClient
 import services.komrade.KomradeClient
 import services.metadata.{MetadataClient, MetadataClientImpl}
 import services.pdp.{PdpClient, PdpClientImpl}
@@ -20,7 +19,6 @@ class MockModule extends Module with MockitoSugar {
   override def configure() = {
     bind(classOf[AuditClient]).toInstance(mock[AuditClient])
     bind(classOf[Authorizer]).toInstance(mock[Authorizer])
-    bind(classOf[DreddClient]).toInstance(mock[DreddClient])
     bind(classOf[KomradeClient]).toInstance(mock[KomradeClient])
     bind(classOf[PdpClient]).toInstance(mock[PdpClientImpl])
     bind(classOf[RtiClient]).toInstance(mock[RtiClient])
