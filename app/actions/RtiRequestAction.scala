@@ -22,7 +22,7 @@ case class RtiRequestAction @Inject()(
 
     val result = for {
       file         <- FutureEither.successful(request.media.headOption.toRight(Results.BadRequest))
-      presignedUrl <- FutureEither(presignedUrlReq.getUrl(file, request).map(Right(_)))
+      presignedUrl <- FutureEither(presignedUrlReq.getUrl(file).map(Right(_)))
     } yield {
       RtiRequest(file, presignedUrl, request.watermark, request)
     }

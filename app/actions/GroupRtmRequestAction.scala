@@ -30,7 +30,7 @@ case class GroupRtmRequestAction @Inject()(
     val res = RtmQueryHelper(input.path, input.queryString).toRight(Results.BadRequest).map { rtmQuery =>
       Future.traverse(input.media.toList)(fileIdent => {
         for {
-          presignedUrl <- presignedUrlReq.getUrl(fileIdent, input)
+          presignedUrl <- presignedUrlReq.getUrl(fileIdent)
           endpoint <- loadBalancer.getInstanceAsFuture(fileIdent.fileId.toString)
           queries <- Future(RtmQueryHelper.getRTMQueries(rtmQuery.params, None, None, Seq(presignedUrl), input.audienceId))
         } yield {
