@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit
 import com.evidence.service.common.cache.generic.Cache
 import com.evidence.service.common.cache.CacheConfig
 import com.evidence.service.common.config.Configuration
-import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.komrade.thrift.{PartnerFeature, WatermarkSetting}
 
 import java.time.Instant
@@ -115,14 +114,12 @@ case object HdlCache {
     override def evict(key: String): Unit = cache.deleteSync(hdlKey(key))
   }
 
-  case object PresignedUrl extends HdlCache[String, URL] with LazyLogging {
+  case object PresignedUrl extends HdlCache[String, URL] {
     private val cacheKey = "PresignedUrl"
     private val cache    = new Cache[cacheValue[String]](CacheConfig(ttl = Some(HdlTtl.urlRedisTTL)))
 
     override def get(key: String): Option[URL] =
-      getValue(cache.getSync(hdlKey(key), cacheKey, refreshTTL = false), cacheKey).map{url =>
-        logger.info("Redis succeeds to get PresignedUrl")("key" -> key)
-        new URL(url)}
+      getValue(cache.getSync(hdlKey(key), cacheKey, refreshTTL = false), cacheKey).map(url => new URL(url))
 
     override def set(key: String, value: URL): Unit =
       cache.setSync(hdlKey(key), cacheKey, cacheValue(value.toString, HdlTtl.urlRedisTTL))
