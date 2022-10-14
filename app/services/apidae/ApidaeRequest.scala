@@ -10,5 +10,5 @@ import play.api.mvc.WrappedRequest
   *
   * @return Generated URI as a string.
   */
-case class ApidaeRequest[A](file: FileIdent, userId: UUID, request: HeimdallRequest[A])
+case class ApidaeRequest[A](file: FileIdent, userId: UUID, request: HeimdallRequest[A], url: Option[String])
     extends WrappedRequest[A](request)

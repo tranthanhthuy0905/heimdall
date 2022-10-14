@@ -19,7 +19,7 @@ case class ApidaeRequestAction @Inject()()(implicit val executionContext: Execut
     val result = for {
       file     <- request.media.headOption.toRight(Results.BadRequest)
       userUUID <- Convert.tryToUuid(request.subjectId).toRight(Results.BadRequest)
-    } yield ApidaeRequest(file, userUUID, request)
+    } yield ApidaeRequest(file, userUUID, request, request.url)
     Future.successful(result)
   }
 }

@@ -10,7 +10,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ApidaeClient {
-  def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
+  def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID, url: Option[String]): Future[WSResponse]
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getMediaSummary(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getZipFileInfoRaw(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
@@ -24,7 +24,12 @@ trait ApidaeClient {
 @Singleton
 class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: ExecutionContext) extends ApidaeClient {
 
-  def transcode(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
+  def transcode(
+    partnerId: UUID,
+    userId: UUID,
+    evidenceId: UUID,
+    fileId: UUID,
+    url: Option[String]): Future[WSResponse] =
     buildApidaeEndpoint(s"/files/${fileId.toString}/convert")
       .addQueryStringParameters(
         "partner_id"  -> partnerId.toString,
@@ -37,7 +42,8 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
           "partner_id"  -> partnerId.toString,
           "evidence_id" -> evidenceId.toString,
           "user_id"     -> userId.toString,
-          "file_id"     -> fileId.toString
+          "file_id"     -> fileId.toString,
+          "url"         -> url.toString,
         ))
       .execute()
 
@@ -54,9 +60,9 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
   def getMediaSummary(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
     buildApidaeEndpoint("/v1/media/summary")
       .withQueryStringParameters(
-        "partner_id" -> partnerId.toString,
+        "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
-        "file_id" -> fileId.toString,
+        "file_id"     -> fileId.toString,
       )
       .withMethod("GET")
       .execute()
@@ -64,9 +70,9 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
   def getZipFileInfoRaw(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
     buildApidaeEndpoint(s"/v1/zip/file")
       .addQueryStringParameters(
-        "partner_id" -> partnerId.toString,
+        "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
-        "file_id" -> fileId.toString,
+        "file_id"     -> fileId.toString,
       )
       .withMethod("GET")
       .execute()
@@ -89,9 +95,9 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
   def getZipStructure(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] = {
     buildApidaeEndpoint("/v1/zip/structure")
       .withQueryStringParameters(
-        "partner_id" -> partnerId.toString,
+        "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
-        "file_id" -> fileId.toString,
+        "file_id"     -> fileId.toString,
       )
       .withMethod("GET")
       .execute()
@@ -100,9 +106,9 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
   def getZipStatus(partnerId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
     buildApidaeEndpoint("/v1/zip/status")
       .withQueryStringParameters(
-        "partner_id" -> partnerId.toString,
+        "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
-        "file_id" -> fileId.toString,
+        "file_id"     -> fileId.toString,
       )
       .withMethod("GET")
       .execute()

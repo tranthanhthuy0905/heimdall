@@ -38,4 +38,6 @@ case class HeimdallRequest[A](request: Request[A], authorizationData: Authorizat
   }
 
   def media: MediaIdent = request.attrs.get(MediaIdentAttr.Key).getOrElse(EmptyMediaIdent())
+
+  def url: Option[String] = request.queryString.getOrElse("url", Seq()).headOption
 }

@@ -39,13 +39,12 @@ class MediaConvertController @Inject()(
         andThen apidaeRequestAction
         andThen mediaConvertValidation
     ).async { implicit request =>
-
       (for {
         auditEvent <- FutureEither.successful(request.request.auditEvent.toRight(INTERNAL_SERVER_ERROR))
         _ <- FutureEither(audit.recordEndSuccess(auditEvent)).mapLeft(toHttpStatus("failedToSendEvidencePlaybackRequestedAuditEvent")(_))
         response <- FutureEither(
           apidae
-            .transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId)
+            .transcode(request.file.partnerId, request.userId, request.file.evidenceId, request.file.fileId, request.url)
             .map(withOKStatus))
       } yield response).fold(error, response => Ok(response.json).as(ContentTypes.JSON))
     }
