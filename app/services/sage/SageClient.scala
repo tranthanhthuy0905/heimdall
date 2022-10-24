@@ -22,8 +22,7 @@ import io.grpc.{CallCredentials, Metadata}
 import models.common.{FileIdent, HeimdallError}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
-import scala.util.control.NonFatal
+import scala.util.Try
 import play.api.cache.AsyncCacheApi
 import utils.{HdlCache, HdlTtl}
 
@@ -149,8 +148,7 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
     val fileRes = for {
       res <- queryServiceFn.read(request).map(toEither)
     } yield res.map(_.map(_.entity.value.asInstanceOf[File]))
-    val finalFile = fileRes.map(_.map(_.headOption).flatMap(_.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
-    logSageExecTime(id, finalFile, System.currentTimeMillis, request)
+    fileRes.map(_.map(_.headOption).flatMap(_.toRight(HeimdallError("File not found", HeimdallError.ErrorCode.NOT_FOUND))))
   }
 
   override def getUrl(file: FileIdent, ttl: Duration): Future[Either[HeimdallError, URL]] = {
@@ -179,22 +177,5 @@ class SageClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(implicit ex
   private def manageDownloadUrl(input: Either[HeimdallError, File]): Either[HeimdallError, String] = {
     val urlString = input.map(_.downloadUrl.map(_.url).map(_.trim).filter(_.nonEmpty))
     urlString.flatMap(_.toRight(HeimdallError("Presigned-url not found", HeimdallError.ErrorCode.NOT_FOUND)))
-  }
-
-  private def logSageExecTime[T](id: EvidenceId, future: Future[T], baseTime: Long, request: ReadRequest) = {
-    def logging(mes: String, threshold: Long) = {
-      val correlationId = request.context.map(_.correlationId).getOrElse("")
-      val callingService = request.context.map(_.callingService).getOrElse("")
-      val currTime = System.currentTimeMillis
-      val diff = currTime - baseTime
-      if (diff > threshold) {
-        logger.warn(mes)("correlationId" -> correlationId, "callingService" -> callingService, "fileId" -> id.entityId, "partnerId" -> id.partnerId, "execTimeInMilSec" -> diff, "startTime" -> baseTime, "endTime" -> currTime)
-      }
-    }
-    future.onComplete {
-      case Success(_) => logging("SageExecuteSuccessTooSlow", 150)
-      case _ => ()
-    }
-    future
   }
 }
