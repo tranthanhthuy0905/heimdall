@@ -17,23 +17,24 @@ import utils.HdlResponseHelpers
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class PartnerController  @Inject()(
+class PartnerController @Inject()(
   heimdallRequestAction: HeimdallRequestAction,
   komrade: KomradeClient,
   partnerPermValidationActionBuilder: PartnerPermValidationActionBuilder,
   audit: AuditClient,
   components: ControllerComponents
 )(implicit ex: ExecutionContext)
-  extends AbstractController(components)
-  with AuditConversions
-  with HdlResponseHelpers {
+    extends AbstractController(components)
+    with AuditConversions
+    with HdlResponseHelpers {
 
   def getWatermarkSettings(partnerId: String): Action[AnyContent] = {
     (
       heimdallRequestAction
         andThen partnerPermValidationActionBuilder.build(partnerId)
-    ) async { _ =>
-      komrade.getWatermarkSettings(partnerId)
+    ) async { request =>
+      komrade
+        .getWatermarkSettings(partnerId, Some(request.requestInfo))
         .map(settings => Ok(watermarkSettingToJson(settings)))
     }
   }
@@ -43,12 +44,12 @@ class PartnerController  @Inject()(
       heimdallRequestAction
         andThen partnerPermValidationActionBuilder.build(partnerId)
     ) async { request =>
-      request.body.asJson
-        .map{json => {
+      request.body.asJson.map { json =>
+        {
           try {
-            val settings = jsonToWatermarkSetting(json)
+            val settings     = jsonToWatermarkSetting(json)
             val normalizedId = Some(normalizeUuid(partnerId))
-            val authHandler = request.attrs(AuthorizationAttr.Key)
+            val authHandler  = request.attrs(AuthorizationAttr.Key)
             val auditEvent = WatermarkSettingsUpdatedEvent(
               Tid(TidEntities.Partner, normalizedId, normalizedId),
               updatedByTid(authHandler.parsedJwt),
@@ -56,16 +57,18 @@ class PartnerController  @Inject()(
               settings.position.value
             )
             (for {
-              response <- FutureEither(komrade.updateWatermarkSettings(partnerId, settings)
-                .map(_ => Some(Ok(Json.obj("status" -> "ok"))).toRight(INTERNAL_SERVER_ERROR)))
+              response <- FutureEither(
+                komrade
+                  .updateWatermarkSettings(partnerId, settings, Some(request.requestInfo))
+                  .map(_ => Some(Ok(Json.obj("status" -> "ok"))).toRight(INTERNAL_SERVER_ERROR)))
               _ <- FutureEither(audit.recordEndSuccess(auditEvent))
                 .mapLeft(toHttpStatus("failedToSendWatermarkSettingsUpdatedEvent")(_))
             } yield response).fold(error, res => res)
           } catch {
             case _: JsResultException => Future.successful(BadRequest("Invalid json request"))
           }
-        }}
-        .getOrElse(Future.successful(BadRequest("Expecting json body")))
+        }
+      }.getOrElse(Future.successful(BadRequest("Expecting json body")))
     }
   }
 
@@ -74,20 +77,21 @@ class PartnerController  @Inject()(
       "data" -> Json.obj(
         "watermarkSettings" -> Json.obj(
           "partnerId" -> settings.partnerId,
-          "position" -> settings.position.value
+          "position"  -> settings.position.value
         )
       )
     )
   }
 
   private def jsonToWatermarkSetting(json: JsValue): WatermarkSetting = {
-    val partnerId = (json \ "data" \ "watermarkSettings" \ "partnerId").get.as[String]
+    val partnerId     = (json \ "data" \ "watermarkSettings" \ "partnerId").get.as[String]
     val positionValue = (json \ "data" \ "watermarkSettings" \ "position").get.as[Int]
     WatermarkSetting(partnerId, WatermarkPosition(positionValue))
   }
 
   private def normalizeUuid(uuidString: String): String = {
-    Convert.tryToUuid(uuidString)
+    Convert
+      .tryToUuid(uuidString)
       .map(normalizedUuid => normalizedUuid.toString)
       .getOrElse(uuidString)
   }
