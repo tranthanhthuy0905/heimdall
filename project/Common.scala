@@ -12,7 +12,7 @@ object Common {
   val pdpProtoVersion            = "0.2.195"
   val sageProtoVersion           = "0.6.1951"
   val nettyVersion               = "4.1.79.Final"
-  val jacksonVersion             = "2.14.0-rc1"
+  val jacksonVersion             = "2.14.0-rc3"
   val minidevVersion             = "2.4.8"
   val gsonVersion                = "2.9.1"
   val esapiVersion               = "2.5.0.0"
