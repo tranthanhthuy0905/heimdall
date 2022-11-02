@@ -2,6 +2,7 @@ package actions
 
 import akka.http.scaladsl.model.Uri
 import com.evidence.service.common.logging.LazyLogging
+import com.evidence.service.thrift.v2.RequestInfo
 import com.typesafe.config.Config
 import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Results}
@@ -14,10 +15,10 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 case class RtmRequestAction @Inject()(
-     config: Config,
-     presignedUrlReq: PresignedUrlClient,
-     komradeClient: KomradeClient,
-     loadBalancer: HeimdallLoadBalancer,
+  config: Config,
+  presignedUrlReq: PresignedUrlClient,
+  komradeClient: KomradeClient,
+  loadBalancer: HeimdallLoadBalancer,
 )(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[HeimdallRequest, RtmRequest]
     with LazyLogging
@@ -27,7 +28,10 @@ case class RtmRequestAction @Inject()(
   def refine[A](input: HeimdallRequest[A]) = {
 
     for {
-      isMultiAudioEnabled <- input.getQueryString("partner_id").map(isMultiStreamPlaybackEnabled).getOrElse(Future.successful(false))
+      isMultiAudioEnabled <- input
+        .getQueryString("partner_id")
+        .map(p => isMultiStreamPlaybackEnabled(p, input.requestInfo))
+        .getOrElse(Future.successful(false))
       rtmRequest <- buildRtmQueries(input, isMultiAudioEnabled)
     } yield rtmRequest
   }
@@ -37,7 +41,13 @@ case class RtmRequestAction @Inject()(
       for {
         presignedUrls <- Future.traverse(input.media.toList)(presignedUrlReq.getUrl(_))
         endpoint      <- loadBalancer.getInstanceAsFuture(input.media.fileIds.head.toString)
-        queries       <- Future.successful(RtmQueryHelper.getRTMQueries(rtmQuery.params, Some(input.watermark), input.playbackSettings, presignedUrls, input.audienceId))
+        queries <- Future.successful(
+          RtmQueryHelper.getRTMQueries(
+            rtmQuery.params,
+            Some(input.watermark),
+            input.playbackSettings,
+            presignedUrls,
+            input.audienceId))
       } yield {
         val uri = Uri
           .from(
@@ -53,7 +63,9 @@ case class RtmRequestAction @Inject()(
 
   }
 
-  private def isMultiStreamPlaybackEnabled(partnerId: String): Future[Boolean] = {
-    komradeClient.listPlaybackPartnerFeatures(partnerId).map(features => features.exists(_.featureName == MultiStreamPlaybackEnabledFeature))
+  private def isMultiStreamPlaybackEnabled(partnerId: String, info: RequestInfo): Future[Boolean] = {
+    komradeClient
+      .listPlaybackPartnerFeatures(partnerId, Some(info))
+      .map(features => features.exists(_.featureName == MultiStreamPlaybackEnabledFeature))
   }
 }

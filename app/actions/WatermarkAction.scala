@@ -2,13 +2,16 @@ package actions
 
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.common.monad.FutureEither
+import com.evidence.service.thrift.v2.RequestInfo
+
 import javax.inject.Inject
 import models.common.HeimdallRequest
 import play.api.mvc.{ActionRefiner, Result, Results}
 import services.komrade.KomradeClient
 import utils.DateTime
-import scala.collection.immutable.Seq
 
+import java.util.UUID
+import scala.collection.immutable.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
 case class WatermarkAction @Inject()(komrade: KomradeClient)(
@@ -40,9 +43,13 @@ case class WatermarkAction @Inject()(komrade: KomradeClient)(
   ): Future[Either[Result, HeimdallRequest[A]]] = {
     (for {
       partner <- FutureEither(
-        komrade.getPartner(input.audienceId).map(withSomeValue(_, "failed to retrieve partner domain")))
+        komrade
+          .getPartner(input.audienceId, Some(input.requestInfo))
+          .map(withSomeValue(_, "failed to retrieve partner domain")))
       user <- FutureEither(
-        komrade.getUser(input.audienceId, input.subjectId).map(withSomeValue(_, "failed to retrieve username")))
+        komrade
+          .getUser(input.audienceId, input.subjectId, Some(input.requestInfo))
+          .map(withSomeValue(_, "failed to retrieve username")))
 
     } yield input.copy(watermark = Watermark(partner, user))).future
   }

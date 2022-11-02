@@ -1,12 +1,20 @@
 package models.common
 
 import com.evidence.service.common.logging.LazyLogging
+import com.evidence.service.thrift.v2.RequestInfo
 import models.auth.{AuthorizationData, JWTWrapper}
 import play.api.mvc.{Request, WrappedRequest}
 import services.audit.AuditEvent
 import services.komrade.PlaybackSettings
 
-case class HeimdallRequest[A](request: Request[A], authorizationData: AuthorizationData, watermark: String = "", playbackSettings: Option[PlaybackSettings] = None, auditEvent: Option[AuditEvent] = None)
+import java.util.UUID
+
+case class HeimdallRequest[A](
+  request: Request[A],
+  authorizationData: AuthorizationData,
+  watermark: String = "",
+  playbackSettings: Option[PlaybackSettings] = None,
+  auditEvent: Option[AuditEvent] = None)
     extends WrappedRequest[A](request)
     with LazyLogging {
 
@@ -18,6 +26,12 @@ case class HeimdallRequest[A](request: Request[A], authorizationData: Authorizat
   def clientIpAddress: String = {
     request.remoteAddress
   }
+
+  val requestInfo: RequestInfo = RequestInfo(
+    correlationId = Some(UUID.randomUUID.toString),
+    ipAddress = Some(clientIpAddress),
+    callingService = Some("heimdall")
+  )
 
   def jwt: String = this.authorizationData.jwt
 

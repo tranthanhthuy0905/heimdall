@@ -8,7 +8,7 @@ object Common {
   val scalaTestVersion           = "3.0.5"
   val scalaMockVersion           = "4.1.0"
   val json4sTestVersion          = "3.5.3"
-  val serviceThriftVersion       = "31.0.5872"
+  val serviceThriftVersion       = "32.0.6005"
   val pdpProtoVersion            = "0.2.195"
   val sageProtoVersion           = "0.6.1951"
   val nettyVersion               = "4.1.79.Final"

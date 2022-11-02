@@ -5,7 +5,7 @@ import com.evidence.service.common.finagle.FinagleClient
 import com.evidence.service.common.finagle.FutureConverters._
 import com.evidence.service.common.logging.LazyLogging
 import com.evidence.service.komrade.thrift.{KomradeService, _}
-import com.evidence.service.thrift.v2.Authorization
+import com.evidence.service.thrift.v2.{Authorization, RequestInfo}
 import com.typesafe.config.Config
 import play.api.cache.AsyncCacheApi
 import utils.{HdlCache, HdlTtl}
@@ -14,11 +14,18 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 trait KomradeClient {
-  def getUser(partnerId: String, userId: String): Future[Option[String]]
-  def getPartner(partnerId: String): Future[Option[String]]
-  def getWatermarkSettings(partnerId: String): Future[WatermarkSetting]
-  def updateWatermarkSettings(partnerId: String, watermarkSetting: WatermarkSetting): Future[Unit]
-  def listPlaybackPartnerFeatures(agencyId: String): Future[Seq[PartnerFeature]]
+  def getUser(partnerId: String, userId: String, requestInfo: Option[RequestInfo] = None): Future[Option[String]]
+  def getPartner(partnerId: String, requestInfo: Option[RequestInfo] = None): Future[Option[String]]
+  def getWatermarkSettings(partnerId: String, requestInfo: Option[RequestInfo] = None): Future[WatermarkSetting]
+
+  def updateWatermarkSettings(
+    partnerId: String,
+    watermarkSetting: WatermarkSetting,
+    requestInfo: Option[RequestInfo] = None): Future[Unit]
+
+  def listPlaybackPartnerFeatures(
+    agencyId: String,
+    requestInfo: Option[RequestInfo] = None): Future[Seq[PartnerFeature]]
 }
 
 trait PlaybackFeatures {
@@ -51,7 +58,10 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
 
   // Streaming use komrade to get username and agency name for watermark string only
   // it is safe to cached results for those calls since Komrade call is expensive (query DB)
-  override def getUser(partnerId: String, userId: String): Future[Option[String]] = {
+  override def getUser(
+    partnerId: String,
+    userId: String,
+    requestInfo: Option[RequestInfo] = None): Future[Option[String]] = {
     val key = s"$partnerId-$userId"
     cache.getOrElseUpdate[Option[String]](key, HdlTtl.usernameMemTTL) {
       HdlCache.Username
@@ -60,8 +70,7 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
           Future.successful(Some(un))
         }
         .getOrElse {
-          logger.debug("getUser")("partnerId" -> partnerId, "userId" -> userId)
-          val res = client.getUser(partnerId, userId).toScalaFuture.map { u =>
+          val res = client.getUser(partnerId, userId, requestInfo).toScalaFuture.map { u =>
             {
               u.username.foreach(un => HdlCache.Username.set(key, un))
               u.username
@@ -72,7 +81,7 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
     }
   }
 
-  override def getPartner(partnerId: String): Future[Option[String]] = {
+  override def getPartner(partnerId: String, requestInfo: Option[RequestInfo] = None): Future[Option[String]] = {
     val key = partnerId
     cache.getOrElseUpdate[Option[String]](key, HdlTtl.domainMemTTL) {
       HdlCache.AgencyDomain
@@ -82,7 +91,7 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
         }
         .getOrElse {
           logger.debug("getPartner")("partnerId" -> partnerId)
-          val res = client.getPartner(partnerId).toScalaFuture.map { p =>
+          val res = client.getPartner(partnerId, requestInfo).toScalaFuture.map { p =>
             {
               p.domain.foreach(d => HdlCache.AgencyDomain.set(key, d))
               p.domain
@@ -93,7 +102,9 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
     }
   }
 
-  override def getWatermarkSettings(partnerId: String): Future[WatermarkSetting] = {
+  override def getWatermarkSettings(
+    partnerId: String,
+    requestInfo: Option[RequestInfo] = None): Future[WatermarkSetting] = {
     val key = getWatermarkSettingsRedisKey(partnerId)
     HdlCache.WatermarkSettings
       .get(key)
@@ -103,7 +114,7 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
       .getOrElse {
         logger.debug("getWatermarkSettings")("partnerId" -> partnerId)
         val request = GetWatermarkSettingRequest(partnerId)
-        val res = client.getWatermarkSetting(auth, request).toScalaFuture.map { s =>
+        val res = client.getWatermarkSetting(auth, request, requestInfo).toScalaFuture.map { s =>
           s.setting.foreach(x => HdlCache.WatermarkSettings.set(key, x))
           s.setting.getOrElse(WatermarkSetting(partnerId, WatermarkPosition.BottomLeft))
         }
@@ -111,16 +122,21 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
       }
   }
 
-  override def updateWatermarkSettings(partnerId: String, watermarkSetting: WatermarkSetting): Future[Unit] = {
+  override def updateWatermarkSettings(
+    partnerId: String,
+    watermarkSetting: WatermarkSetting,
+    requestInfo: Option[RequestInfo] = None): Future[Unit] = {
     val key = getWatermarkSettingsRedisKey(partnerId)
     client
-      .createOrUpdateWatermarkSetting(auth, watermarkSetting)
+      .createOrUpdateWatermarkSetting(auth, watermarkSetting, requestInfo)
       .toScalaFuture
       .map(_ => HdlCache.WatermarkSettings.set(key, watermarkSetting))
   }
 
   // only list a few interested features instead of the whole feature list of the given partner
-  override def listPlaybackPartnerFeatures(partnerId: String): Future[Seq[PartnerFeature]] = {
+  override def listPlaybackPartnerFeatures(
+    partnerId: String,
+    requestInfo: Option[RequestInfo] = None): Future[Seq[PartnerFeature]] = {
     val key = getPartnerFeaturesRedisKey(partnerId)
     cache.getOrElseUpdate[Seq[PartnerFeature]](key, HdlTtl.partnerFeaturesRedisTTL) {
       HdlCache.PartnerFeatures
@@ -130,12 +146,16 @@ class CachedKomradeClientImpl @Inject()(config: Config, cache: AsyncCacheApi)(im
         }
         .getOrElse {
           logger.debug("listPlaybackPartnerFeatures")("partnerId" -> partnerId)
-          client.listPartnerFeaturesV2(auth, partnerId).toScalaFuture.map(features => {
-            features.filter(feature => playbackFeatures.contains(feature.featureName))
-          }).map { plFeatures =>
-            HdlCache.PartnerFeatures.set(key, plFeatures)
-            plFeatures
-          }
+          client
+            .listPartnerFeaturesV2(auth, partnerId, requestInfo)
+            .toScalaFuture
+            .map(features => {
+              features.filter(feature => playbackFeatures.contains(feature.featureName))
+            })
+            .map { plFeatures =>
+              HdlCache.PartnerFeatures.set(key, plFeatures)
+              plFeatures
+            }
         }
     }
   }
