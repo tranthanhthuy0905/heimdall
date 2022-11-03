@@ -12,7 +12,7 @@ if [[ "$BRANCH_NAME" =~ $release_branch_regex ]]; then
 fi
 
 # service build already test it
-#./tests.sh
+./tests.sh
 
 bin/sbt compile outputVersion package universal:packageBin -Dpackaging.buildQualifier="" -Dpackaging.buildNumber="$version" \
   clean \

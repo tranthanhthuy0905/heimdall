@@ -39,24 +39,28 @@ Heimdall has [`./docs/heimdall.yaml`](https://git.taservs.net/ecom/heimdall/tree
 ## Run and Debug Heimdall Locally
 
 This instruction explains how to hit Heimdall directly and have it to contact QA/Dev services.
-I.e. the requests will not hit `nginx` and have it forward traffic to the local Heimdall.
-Forwarding requests though `nginx` will require changes to `nginx` config in Dev or QA.
+I.e. the requests will not hit `Heimdall pod` and have it forward traffic to the local Heimdall.
 
 **1. Update application config**
 
-Copy `/opt/heimdall/heimdall/conf/application.conf` from heimdall host of an environment that the local 
-instance of heimdall is going to connect to.<br/>
-Replace `./conf/env/localdev.conf` with `application.conf`.<br/>
-Update `api_prefix` in `./conf/env/localdev.conf` as following: `heimdall.api_prefix = ""`.
+Sign in Azure Account and access ag1 environment in the `k8s-deploy` repository terminal: `./scripts/aks-login.sh ag1 va dems`<br/> 
+Run `kubectl exec -n visualization -it [heimdall_pod] bash` to access Heimdall pod from local<br/>
+Run `cd k8s-deploy` to access cli and `cat application.conf` to see the full configuration <br/>
+Copy and replace `./conf/env/localdev.conf` with that configuration.<br/>
 
-**2. Run heimdall**
+**2. Set up Debugger**
+Plugin: Play Framework 
+Certificates: `internal-wildcard.ag1.crt` and `internal-wildcard.dv1.crt`
+Local URL: http://localhost:9000
+
+**3. Run heimdall**
 
 ```
 ./bin/sbt run
 ```
 Endpoint named `/media/alive` can be requested by `curl` or simply through the browser: <http://localhost:9000/media/alive>.
 
-**3. Using Heimdall API**
+**4. Using Heimdall API**
 
 ```
 export FILEID=815fc051-e956-4ea8-aa08-f634338d3a95
