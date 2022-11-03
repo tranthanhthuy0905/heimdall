@@ -43,7 +43,7 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
           "evidence_id" -> evidenceId.toString,
           "user_id"     -> userId.toString,
           "file_id"     -> fileId.toString,
-          "url"         -> url.toString,
+          "url"         -> url.getOrElse(""),
         ))
       .execute()
 
