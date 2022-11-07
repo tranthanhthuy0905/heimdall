@@ -37,14 +37,13 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
         "user_id"     -> userId.toString,
       )
       .withMethod("PUT")
-      .withBody(
-        Json.obj(
-          "partner_id"  -> partnerId.toString,
-          "evidence_id" -> evidenceId.toString,
-          "user_id"     -> userId.toString,
-          "file_id"     -> fileId.toString,
-          "url"         -> url.toString,
-        ))
+      .withBody(Json.obj(
+        "partner_id"  -> partnerId.toString,
+        "evidence_id" -> evidenceId.toString,
+        "user_id"     -> userId.toString,
+        "file_id"     -> fileId.toString,
+        "url"         -> url.fold("")(identity),
+      ))
       .execute()
 
   def getTranscodingStatus(partnerId: UUID, userId: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse] =
