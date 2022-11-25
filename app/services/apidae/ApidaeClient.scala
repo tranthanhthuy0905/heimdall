@@ -19,6 +19,7 @@ trait ApidaeClient {
   def getZipStructure(partnerID: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def getZipStatus(partnerID: UUID, evidenceId: UUID, fileId: UUID): Future[WSResponse]
   def requestConcatenate(body: JsValue): Future[WSResponse]
+  def getConvertedFiles(partnerID: UUID, evidenceId: UUID): Future[WSResponse]
 }
 
 @Singleton
@@ -108,6 +109,15 @@ class ApidaeClientImpl @Inject()(config: Config, ws: WSClient)(implicit ex: Exec
         "partner_id"  -> partnerId.toString,
         "evidence_id" -> evidenceId.toString,
         "file_id"     -> fileId.toString,
+      )
+      .withMethod("GET")
+      .execute()
+
+  def getConvertedFiles(partnerId: UUID, evidenceId: UUID): Future[WSResponse] =
+    buildApidaeEndpoint("/conversion/files")
+      .withQueryStringParameters(
+        "partner_id"  -> partnerId.toString,
+        "evidence_id" -> evidenceId.toString,
       )
       .withMethod("GET")
       .execute()
